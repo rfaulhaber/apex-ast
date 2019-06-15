@@ -1,0 +1,643 @@
+// note: see this: https://github.com/rust-lang/rust/blob/master/src/libsyntax/ast.rs
+
+// apex files are only ever classes or interfaces
+// for now we won't concern ourselves with anonymous apex
+apex_file = { SOI ~ (class_declaration | trigger_declaration | interface_declaration) ~ EOI }
+
+// apex
+
+trigger_declaration = { TRIGGER ~ identifier ~ ON ~ identifier ~ trigger_event_list ~ code_block }
+trigger_event_list = _{ "(" ~ trigger_event ~ ("," ~ trigger_event)* ~ ")" }
+trigger_event = { (BEFORE ~ dml_action) | (AFTER ~ dml_action) }
+
+// classes
+class_declaration = { access_modifier ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
+// TODO add syntax for inner classes and interfaces
+class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_member_declaration | class_constructor_definition | method_definition)* ~ "}" }
+class_member_declaration = { annotation? ~ access_modifier? ~ STATIC? ~ FINAL? ~ return_type ~ identifier ~ (class_member_accessors | ("=" ~ assignment_rhs)? ~ ";") }
+inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
+inner_class_body = { "{" ~ (class_member_declaration | class_constructor_definition | method_definition)* ~ "}" }
+inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
+// basically methods without return type 
+class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ method_parameters ~ code_block }
+class_member_accessors = { "{" ~ get_accessor? ~ set_accessor? ~ "}" }
+get_accessor = { access_modifier? ~ GET ~ (code_block | ";") }
+set_accessor = { access_modifier? ~ SET ~ (code_block | ";") }
+
+// interfaces
+interface_declaration = { INTERFACE ~ identifier ~ (EXTENDS ~ type_list)? ~ interface_body }
+interface_body = _{ "{" ~ interface_method_definition* ~ "}" }
+interface_method_definition = { return_type ~ identifier ~ method_parameters ~ ";" }
+
+// method signatures
+method_definition = { method_signature ~ code_block }
+abstract_method_definition = { access_modifier? ~ ABSTRACT ~ return_type ~ identifier ~ method_parameters ~ ";" }
+method_signature = _{ annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL)? ~ return_type ~ identifier ~ method_parameters }
+method_parameters = { "(" ~ parameter ~ ("," ~ parameter)* ~ ")" | "()" }
+parameter = _{ basic_type ~ identifier }
+return_type = { basic_type | VOID }
+
+// this only covers situations like: myVariable(one, 2, "three");
+// calling methods on an object is a type of property access, and this is simply
+// the terminal rule
+method_invocation = { identifier ~ call_arguments }
+
+code_block = { "{" ~ body_statement* ~ "}" }
+inline_code_block = { body_statement }
+
+// enums
+enum_declaration = { access_modifier? ~ ENUM ~ identifier ~ (IMPLEMENTS ~ type_list)? ~ enum_body }
+
+// apex only supports unit enumerations?
+enum_body = _{"{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
+
+// method body rules
+body_statement = { 
+    for_statement 
+    | do_while_statement 
+    | while_statement 
+    | if_statement 
+    | try_catch_statement 
+    | throw_statement 
+    | dml_statement 
+    | return_statement 
+    | continue_statement 
+    | break_statement 
+    | (local_assignment | expression) 
+    ~ ";" 
+}
+
+local_assignment = { local_variable_declaration | variable_reassignment }
+variable_reassignment = { (property_access | list_access | identifier) ~ "=" ~ assignment_rhs }
+local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ ("=" ~ assignment_rhs)? } 
+new_instance_declaration = { NEW ~ basic_type ~ (new_map_literal | new_list_literal | new_array_literal | call_arguments) }
+call_arguments = { "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
+new_list_literal = { "{" ~ expression ~ ("," ~ expression)* ~ "}" } // should be *?
+new_map_literal = { "{" ~ map_literal_mapping ~ ("," ~ map_literal_mapping)* ~ "}" }
+// to cover cases like: List<Integer> l = new Integer[6]
+new_array_literal = { "[" ~ expression ~ "]" } 
+map_literal_mapping = { literal ~ "=>" ~ expression}
+
+// convenience rule for anything on the right hand side of an assignment
+assignment_rhs = _{ expression }
+
+// switch statements
+
+switch_statement = { SWITCH ~ ON ~ expression ~ "{" ~ switch_block* ~ switch_when_else? ~ "}" }
+switch_block = { WHEN ~ switch_when_condition ~ code_block }
+switch_when_condition = _{ switch_match_object | switch_match_type ~ ("," ~ switch_match_type)* }
+switch_match_object = _{ basic_type ~ identifier }
+switch_match_type = _{ literal | identifier }
+switch_when_else = { WHEN ~ ELSE ~ code_block } 
+
+// try/catch
+try_catch_statement = { try_statement ~ catch_statement ~ catch_statement* ~ finally_statement? } 
+try_statement = { TRY ~ code_block } 
+catch_statement = { CATCH ~ "(" ~ basic_type ~ identifier ~ ")" ~ code_block }
+finally_statement = { FINALLY ~ code_block } 
+
+// throw
+throw_statement = { THROW ~ (new_instance_declaration | identifier) ~ ";" }
+
+// for statements
+for_statement = _{ for_iter_statement | for_each_statement }
+for_each_statement = { FOR ~ "(" ~ basic_type ~ identifier ~ ":" ~ expression ~ ")" ~ (code_block | inline_code_block) }
+for_iter_statement = { FOR ~ "(" ~ (local_assignment ~ ("," ~ local_assignment)*)? ~ ";" ~ expression? ~ ";" ~ (expression ~ ("," ~ expression)*)? ~ ")" ~ (code_block | inline_code_block) }
+
+// while statements
+while_statement = { WHILE ~ condition_statement ~ (code_block | inline_code_block) }
+
+// do-while statements
+do_while_statement = { DO ~ code_block ~ WHILE ~ condition_statement ~ ";" }
+
+// if statements
+if_statement = { IF ~ condition_statement ~ (code_block | inline_code_block) ~ else_if_statement* ~ (ELSE ~ (code_block | inline_code_block))? }
+else_if_statement = { ELSE ~ IF ~ condition_statement ~ (code_block | inline_code_block) }
+
+// simple statements
+break_statement = { BREAK ~ ";" }
+continue_statement = { CONTINUE ~ ";" }
+return_statement = { RETURN ~ expression ~ ";" }
+
+condition_statement = { "(" ~ expression ~ ")" }
+
+list_access = { identifier ~ "[" ~ expr_inner ~ "]" }
+property_access = { accessible ~ ("." ~ accessible)+ }
+accessible = _{ soql_expression | new_instance_declaration | method_invocation | literal | identifier } 
+
+// dml
+dml_statement = { dml_action ~ (new_instance_declaration | identifier) ~ ";" }
+dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
+
+keyword = _{ soql_keyword | apex_keyword }
+ 
+// sosl
+// from salesforce: https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_sosl_syntax.htm#sforce_api_calls_sosl_syntax
+// sosl complete (?) syntax
+
+// FIND {SearchQuery} 
+// [ IN SearchGroup ]
+// [ RETURNING FieldSpec [[ toLabel(fields)] [convertCurrency(Amount)] [FORMAT()]] ]
+// [ WITH DivisionFilter ]
+// [ WITH DATA CATEGORY DataCategorySpec ]
+// [ WITH SNIPPET[(target_length=n)] ]
+// [ WITH NETWORK NetworkIdSpec ]
+// [ WITH PricebookId ]
+// [ WITH METADATA ]
+// [ LIMIT n ]
+// [ UPDATE [TRACKING], [VIEWSTAT] ]
+
+// the shortest sosl query in apex is FIND 'term'
+
+sosl_query = {
+    sosl_find_clause
+    ~ sosl_in_search_group?
+    ~ sosl_returning_clause?
+    ~ sosl_with_clause?
+    ~ soql_limit_clause?
+    ~ sosl_update_clause?
+}
+
+// TODO support USING clauses https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_sosl_using_listview.htm#sforce_api_calls_sosl_using_listview
+
+sosl_find_clause = { FIND ~ (string_literal | soql_function) }
+sosl_in_search_group = { IN ~ (ALL_FIELDS | EMAIL_FIELDS | NAME_FIELDS | PHONE_FIELDS | SIDEBAR_FIELDS) }
+
+// TODO support sosl WHERE: https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_sosl_where.htm#sforce_api_calls_sosl_where
+sosl_returning_clause = { RETURNING ~ sosl_sobject_query ~ ("," ~ sosl_sobject_query)* }
+sosl_sobject_query = { identifier ~ (soql_limit_clause | soql_offset_clause | sosl_sobject_query_field_list)? }
+sosl_sobject_query_field_list = { "(" ~ identifier ~ ("," ~ identifier)* ~ (soql_limit_clause | soql_offset_clause)? ~ ")" }
+sosl_with_clause = { WITH ~ (sosl_data_category | sosl_snippet | sosl_network | sosl_pricebook | sosl_metadata) }
+sosl_data_category = { DATA_CATEGORY ~ with_data_category_expression }
+sosl_snippet = { SNIPPET ~ ("(" ~ ^"target_length" ~ "=" ~ integer_decimal)? }
+sosl_network = { NETWORK ~ (IN ~ soql_list_literal | "=" ~ string_literal) }
+sosl_pricebook = { ^"PricebookId" ~ "=" ~ string_literal }
+sosl_metadata = { METADATA ~ "=" ~ string_literal }
+sosl_limit_clause = _{ soql_limit_clause }
+sosl_update_clause = { UPDATE ~ (TRACKING | VIEWSTAT) }
+
+// sosl keywords aren't reserved?
+// sosl_keywords = {
+//     ALL_FIELDS 
+//     | EMAIL_FIELDS
+//     | FIND
+//     | NAME_FIELDS 
+//     | PHONE_FIELDS
+//     | SIDEBAR_FIELDS
+//     | RETURNING
+//     | SNIPPET
+//     | NETWORK
+//     | METADATA
+// }
+
+ALL_FIELDS = {^"ALL FIELDS"}
+EMAIL_FIELDS = {^"EMAIL FIELDS"}
+FIND = { ^"FIND" }
+NAME_FIELDS = {^"NAME FIELDS"}
+PHONE_FIELDS = {^"PHONE FIELDS"}
+SIDEBAR_FIELDS = {^"SIDEBAR FIELDS"}
+RETURNING = { ^"RETURNING" }
+SNIPPET = { ^"SNIPPET" }
+NETWORK = { ^"NETWORK" }
+METADATA = { ^"METADATA" }
+
+
+// soql
+
+// from salesforce, https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql_select.htm
+// complete (?) soql syntax
+
+// SELECT fieldList [subquery][...]
+// [TYPEOF typeOfField whenExpression[...] elseExpression END][...]
+// FROM objectType[,...] 
+//     [USING SCOPE filterScope]
+// [WHERE conditionExpression]
+// [WITH [DATA CATEGORY] filteringExpression]
+// [GROUP BY {fieldGroupByList|ROLLUP (fieldSubtotalGroupByList)|CUBE (fieldSubtotalGroupByList)} 
+//     [HAVING havingConditionExpression] ] 
+// [ORDER BY fieldOrderByList {ASC|DESC} [NULLS {FIRST|LAST}] ]
+// [LIMIT numberOfRowsToReturn]
+// [OFFSET numberOfRowsToSkip]
+// [FOR {VIEW  | REFERENCE}[,...] ]
+//       [ UPDATE {TRACKING|VIEWSTAT}[,...] ]
+
+// soql queries are expressions and not statements
+soql_expression = { "[" ~ soql_query ~ "]" }
+
+// the shortest complete soql query is: SELECT field FROM object
+soql_query = { 
+    // TODO add support for soql functions in SELECT
+    // TODO support TYPEOF clauses https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql_relationships_and_polymorph_keys.htm
+
+    soql_select_clause 
+    ~ soql_from_clause
+    ~ soql_where_clause?
+    ~ soql_with_clause?
+    ~ soql_group_by_clause?
+    ~ soql_order_by_clause?
+    ~ soql_limit_clause?
+    ~ soql_offset_clause?
+    ~ soql_for_clause?
+}
+
+soql_select_clause = { SELECT ~ soql_select_term ~ ("," ~ soql_select_term)* }
+soql_from_clause = { FROM ~ soql_from_object_list ~ (USING_SCOPE ~ identifier)? }
+soql_where_clause = { WHERE ~ soql_where_condition }
+// TODO update WITH to support feed items. need better understanding of syntax
+soql_with_clause = { WITH ~ (DATA_CATEGORY ~ with_data_category_expression) | SECURITY_ENFORCED }
+soql_order_by_clause = { ORDER_BY ~ soql_field_list ~ (ASC | DESC)? ~ (NULLS ~ (FIRST | LAST))? }
+soql_limit_clause = { LIMIT ~ integer_decimal }
+soql_offset_clause = { OFFSET ~ integer_decimal }
+soql_for_clause = { FOR ~ (VIEW | REFERENCE | UPDATE) }
+
+soql_select_term = { soql_select_subquery | soql_function | query_type }
+soql_field_list = { query_type ~ ("," ~ query_type)* }
+soql_from_object_list = { identifier ~ ("," ~ identifier)* }
+// select subqueries aren't full SOQL queries as far as I can tell
+soql_select_subquery = { "(" ~ SELECT ~ soql_field_list ~ FROM ~ identifier ~ ")" }
+// TODO soql query where conditions must be able to have parentheses around them
+soql_where_condition = { soql_where_braced_condition | soql_where_field_expression ~ (soql_logical_operator ~ soql_where_field_expression)* }
+soql_where_braced_condition = { "(" ~ soql_where_condition ~ ")" }
+soql_where_subquery = { "(" ~ SELECT ~ soql_field_list ~ FROM ~ identifier ~ WHERE ~ soql_where_condition ~ ")"  }
+soql_where_field_expression = { query_type ~ soql_where_comparison_operator ~ (soql_where_subquery | soql_value) }
+soql_where_comparison_operator = { NOT_IN | LIKE | IN | ge | le | gt | lt | not_eq | soql_eq }
+with_data_category_expression = { with_data_category_selection ~ (AND ~ with_data_category_selection)* }
+with_data_category_selection = { query_type ~ soql_with_data_category_operator ~ (soql_value | identifier) }
+soql_with_data_category_operator = { ABOVE_OR_BELOW | ABOVE | BELOW | AT }
+soql_group_by_clause = { GROUP_BY ~ (soql_group_by_function | soql_field_list) ~ soql_having_clause? }
+soql_group_by_function = { (ROLLUP | CUBE) ~ "(" ~ soql_field_list ~ ")" }
+soql_having_clause = { HAVING ~ soql_having_condition_expression }
+soql_having_condition_expression = { soql_function ~ (ge | le | gt | lt | soql_eq) ~ soql_value }
+soql_eq = { "=" }
+soql_value = { soql_merge_apex | soql_list_literal | literal | SOQL_NULL }
+soql_list_literal = { "(" ~ literal ~ ("," ~ literal)* }
+soql_merge_apex = { ":" ~ expression }
+soql_function = { identifier ~ soql_function_arguments } // TODO figure out what soql funcitons are available
+soql_function_arguments = { "(" ~ (literal | identifier) ~ ("," ~ (literal | identifier))* ~ ")" | "()" }
+soql_logical_operator = { AND | NOT | OR }
+// query type can be either an object proper or an object field 
+query_type = @{ identifier ~ ("." ~ identifier)* }
+
+// soql keywords convenience rule
+soql_keyword = _{
+    ABOVE 
+    | ABOVE_OR_BELOW 
+    | AND 
+    | ASC 
+    | AT 
+    | BELOW 
+    | CUBE 
+    | DATA_CATEGORY 
+    | DESC 
+    | END 
+    | EXCLUDES 
+    | FIRST 
+    | FROM 
+    | GROUP_BY 
+    | HAVING 
+    | INCLUDES 
+    | IN 
+    | LAST 
+    | LIKE 
+    | LIMIT 
+    | NOT 
+    | NOT_IN 
+    | NULLS 
+    | OFFSET 
+    | OR 
+    | ORDER_BY 
+    | REFERENCE 
+    | ROLLUP 
+    | SECURITY_ENFORCED 
+    | SELECT 
+    | SOQL_NULL 
+    | SOQL_UPDATE 
+    | TRACKING 
+    | TYPEOF 
+    | USING_SCOPE 
+    | VIEW 
+    | VIEWSTAT 
+    | WHERE 
+    | WITH 
+}
+ 
+// soql keywords
+ABOVE = { ^"ABOVE" }
+ABOVE_OR_BELOW = { ^"ABOVE_OR_BELOW" }
+AND = { ^"AND" }
+ASC = { ^"ASC" }
+AT = { ^"AT" }
+BELOW = { ^"BELOW" }
+CUBE = { ^"CUBE" }
+DATA_CATEGORY = { ^"DATA CATEGORY" }
+DESC = { ^"DESC" }
+END = { ^"END" }
+EXCLUDES = { ^"EXCLUDES" }
+FIRST = { ^"FIRST" }
+FROM = { ^"FROM" }
+GROUP_BY = { ^"GROUP BY" }
+HAVING = { ^"HAVING" }
+IN = { ^"IN" }
+INCLUDES = { ^"INCLUDES" }
+LAST = { ^"LAST" }
+LIKE = { ^"LIKE" }
+LIMIT = { ^"LIMIT" }
+NOT = { ^"NOT" }
+NOT_IN = { ^"NOT IN" }
+NULLS = { ^"NULLS" }
+OFFSET = { ^"OFFSET" }
+OR = { ^"OR" }
+ORDER_BY = { ^"ORDER BY" }
+REFERENCE = { ^"REFERENCE" }
+ROLLUP = { ^"ROLLUP" }
+SECURITY_ENFORCED = { ^"SECURITY_ENFORCED" }
+SELECT = { ^"SELECT" }
+SOQL_NULL = { ^"NULL" }
+SOQL_UPDATE = { ^"UPDATE" }
+TRACKING = { ^"TRACKING" }
+TYPEOF = { ^"TYPEOF" }
+USING_SCOPE = { ^"USING SCOPE" }
+VIEW = { ^"VIEW" }
+VIEWSTAT = { ^"VIEWSTAT" }
+WHERE = { ^"WHERE" }
+WITH = { ^"WITH" }
+WHEN = { ^"WHEN" }
+
+// expressions 
+expression = { ternary_expr | infix_expr | expr_inner }
+
+// these are "terminal" expressions
+expr_inner = { 
+    braced_expr 
+    | property_access 
+    | soql_expression 
+    | new_instance_declaration 
+    | method_invocation 
+    | instanceof_expr 
+    | unary_expr 
+    | list_access 
+    | literal 
+    | identifier 
+}
+
+braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" } // I'm not a fan of this but it works ¯\_(ツ)_/¯
+unary_expr = { inc_dec_expr | (cast_operator | unary_operator) ~ (braced_expr | property_access | method_invocation | identifier | literal) }
+infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
+ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ (infix_expr | expr_inner) ~ ":" ~ (infix_expr | expr_inner) }
+cast_operator = { "(" ~ basic_type ~ ")" } // thank you java grammar
+inc_dec_expr = _{ inc_dec_prefix | inc_dec_postfix }
+inc_dec_prefix = { (inc_op | dec_op) ~ identifier }
+inc_dec_postfix = { identifier ~ (inc_op | dec_op) }
+
+// technically, something like "1 instanceof Integer" is apparently syntactically
+// correct but Salesforce throws a compile-time error rather than a parsing error
+instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
+
+// annotations
+annotation = { "@" ~ identifier ~ ("(" ~ identifier ~ "=" ~ identifier ~ ")")? } // do we really care what these values are?
+
+// types
+basic_type = { collection_type | (primitive_type | class_or_interface_type) ~ (array_brackets)? }
+array_brackets = { "[]" } // apex only allows for 1d literals
+type_list = { basic_type ~ ("," ~ basic_type)* }
+class_or_interface_type = { identifier ~ ("." ~ identifier)? }
+collection_type = { set_type | list_type | map_type }
+set_type = { ^"Set" ~ typed_type }
+list_type = { ^"List" ~ typed_type }
+map_type = { ^"Map" ~ "<" ~ basic_type ~ "," ~ basic_type ~ ">" }
+typed_type = { "<" ~ basic_type ~ ">" }
+
+// TODO find a way to exclude identifiers, like "in" but allow "init". !keyword ~ ... does not suffice
+identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*}
+
+primitive_type = {
+    ^"Blob" 
+    | ^"Boolean" 
+    | ^"Datetime"
+    | ^"Date" 
+    | ^"Decimal"
+    | ^"Double"
+    | ^"ID"
+    | ^"Integer"
+    | ^"Long"
+    | ^"Object"
+    | ^"String"
+    | ^"Time"
+}
+
+// modifiers
+access_modifier = { PUBLIC | PRIVATE | PROTECTED | GLOBAL }
+sharing_modifier = { INHERITED_SHARING | WITH_SHARING | WITHOUT_SHARING }
+storage_modifier = { ABSTRACT | VIRTUAL }
+
+// literals
+literal = _{ string_literal | number_literal | boolean_literal | NULL }
+boolean_literal = { TRUE | FALSE }
+string_literal = @{ "'" ~ string_inner ~ "'" }
+string_inner = @{ char* }
+char = {
+    !("\'" | "\\") ~ ANY
+    | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+number_literal = _{ float_literal | long_literal | integer_literal }
+
+// thank you huia programming language
+
+// floats 
+// we don't really care about numbers as long as our parser recognizes that
+// they are numbers
+float_literal               = ${ "-"? ~ float_characteristic ~ "." ~ float_mantissa }
+float_characteristic        = @{ "0" | ((ASCII_NONZERO_DIGIT) ~ (ASCII_DIGIT | "_")*) }
+float_mantissa              =  { (ASCII_DIGIT)+ }
+
+// longs
+long_literal = @{ integer_decimal ~ ^"L" }
+
+// integers
+integer_literal             = ${ integer_hexadecimal_sigil | integer_octal_sigil | integer_binary_sigil | integer_decimal | integer_zero }
+integer_decimal             = @{ "-"? ~ ASCII_NONZERO_DIGIT ~ (ASCII_DIGIT | "_")* }
+integer_hexadecimal         = @{ (ASCII_DIGIT | 'a'..'f' | 'A'..'F') ~ (ASCII_DIGIT | 'a'..'f' | 'A'..'F' | "_")* }
+integer_hexadecimal_sigil   = _{ "0x" ~ integer_hexadecimal }
+integer_octal               = @{ ('0'..'7') ~ ('0'..'7' | "_" )* }
+integer_octal_sigil         = _{ "0o" ~ integer_octal }
+integer_binary              = @{ ('0'..'1') ~ ('0'..'1' | "_")* }
+integer_binary_sigil        = _{ "0b" ~ integer_binary }
+integer_zero                =  { "0" }
+
+binary_operator = _{
+    logic_and
+    | logic_or
+    | ge
+    | le
+    | eq
+    | not_eq
+    | add_assign
+    | sub_assign
+    | mul_assign
+    | div_assign
+    | and_assign
+    | or_assign
+    | xor_assign
+    | left_shift_assign
+    | right_shift_assign
+    | bit_shift_left
+    | bit_shift_right
+    | gt
+    | lt
+    | add
+    | sub
+    | mul
+    | div
+    | bit_and
+    | bit_or
+    | bit_xor
+}
+
+unary_operator = _{
+    logic_not
+    | bit_not
+    | add
+    | sub
+}
+
+inc_op = { "++" }
+dec_op = { "--" }
+
+logic_and = { "&&" }
+logic_or = { "||" }
+logic_not = { "!" }
+
+ge = { ">=" }
+gt = { ">" }
+le = { "<=" }
+lt = { "<" }
+eq = { "==" }
+not_eq = { "!=" }
+
+add = { "+" }
+sub = { "-" }
+mul = { "*" }
+div = { "/" }
+
+add_assign = { "+=" }
+sub_assign = { "-=" }
+mul_assign = { "*=" }
+div_assign = { "/=" }
+and_assign = { "&=" }
+or_assign = { "|=" }
+xor_assign = { "^=" }
+left_shift_assign = { "<<=" }
+right_shift_assign = { ">>=" }
+
+bit_and = { "&" }
+bit_or = { "|" }
+bit_xor = { "^" }
+bit_not = { "~" }
+bit_shift_left = { "<<" }
+bit_shift_right = { ">>" }
+
+// apex keywords convenience rule
+apex_keyword = _{
+    ABSTRACT
+    | BOOLEAN
+    | BREAK
+    | CATCH
+    | CLASS
+    | CONTINUE
+    | DEFAULT
+    | DO
+    | ELSE
+    | ENUM
+    | EXTENDS
+    | FALSE
+    | FINALLY
+    | FINAL
+    | FOR
+    | GET
+    | GLOBAL
+    | IF
+    | IMPLEMENTS
+    | INHERITED_SHARING
+    | INSTANCEOF
+    | INTERFACE
+    | NEW
+    | OVERRIDE
+    | PRIVATE
+    | PROTECTED
+    | PUBLIC
+    | RETURN
+    | SET
+    | STATIC
+    | SUPER
+    | THIS
+    | THROW
+    | TRANSIENT
+    | TRUE
+    | TRY
+    | VIRTUAL
+    | VOID
+    | WHILE
+    | WITHOUT_SHARING
+    | WITH_SHARING
+}
+
+// apex keywords
+ABSTRACT = { ^"abstract" }
+AFTER = { ^"after" }
+BEFORE = { ^"before" }
+BOOLEAN = { ^"boolean" }
+BREAK = { ^"break" }
+CATCH = { ^"catch" }
+CLASS = { ^"class" }
+CONTINUE = { ^"continue" }
+DEFAULT = { ^"default" }
+DELETE = { ^"delete" }
+DO = { ^"do" }
+ELSE = { ^"else" }
+ENUM = { ^"enum" }
+EXTENDS = { ^"extends" }
+FALSE = { ^"false" }
+FINAL = { ^"final" }
+FINALLY = { ^"finally" }
+FOR = { ^"for" }
+GET = { ^"get" }
+GLOBAL = { ^"global" }
+IF = { ^"if" }
+IMPLEMENTS = { ^"implements" }
+INHERITED_SHARING = { ^"inherited sharing" }
+INSERT = { ^"insert" }
+INSTANCEOF = { ^"instanceof" }
+INTERFACE = { ^"interface" }
+NEW = { ^"new" }
+NULL = { ^"null" }
+ON = { ^"on" }
+OVERRIDE = { ^"override" }
+PRIVATE = { ^"private" }
+PROTECTED = { ^"protected" }
+PUBLIC = { ^"public" }
+RETURN = { ^"return" }
+SET = { ^"set" }  
+STATIC = { ^"static" }
+SUPER = { ^"super" }
+SWITCH = { ^"switch" }
+THIS = { ^"this" }
+THROW = { ^"throw" }
+TRANSIENT = { ^"transient" }
+TRIGGER = { ^"trigger" }
+TRUE = { ^"true" }
+TRY = { ^"try" }
+UNDELETE = { ^"undelete" }
+UPDATE = { ^"update" }
+UPSERT = { ^"upsert" }
+VIRTUAL = { ^"virtual" }
+VOID = { ^"void" }
+WHILE = { ^"while" }
+WITHOUT_SHARING = { ^"without sharing" }
+WITH_SHARING = { ^"with sharing" }
+
+WHITESPACE = _{ (" " | "\t" | "\r" | "\n")+ }
+COMMENT = _{ comment_block | comment_line }
+comment_block = @{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+comment_line = @{ "//" ~ (!NEWLINE ~ ANY)* }
