@@ -1,11 +1,9 @@
-
 use super::literal::*;
 use super::ops::*;
-use crate::pos::Span;
+
 #[derive(Debug, Clone)]
 pub struct Expr {
 	pub kind: ExprKind,
-	pub span: Span,
 }
 
 #[derive(Debug, Clone)]

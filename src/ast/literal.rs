@@ -1,9 +1,6 @@
-use crate::pos::Span;
-
 #[derive(Debug, Clone)]
 pub struct Literal {
 	pub node: LiteralKind,
-	pub span: Span,
 }
 
 #[derive(Debug, Clone)]
