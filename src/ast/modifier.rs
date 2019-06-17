@@ -10,3 +10,8 @@ pub enum SharingModifier {
 	Without,
 	Inherited,
 }
+
+pub enum ImplModifier {
+	Virtual,
+	Override,
+}

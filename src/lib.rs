@@ -4,5 +4,4 @@ extern crate pest_derive;
 
 pub mod ast;
 mod parser;
-mod pos;
 mod source;

@@ -1,6 +1,12 @@
-use crate::pos::Span;
+pub struct Span {
+	start: usize,
+	end: usize,
+	start_pos: Position,
+	end_pos: Position,
+	input: String,
+}
 
-pub struct Spanned<T> {
-	pub node: T,
-	pub span: Span,
+pub struct Position {
+	pos: usize,
+	line_col: (usize, usize),
 }
