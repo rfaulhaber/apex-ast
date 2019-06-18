@@ -13,14 +13,15 @@ trigger_event = { (BEFORE ~ dml_action) | (AFTER ~ dml_action) }
 // classes
 class_declaration = { access_modifier ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
 // TODO add syntax for inner classes and interfaces
-class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_member_declaration | class_constructor_definition | method_definition)* ~ "}" }
-class_member_declaration = { annotation? ~ access_modifier? ~ STATIC? ~ FINAL? ~ return_type ~ identifier ~ (class_member_accessors | ("=" ~ assignment_rhs)? ~ ";") }
+class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_member_declaration | static_block | class_constructor_definition | method_definition)* ~ "}" }
+class_member_declaration = { annotation? ~ access_modifier? ~ (STATIC | TRANSIENT)? ~ FINAL? ~ return_type ~ identifier ~ (class_member_accessors | ("=" ~ assignment_rhs)? ~ ";") }
 inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
-inner_class_body = { "{" ~ (class_member_declaration | class_constructor_definition | method_definition)* ~ "}" }
+inner_class_body = { "{" ~ (class_member_declaration | class_constructor_definition | static_block | method_definition)* ~ "}" }
 inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
 // basically methods without return type 
 class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ method_parameters ~ code_block }
 class_member_accessors = { "{" ~ get_accessor? ~ set_accessor? ~ "}" }
+static_block = { STATIC ~ code_block }
 get_accessor = { access_modifier? ~ GET ~ (code_block | ";") }
 set_accessor = { access_modifier? ~ SET ~ (code_block | ";") }
 
@@ -49,7 +50,7 @@ inline_code_block = { body_statement }
 enum_declaration = { access_modifier? ~ ENUM ~ identifier ~ (IMPLEMENTS ~ type_list)? ~ enum_body }
 
 // apex only supports unit enumerations?
-enum_body = _{"{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
+enum_body = _{ "{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
 
 // method body rules
 body_statement = { 
@@ -60,6 +61,7 @@ body_statement = {
     | try_catch_statement 
     | throw_statement 
     | dml_statement 
+    | code_block
     | return_statement 
     | continue_statement 
     | break_statement 

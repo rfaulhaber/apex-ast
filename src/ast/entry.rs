@@ -2,12 +2,8 @@ use super::class::Class;
 use super::interface::Interface;
 use super::trigger::Trigger;
 
-pub struct File {
-	pub kind: FileKind,
-	pub name: String,
-}
-
-pub enum FileKind {
+// root of AST
+pub enum EntryKind {
 	Class(Class),
 	Interface(Interface),
 	Trigger(Trigger),

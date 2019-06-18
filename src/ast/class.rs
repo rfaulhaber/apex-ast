@@ -1,3 +1,4 @@
+use super::expr::Expr;
 use super::method::ClassMethod;
 use super::modifier::{AccessModifier, SharingModifier};
 use super::stmt::Block;
@@ -25,13 +26,18 @@ pub struct RestResource {
 
 pub struct ClassVariable {
 	pub access_mod: AccessModifier,
-	pub static_mod: bool,  // "static" is rust keyword
+	pub instance_mod: ClassInstanceModifier,  // "static" is rust keyword
 	pub final_mod: bool,   // "final" is rust keyword
 	pub prop_type: String, // "prop" is rust keyword
 	pub name: String,
 	pub getter: Option<Property>,
 	pub setter: Option<Property>,
-	// pub rhs: Option<Expr>,
+	pub rhs: Option<Expr>,
+}
+
+pub enum ClassInstanceModifier {
+	Static,
+	Transient,
 }
 
 pub struct Property {

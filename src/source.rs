@@ -1,12 +1,12 @@
 pub struct Span {
-	start: usize,
-	end: usize,
-	start_pos: Position,
-	end_pos: Position,
-	input: String,
+	pub start: usize,
+	pub end: usize,
+	pub start_pos: Position,
+	pub end_pos: Position,
+	pub input: String,
 }
 
 pub struct Position {
-	pos: usize,
-	line_col: (usize, usize),
+	pub pos: usize,
+	pub line_col: (usize, usize),
 }
