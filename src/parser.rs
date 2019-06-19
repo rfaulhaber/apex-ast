@@ -1,9 +1,9 @@
-
 use crate::ast::entry::*;
 use pest::Parser;
+
 #[derive(Parser)]
 #[grammar = "./apex.pest"]
-struct GrammarParser;
+pub(crate) struct GrammarParser;
 
 // TODO possibly change to &str
 pub fn parse_apex(contents: String) -> Result<EntryKind, String> {

@@ -10,3 +10,12 @@ pub struct Position {
 	pub pos: usize,
 	pub line_col: (usize, usize),
 }
+
+pub struct SpanNode<T> {
+	node: T,
+	span: Span,
+}
+
+pub trait Spanned<T> {
+	fn span(&self) -> SpanNode<T>;
+}

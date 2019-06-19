@@ -26,7 +26,7 @@ pub struct RestResource {
 
 pub struct ClassVariable {
 	pub access_mod: AccessModifier,
-	pub instance_mod: ClassInstanceModifier,  // "static" is rust keyword
+	pub instance_mod: ClassInstanceModifier,
 	pub final_mod: bool,   // "final" is rust keyword
 	pub prop_type: String, // "prop" is rust keyword
 	pub name: String,
