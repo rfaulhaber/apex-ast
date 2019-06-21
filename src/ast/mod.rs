@@ -7,4 +7,6 @@ pub mod method;
 pub mod modifier;
 pub mod ops;
 pub mod stmt;
+pub mod soql;
+pub mod sosl;
 pub mod trigger;

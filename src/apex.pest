@@ -132,6 +132,12 @@ dml_statement = { dml_action ~ (new_instance_declaration | identifier) ~ ";" }
 dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
 
 keyword = _{ soql_keyword | apex_keyword }
+
+// queries are expressions, not statements
+query_expression = _{ soql_expression | sosl_expression }
+
+soql_expression = { "[" ~ soql_query ~ "]" }
+sosl_expression = { "[" ~ sosl_query ~ "]" }
  
 // sosl
 // from salesforce: https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_sosl_syntax.htm#sforce_api_calls_sosl_syntax
@@ -224,7 +230,6 @@ METADATA = { ^"METADATA" }
 //       [ UPDATE {TRACKING|VIEWSTAT}[,...] ]
 
 // soql queries are expressions and not statements
-soql_expression = { "[" ~ soql_query ~ "]" }
 
 // the shortest complete soql query is: SELECT field FROM object
 soql_query = { 
@@ -372,7 +377,7 @@ expression = { ternary_expr | infix_expr | expr_inner }
 expr_inner = { 
     braced_expr 
     | property_access 
-    | soql_expression 
+    | query_expression
     | new_instance_declaration 
     | method_invocation 
     | instanceof_expr 

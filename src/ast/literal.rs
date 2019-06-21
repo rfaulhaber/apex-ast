@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct Literal {
-	pub node: LiteralKind,
+	pub kind: LiteralKind,
 }
 
 #[derive(Debug, Clone)]
@@ -15,16 +15,14 @@ pub enum LiteralKind {
 
 impl Into<Literal> for LiteralKind {
 	fn into(self) -> Literal {
-		Literal {
-			node: self
-		}
+		Literal { kind: self }
 	}
 }
 
 impl From<String> for Literal {
 	fn from(s: String) -> Literal {
 		Literal {
-			node: LiteralKind::String(s),
+			kind: LiteralKind::String(s),
 		}
 	}
 }
@@ -32,7 +30,7 @@ impl From<String> for Literal {
 impl From<&str> for Literal {
 	fn from(s: &str) -> Literal {
 		Literal {
-			node: LiteralKind::String(s.into()),
+			kind: LiteralKind::String(s.into()),
 		}
 	}
 }
@@ -40,7 +38,7 @@ impl From<&str> for Literal {
 impl From<f64> for Literal {
 	fn from(f: f64) -> Literal {
 		Literal {
-			node: LiteralKind::Float(f),
+			kind: LiteralKind::Float(f),
 		}
 	}
 }
@@ -48,7 +46,7 @@ impl From<f64> for Literal {
 impl From<i64> for Literal {
 	fn from(i: i64) -> Literal {
 		Literal {
-			node: LiteralKind::Integer(i),
+			kind: LiteralKind::Integer(i),
 		}
 	}
 }
@@ -56,7 +54,7 @@ impl From<i64> for Literal {
 impl From<bool> for Literal {
 	fn from(b: bool) -> Literal {
 		Literal {
-			node: LiteralKind::Boolean(b),
+			kind: LiteralKind::Boolean(b),
 		}
 	}
 }
