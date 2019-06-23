@@ -109,7 +109,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 // parse pair after having gone into it already
 fn parse_pair(pair: Pair<Rule>) -> Expr {
 	match pair.as_rule() {
-		Rule::identifier => pair.into(),
+		Rule::identifier | Rule::literal => pair.into(),
 		_ => unimplemented!(),
 	}
 }
