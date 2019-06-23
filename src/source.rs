@@ -1,5 +1,7 @@
 use pest;
 
+// NOTE: all nodes should implement a span derived from Pest!
+
 #[derive(Debug, Clone)]
 pub struct Span {
 	pub start: usize,
