@@ -263,7 +263,6 @@ mod expr_tests {
 
 		let expr: Expr = item.clone().into();
 
-		// TODO this sucks, find a better way to handle this
 		match expr.kind {
 			ExprKind::Postfix(expr, op) => match op {
 				PostfixOp::Inc => match expr.kind {
