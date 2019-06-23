@@ -12,14 +12,19 @@ pub struct Expr {
 
 #[derive(Debug, Clone)]
 pub enum ExprKind {
-	/// any expression surrounded by parentheses, like (1 + 2)
+	/// any expression surrounded by parentheses, like `(1 + 2)`
 	Braced(Box<Expr>),
 
 	/// a binary operation, like `x + 2`
 	Binary(Box<Expr>, BinOp, Box<Expr>),
 
-	/// a unary operation, like `!x` or `x++`
+	/// a unary operation, like `!x`. Excludes increment or decrement expressions.
 	Unary(UnOp, Box<Expr>),
+
+	/// Either an increment or decrement expression.
+	/// This has to be a different type of enum because they can either come
+	/// before or after the expression.
+	Postfix(Box<Expr>, PostfixOp),
 
 	/// a literal, such as a number or string
 	Literal(Literal),
@@ -36,14 +41,23 @@ pub enum ExprKind {
 	// new object instantiation, like "new Foo(one, 2)" or "new Account(Name = 'Foo');"
 	New(String, Option<Vec<Expr>>),
 
+	// ternary expression, like the right-hand side of:
+	// String foo = isTrue() ? 'Yes' : 'No';
 	Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
 
+	// a cast expression, like `(String) list.get(0)`
+	CastExpr(String, Box<Expr>),
+
+	// instanceof expressions, like: `x instanceof Account`
 	InstanceOf(Box<Expr>, Box<Expr>),
 
+	// direct list array access, like `foo[2]`
 	ListAccess(String, Box<Expr>),
 
+	// a soql query expression
 	SoqlQuery(SoqlQuery),
 
+	// a sosl query expression
 	SoslQuery(SoslQuery),
 }
 
@@ -92,6 +106,14 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 	}
 }
 
+// parse pair after having gone into it already
+fn parse_pair(pair: Pair<Rule>) -> Expr {
+	match pair.as_rule() {
+		Rule::identifier => pair.into(),
+		_ => unimplemented!(),
+	}
+}
+
 fn parse_ternary_expr(pair: Pair<Rule>) -> Expr {
 	unimplemented!();
 }
@@ -102,24 +124,82 @@ fn parse_infix_expr(pair: Pair<Rule>) -> Expr {
 
 fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 	let inner = pair.into_inner().next().unwrap();
-
 	match inner.as_rule() {
 		Rule::braced_expr => ExprKind::Braced(Box::new(inner.into())).into(),
-		Rule::property_access => ExprKind::PropAccess(inner.into_inner().map(|expr| expr.into()).collect()).into(),
+		Rule::property_access => {
+			ExprKind::PropAccess(inner.into_inner().map(|expr| expr.into()).collect()).into()
+		}
 		Rule::query_expression => unimplemented!(),
 		Rule::new_instance_declaration => unimplemented!(),
 		Rule::method_invocation => unimplemented!(),
 		Rule::instanceof_expr => unimplemented!(),
-		Rule::unary_expr => unimplemented!(),
-		Rule::list_access => unimplemented!(),
+		Rule::unary_expr => parse_unary_expr(inner),
+		Rule::list_access => parse_list_access(inner),
 		Rule::literal => inner.into(),
 		Rule::identifier => inner.into(),
 		_ => unreachable!(),
 	}
 }
 
-fn parse_new_instance(pairs: Pairs<Rule>) -> Expr {
-	let identifier = 
+fn parse_list_access(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+	let id = String::from(inner.next().unwrap().as_str());
+	let inner_expr = parse_pair(inner.next().unwrap());
+
+	let kind = ExprKind::ListAccess(id, Box::new(inner_expr));
+
+	Expr { kind }
+}
+
+fn parse_unary_expr(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.clone().into_inner();
+	let first = inner.next().unwrap();
+
+	match first.as_rule() {
+		Rule::inc_dec_prefix => parse_inc_dec_prefix(first),
+		Rule::inc_dec_postfix => parse_inc_dec_postfix(first),
+		Rule::unary_operator => {
+			let unary_inner = first.into_inner();
+			let op = UnOp::from(unary_inner.as_str());
+			let expr = parse_pair(inner.next().unwrap());
+
+			let kind = ExprKind::Unary(op, Box::new(expr));
+			Expr { kind }
+		}
+		_ => unreachable!(),
+	}
+
+}
+
+fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+	let op = UnOp::from(inner.next().unwrap().as_str());
+
+	let right_pair = inner.next().unwrap();
+
+	let postfix = match right_pair.as_rule() {
+		Rule::list_access => parse_list_access(right_pair),
+		Rule::identifier => right_pair.into(),
+		_ => unreachable!(),
+	};
+
+	ExprKind::Unary(op, Box::new(postfix)).into()
+}
+
+fn parse_inc_dec_postfix(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+
+	let right_pair = inner.next().unwrap();
+
+	let postfix = match right_pair.as_rule() {
+		Rule::list_access => parse_list_access(right_pair),
+		Rule::identifier => right_pair.into(),
+		_ => unreachable!(),
+	};
+
+	let op = PostfixOp::from(inner.next().unwrap().as_str());
+
+	ExprKind::Postfix(Box::new(postfix), op).into()
 }
 
 #[cfg(test)]
@@ -153,6 +233,46 @@ mod expr_tests {
 		match expr.kind {
 			ExprKind::Identifier(id) => assert_eq!(id, "myVar"),
 			_ => panic!("invalid kind found: {:?}", single_item.as_rule()),
+		}
+	}
+
+	#[test]
+	fn simple_unary_op_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "!foo").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr: Expr = item.clone().into();
+
+		// TODO this sucks, find a better way to handle this
+		match expr.kind {
+			ExprKind::Unary(op, expr) => match op {
+				UnOp::Not => match expr.kind {
+					ExprKind::Identifier(id) => assert_eq!(id, "foo"),
+					_ => panic!("wrong exprkind found: {:?}", expr.kind),
+				},
+				_ => panic!("op was not correct"),
+			},
+			_ => panic!("was not unary expr"),
+		}
+	}
+
+	#[test]
+	fn simple_postfix_op_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo++").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr: Expr = item.clone().into();
+
+		// TODO this sucks, find a better way to handle this
+		match expr.kind {
+			ExprKind::Postfix(expr, op) => match op {
+				PostfixOp::Inc => match expr.kind {
+					ExprKind::Identifier(id) => assert_eq!(id, "foo"),
+					_ => panic!("wrong exprkind found: {:?}", expr.kind),
+				},
+				_ => panic!("op was not correct"),
+			},
+			_ => panic!("was not unary expr"),
 		}
 	}
 }

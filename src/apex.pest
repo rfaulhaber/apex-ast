@@ -381,6 +381,7 @@ expr_inner = {
     | new_instance_declaration 
     | method_invocation 
     | instanceof_expr 
+    | cast_expr
     | unary_expr 
     | list_access 
     | literal 
@@ -388,13 +389,15 @@ expr_inner = {
 }
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" } // I'm not a fan of this but it works ¯\_(ツ)_/¯
-unary_expr = { inc_dec_expr | (cast_operator | unary_operator) ~ (braced_expr | property_access | method_invocation | identifier | literal) }
+unary_expr = { inc_dec_expr | unary_operator ~ unary_rhs }
+unary_rhs = _{ braced_expr | property_access | method_invocation | identifier | literal }
+cast_expr = { cast_operator ~ unary_rhs }
 infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
 ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ (infix_expr | expr_inner) ~ ":" ~ (infix_expr | expr_inner) }
 cast_operator = { "(" ~ basic_type ~ ")" } // thank you java grammar
 inc_dec_expr = _{ inc_dec_prefix | inc_dec_postfix }
-inc_dec_prefix = { (inc_op | dec_op) ~ identifier }
-inc_dec_postfix = { identifier ~ (inc_op | dec_op) }
+inc_dec_prefix = { (inc_op | dec_op) ~ (list_access | identifier) }
+inc_dec_postfix = { (list_access | identifier) ~ (inc_op | dec_op) }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
 // correct but Salesforce throws a compile-time error rather than a parsing error
@@ -502,7 +505,7 @@ binary_operator = _{
     | bit_xor
 }
 
-unary_operator = _{
+unary_operator = {
     logic_not
     | bit_not
     | add

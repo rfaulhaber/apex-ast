@@ -1,5 +1,5 @@
 [package]
-name = "apex-parser"
+name = "apex-ast"
 version = "0.1.0"
 authors = ["Ryan Faulhaber <faulhaberryan@gmail.com>"]
 edition = "2018"
