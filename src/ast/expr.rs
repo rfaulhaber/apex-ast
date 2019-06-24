@@ -3,6 +3,7 @@ use super::literal::*;
 use super::ops::*;
 use super::soql::*;
 use super::sosl::*;
+use super::ty::*;
 
 use crate::parser::Rule;
 use pest::iterators::{Pair, Pairs};
@@ -32,7 +33,7 @@ pub enum ExprKind {
 	Literal(Literal),
 
 	// an identifier
-	Identifier(String),
+	Identifier(Identifier),
 
 	// a series of expressions joined by "."
 	PropAccess(Vec<Expr>),
@@ -51,7 +52,7 @@ pub enum ExprKind {
 	CastExpr(String, Box<Expr>),
 
 	// instanceof expressions, like: `x instanceof Account`
-	InstanceOf(Identifier, Box<Expr>),
+	InstanceOf(Identifier, Ty),
 
 	// direct list array access, like `foo[2]`
 	ListAccess(String, Box<Expr>),
@@ -210,6 +211,14 @@ fn parse_instanceof(pair: Pair<Rule>) -> Expr {
 	let id: Identifier = inner.next().unwrap().as_str().into();
 	inner.next();
 
+	let type_pair = inner.next().unwrap().into_inner().next().unwrap();
+
+	let ty = match type_pair.as_rule() {
+		Rule::collection_type => unimplemented!(),
+		Rule::primitive_type  => unimplemented!(),
+		_ => unimplemented!(),
+	};
+
 	unimplemented!();
 }
 
@@ -242,7 +251,7 @@ mod expr_tests {
 		let expr: Expr = single_item.clone().into();
 
 		match expr.kind {
-			ExprKind::Identifier(id) => assert_eq!(id, "myVar"),
+			ExprKind::Identifier(id) => assert_eq!(id.name, "myVar"),
 			_ => panic!("invalid kind found: {:?}", single_item.as_rule()),
 		}
 	}
@@ -258,7 +267,7 @@ mod expr_tests {
 		match expr.kind {
 			ExprKind::Unary(op, expr) => match op {
 				UnOp::Not => match expr.kind {
-					ExprKind::Identifier(id) => assert_eq!(id, "foo"),
+					ExprKind::Identifier(id) => assert_eq!(id.name, "foo"),
 					_ => panic!("wrong exprkind found: {:?}", expr.kind),
 				},
 				_ => panic!("op was not correct"),
@@ -277,7 +286,7 @@ mod expr_tests {
 		match expr.kind {
 			ExprKind::Postfix(expr, op) => match op {
 				PostfixOp::Inc => match expr.kind {
-					ExprKind::Identifier(id) => assert_eq!(id, "foo"),
+					ExprKind::Identifier(id) => assert_eq!(id.name, "foo"),
 					_ => panic!("wrong exprkind found: {:?}", expr.kind),
 				},
 				_ => panic!("op was not correct"),
