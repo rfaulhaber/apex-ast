@@ -1,7 +1,9 @@
+use super::identifier::Identifier;
 use super::literal::*;
 use super::ops::*;
 use super::soql::*;
 use super::sosl::*;
+
 use crate::parser::Rule;
 use pest::iterators::{Pair, Pairs};
 
@@ -49,7 +51,7 @@ pub enum ExprKind {
 	CastExpr(String, Box<Expr>),
 
 	// instanceof expressions, like: `x instanceof Account`
-	InstanceOf(Box<Expr>, Box<Expr>),
+	InstanceOf(Identifier, Box<Expr>),
 
 	// direct list array access, like `foo[2]`
 	ListAccess(String, Box<Expr>),
@@ -200,6 +202,15 @@ fn parse_inc_dec_postfix(pair: Pair<Rule>) -> Expr {
 	let op = PostfixOp::from(inner.next().unwrap().as_str());
 
 	ExprKind::Postfix(Box::new(postfix), op).into()
+}
+
+fn parse_instanceof(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+
+	let id: Identifier = inner.next().unwrap().as_str().into();
+	inner.next();
+
+	unimplemented!();
 }
 
 #[cfg(test)]

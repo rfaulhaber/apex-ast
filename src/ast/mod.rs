@@ -11,3 +11,4 @@ pub mod soql;
 pub mod sosl;
 pub mod stmt;
 pub mod trigger;
+pub mod ty; // "type" is reserved
