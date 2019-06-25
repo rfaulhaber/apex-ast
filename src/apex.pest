@@ -274,6 +274,7 @@ soql_with_data_category_operator = { ABOVE_OR_BELOW | ABOVE | BELOW | AT }
 soql_group_by_clause = { GROUP_BY ~ (soql_group_by_function | soql_field_list) ~ soql_having_clause? }
 soql_group_by_function = { (ROLLUP | CUBE) ~ "(" ~ soql_field_list ~ ")" }
 soql_having_clause = { HAVING ~ soql_having_condition_expression }
+// TODO this can be more complicated
 soql_having_condition_expression = { soql_function ~ (ge | le | gt | lt | soql_eq) ~ soql_value }
 soql_eq = { "=" }
 soql_value = { soql_merge_apex | soql_list_literal | literal | SOQL_NULL }

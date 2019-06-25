@@ -1,5 +1,9 @@
 use super::expr::Expr;
 use super::identifier::Identifier;
+use crate::parser::{GrammarParser, Rule};
+use pest::iterators::{Pair, Pairs};
+
+// TODO create general conditional expression for WHERE, WITH, HAVING, etc.
 
 #[derive(Debug, Clone)]
 pub struct SoqlQuery {
@@ -14,7 +18,7 @@ pub struct SoqlQuery {
 	// around 2100000000
 	pub limit: Option<u32>,
 	pub offset: Option<u32>, // see above
-	pub for_clause: Option<For>,
+	pub for_clause: Option<ForTerm>,
 }
 
 #[derive(Debug, Clone)]
@@ -41,9 +45,10 @@ pub struct FromClause {
 
 #[derive(Debug, Clone)]
 pub struct WhereClause {
-	terms: Vec<WhereTerm>,
+	terms: Box<WhereTerm>,
 }
 
+// TODO: rename?
 /// Each WhereTerm is a single piece of a WHERE clause.
 /// For example: `Id IN :ids` or `FirstName = 'John'`
 #[derive(Debug, Clone)]
@@ -52,7 +57,7 @@ pub enum WhereTerm {
 	Braced(Box<WhereTerm>),
 
 	/// A comparison, can be recursive to support complex Boolean logic.
-	FieldExpr(WhereFieldOrFunction, WhereOp, Box<WhereTerm>),
+	FieldExpr(WhereFieldOrFunction, SoqlCompOp, Box<WhereTerm>),
 
 	/// An Apex expression, beginning with a colon, like `:ids`.
 	ApexExpr(Expr),
@@ -76,7 +81,7 @@ pub enum WhereFieldOrFunction {
 }
 
 #[derive(Debug, Clone)]
-pub enum WhereOp {
+pub enum SoqlCompOp {
 	NotIn,
 	In,
 	Like,
@@ -125,7 +130,7 @@ pub enum WithClauseKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct DataCategorySelection(String, DataCategoryOp, String);
+pub struct DataCategorySelection(pub String, pub DataCategoryOp, pub String);
 
 #[derive(Debug, Clone)]
 pub enum DataCategoryOp {
@@ -138,7 +143,7 @@ pub enum DataCategoryOp {
 #[derive(Debug, Clone)]
 pub struct GroupByClause {
 	pub kind: GroupByKind,
-	pub having: Option<Having>,
+	pub having: Option<Box<WhereTerm>>,
 }
 
 #[derive(Debug, Clone)]
@@ -147,26 +152,167 @@ pub enum GroupByKind {
 	FieldList(Vec<String>),
 }
 
+impl<'a> From<Pair<'a, Rule>> for GroupByClause {
+	// should come from soql_group_by_clause directly
+	fn from(p: Pair<'a, Rule>) -> GroupByClause {
+		let mut inner = p.into_inner();
+		
+		inner.next(); // discarding token
+
+		let func_or_list = inner.next().unwrap();
+
+		match func_or_list.as_rule() {
+			Rule::soql_group_by_function => unimplemented!(),
+			Rule::soql_field_list => unimplemented!(),
+			_ => unreachable!(),
+		}
+	}
+}
+
 #[derive(Debug, Clone)]
 pub enum GroupByFunc {
 	Rollup,
 	Cube,
 }
+impl<'a> From<Pair<'a, Rule>> for GroupByFunc {
+	fn from(p: Pair<'a, Rule>) -> GroupByFunc {
+		match p.as_rule() {
+			Rule::ROLLUP => GroupByFunc::Rollup,
+			Rule::CUBE => GroupByFunc::Cube,
+			_ => unreachable!("expected a group by func, got {:?}", p.as_rule()),
+		}
+	}
+}
 
 #[derive(Debug, Clone)]
-pub struct Having {}
+pub struct OrderBy {
+	pub fields: Vec<Identifier>,
+	pub order: Option<OrderOp>,
+	pub nulls: Option<OrderNulls>,
+}
+
+impl<'a> From<Pair<'a, Rule>> for OrderBy {
+	fn from(p: Pair<'a, Rule>) -> OrderBy {
+		let mut inner = p.into_inner();
+
+		// TODO we will probably need to save this for source mapping!
+		inner.next();
+
+		let field_list: Vec<Identifier> = inner
+			.next()
+			.unwrap()
+			.into_inner()
+			.map(Identifier::from)
+			.collect();
+
+		match inner.next() {
+			Some(pair) => match pair.as_rule() {
+				Rule::ASC | Rule::DESC => {
+					let order_op: OrderOp = pair.into();
+
+					match inner.next() {
+						Some(inner_pair) => {
+							let null_order = inner_pair.into();
+
+							OrderBy {
+								fields: field_list,
+								order: Some(order_op),
+								nulls: Some(null_order),
+							}
+						}
+						None => OrderBy {
+							fields: field_list,
+							order: Some(order_op),
+							nulls: None,
+						},
+					}
+				}
+				Rule::NULLS => {
+					let null_order = inner.next().unwrap().into();
+
+					OrderBy {
+						fields: field_list,
+						order: None,
+						nulls: Some(null_order),
+					}
+				}
+				_ => unreachable!("expected order by clause piece, got {:?}", pair.as_rule()),
+			},
+			None => OrderBy {
+				fields: field_list,
+				order: None,
+				nulls: None,
+			},
+		}
+	}
+}
 
 #[derive(Debug, Clone)]
-pub struct OrderBy;
+pub enum OrderOp {
+	Asc,
+	Desc,
+}
+
+impl<'a> From<Pair<'a, Rule>> for OrderOp {
+	fn from(p: Pair<'a, Rule>) -> OrderOp {
+		match p.as_rule() {
+			Rule::ASC => OrderOp::Asc,
+			Rule::DESC => OrderOp::Desc,
+			_ => unreachable!("expected order op (ASC | DESC), got {:?}", p.as_rule()),
+		}
+	}
+}
 
 #[derive(Debug, Clone)]
-pub struct For;
+pub enum OrderNulls {
+	First,
+	Last,
+}
+
+impl<'a> From<Pair<'a, Rule>> for OrderNulls {
+	fn from(p: Pair<'a, Rule>) -> OrderNulls {
+		match p.as_rule() {
+			Rule::FIRST => OrderNulls::First,
+			Rule::LAST => OrderNulls::Last,
+			_ => unreachable!("expected order nulls term, got {:?}", p.as_rule()),
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
+pub enum ForTerm {
+	View,
+	Reference,
+	Update,
+}
+
+impl<'a> From<Pair<'a, Rule>> for ForTerm {
+	fn from(p: Pair<'a, Rule>) -> ForTerm {
+		match p.as_rule() {
+			Rule::VIEW => ForTerm::View,
+			Rule::REFERENCE => ForTerm::Reference,
+			Rule::UPDATE => ForTerm::Update,
+			_ => unreachable!("expected for term, got {:?}", p.as_rule()),
+		}
+	}
+}
 
 #[cfg(test)]
 mod soql_tests {
 	use super::*;
-	use crate::parser::GrammarParser;
+	use crate::parser::{GrammarParser, Rule};
 	use pest::Parser;
 
+	#[test]
+	fn simple_soql_parses_correctly() {
+		let soql = r#"
+			SELECT Name, Id, Foo__c
+			FROM Bar__c,
+			WHERE Foo__c IN :listOfFoos
+			ORDER BY Name ASC
+		"#;
 
+		let mut parsed = GrammarParser::parse(Rule::soql_query, soql).unwrap();
+
+	}
 }
