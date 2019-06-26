@@ -70,12 +70,18 @@ impl Into<Expr> for ExprKind {
 	}
 }
 
+pub fn parse_expr(p: Pair<Rule>) -> Expr {
+	p.into()
+}
+
+// needs to contain all forms of Rule::expression and children
 impl<'a> From<Pair<'a, Rule>> for Expr {
 	fn from(pair: Pair<Rule>) -> Expr {
 		match pair.as_rule() {
 			Rule::infix_expr => parse_infix_expr(pair),
 			Rule::ternary_expr => parse_ternary_expr(pair),
 			Rule::expr_inner => parse_expr_inner(pair),
+			// TODO add all children of expr_inner, ternary_expr, and infix
 			Rule::identifier => Expr {
 				kind: ExprKind::Identifier(pair.as_str().into()),
 			},
@@ -215,7 +221,7 @@ fn parse_instanceof(pair: Pair<Rule>) -> Expr {
 
 	let ty = match type_pair.as_rule() {
 		Rule::collection_type => unimplemented!(),
-		Rule::primitive_type  => unimplemented!(),
+		Rule::primitive_type => unimplemented!(),
 		_ => unimplemented!(),
 	};
 

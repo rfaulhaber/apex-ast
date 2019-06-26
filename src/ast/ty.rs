@@ -4,6 +4,9 @@ use pest::iterators::{Pair, Pairs};
 #[derive(Debug, Clone)]
 pub struct Ty {
 	pub name: String,
+
+	// does it contain array brackets?
+	pub list: bool,
 	pub kind: TyKind,
 }
 
@@ -16,7 +19,11 @@ pub enum TyKind {
 
 impl<'a> From<Pair<'a, Rule>> for Ty {
 	fn from(p: Pair<'a, Rule>) -> Ty {
-		unimplemented!();
+		let mut inner = p.into_inner().next().unwrap();
+
+		match inner.as_rule() {
+			Rule::collection_type => 
+		}
 	}
 }
 
@@ -44,6 +51,27 @@ impl<'a> From<Pair<'a, Rule>> for Collection {
 			_ => unreachable!("expected a valid collection type"),
 		}
 	}
+}
+
+fn parse_collection_type(p: Pair<Rule>) -> Collection {
+	let mut inner = p.into_inner().next().unwrap();
+
+	unimplemented!();
+
+}
+
+fn parse_collection_type_inner(pairs: Pairs<Rule>) -> Box<Ty> {
+	pairs.next(); // skip token
+
+	unimplemented!();
+}
+
+fn parse_basic_type(pair: Pair<Rule>) -> Ty {
+	let mut inner = pair.into_inner();
+
+	let next = inner.next().unwrap();
+
+	unimplemented!();
 }
 
 // "primitive" in terms of Apex just means "built-in" since it technically does
