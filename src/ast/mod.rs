@@ -12,3 +12,9 @@ pub mod sosl;
 pub mod stmt;
 pub mod trigger;
 pub mod ty; // "type" is reserved
+
+// TODO specify a FromPair trait?
+
+// trait FromPair {
+// 	fn from_pair(p: Pair<Rule>) -> Self;
+// }
