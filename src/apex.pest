@@ -123,7 +123,7 @@ return_statement = { RETURN ~ expression ~ ";" }
 
 condition_statement = { "(" ~ expression ~ ")" }
 
-list_access = { identifier ~ "[" ~ expr_inner ~ "]" }
+list_access = { identifier ~ "[" ~ expression ~ "]" }
 property_access = { accessible ~ ("." ~ accessible)+ }
 accessible = _{ soql_expression | new_instance_declaration | method_invocation | literal | identifier } 
 
@@ -408,15 +408,16 @@ instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 annotation = { "@" ~ identifier ~ ("(" ~ identifier ~ "=" ~ identifier ~ ")")? } // do we really care what these values are?
 
 // types
-basic_type = { collection_type | (primitive_type | class_or_interface_type) ~ (array_brackets)? }
+basic_type = { collection_type | typed_type | (primitive_type | class_or_interface_type) ~ (array_brackets)? }
 array_brackets = { "[]" } // apex only allows for 1d literals
 type_list = { basic_type ~ ("," ~ basic_type)* }
 class_or_interface_type = { identifier ~ ("." ~ identifier)? }
 collection_type = { set_type | list_type | map_type }
-set_type = { ^"Set" ~ typed_type }
-list_type = { ^"List" ~ typed_type }
+set_type = { ^"Set" ~ gen_type }
+list_type = { ^"List" ~ gen_type }
 map_type = { ^"Map" ~ "<" ~ basic_type ~ "," ~ basic_type ~ ">" }
-typed_type = { "<" ~ basic_type ~ ">" }
+typed_type = { identifier ~ gen_type }
+gen_type = _{ "<" ~ basic_type ~ ">" }
 
 // TODO find a way to exclude identifiers, like "in" but allow "init". !keyword ~ ... does not suffice
 identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*}
