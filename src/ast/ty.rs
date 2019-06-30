@@ -80,7 +80,7 @@ fn parse_collection_type(p: Pair<Rule>) -> Ty {
 
 fn parse_set_type(p: Pair<Rule>) -> Ty {
 	let collection = Collection {
-		kind: CollectionType::Set(Box::new(parse_typed_type(p.into_inner().next().unwrap()))),
+		kind: CollectionType::Set(Box::new(Ty::from(p.into_inner().next().unwrap()))),
 	};
 
 	Ty {
@@ -104,8 +104,8 @@ fn parse_map_type(p: Pair<Rule>) -> Ty {
 	let mut inner = p.into_inner();
 
 	let inner_types = (
-		parse_typed_type(inner.next().unwrap()),
-		parse_typed_type(inner.next().unwrap()),
+		Ty::from(inner.next().unwrap()),
+		Ty::from(inner.next().unwrap()),
 	);
 	let collection = Collection {
 		kind: CollectionType::Map(Box::new(inner_types.0), Box::new(inner_types.1)),
@@ -310,9 +310,35 @@ mod expr_tests {
 	}
 
 
-	#[test]
-	fn generic_type_should_parse_correctly() {}
+	// TODO
+	// #[test]
+	// fn generic_type_should_parse_correctly() {
+	// }
 
 	#[test]
-	fn map_type_should_parse_correctly() {}
+	fn map_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Map<Id, Case>")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::Collection(coll) = ty.kind {
+			match coll.kind {
+				CollectionType::Map(key_ty, val_ty) => match (key_ty.kind, val_ty.kind) {
+					(TyKind::Primitive(prim), TyKind::ClassOrInterface(coi)) => {
+						assert_eq!(prim.kind, PrimitiveType::ID);
+						assert_eq!(coi.class, "Case");
+					}
+					_ => panic!("inner types did not parse correctly"),
+				},
+				_ => panic!("expected list, got {:?}", coll.kind),
+			}
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
 }

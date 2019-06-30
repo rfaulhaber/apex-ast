@@ -310,7 +310,9 @@ mod soql_tests {
 			WHERE Foo__c IN :listOfFoos
 			ORDER BY Name ASC"#;
 
-		let mut parsed = GrammarParser::parse(Rule::soql_query, soql).unwrap();
-
+		let parsed = GrammarParser::parse(Rule::soql_query, soql)
+			.unwrap()
+			.next()
+			.unwrap();
 	}
 }
