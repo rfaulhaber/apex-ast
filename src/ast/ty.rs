@@ -22,6 +22,8 @@ pub enum TyKind {
 impl<'a> From<Pair<'a, Rule>> for Ty {
 	fn from(p: Pair<'a, Rule>) -> Ty {
 		let rule = p.as_rule();
+
+		println!("from rule: {:?}, {:?}", rule, p);
 		let mut inner = p.into_inner();
 
 		let first = inner.next().unwrap();
@@ -89,7 +91,7 @@ fn parse_set_type(p: Pair<Rule>) -> Ty {
 
 fn parse_list_type(p: Pair<Rule>) -> Ty {
 	let collection = Collection {
-		kind: CollectionType::List(Box::new(parse_typed_type(p.into_inner().next().unwrap()))),
+		kind: CollectionType::List(Box::new(Ty::from(p.into_inner().next().unwrap()))),
 	};
 
 	Ty {
@@ -122,7 +124,7 @@ fn parse_typed_type(p: Pair<Rule>) -> Ty {
 
 fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 	// NOTE this will have to be reworked for spans
-	let kind_str = pair.into_inner().next().unwrap().as_str();
+	let kind_str = pair.as_str();
 
 	let kind = PrimitiveType::from(kind_str);
 
@@ -151,12 +153,12 @@ fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 // "primitive" in terms of Apex just means "built-in" since it technically does
 // not have primitives
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Primitive {
 	pub kind: PrimitiveType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PrimitiveType {
 	Blob,
 	Boolean,
@@ -220,4 +222,97 @@ mod expr_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
+
+	#[test]
+	fn primitive_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Integer")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::Primitive(prim) = ty.kind {
+			assert_eq!(PrimitiveType::Integer, prim.kind);
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+
+	#[test]
+	fn class_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Foo")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::ClassOrInterface(coi) = ty.kind {
+			assert_eq!("Foo", coi.class.name);
+			assert!(coi.subclass.is_none());
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+	fn composite_class_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Foo.Bar")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::ClassOrInterface(coi) = ty.kind {
+			assert_eq!("Foo", coi.class.name);
+
+			// Identifier implements PartialEq<str>, so str must be rhs value
+			assert_eq!(coi.subclass.unwrap(), "Bar");
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+
+	#[test]
+	fn collection_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "List<String>")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::Collection(coll) = ty.kind {
+			match coll.kind {
+				CollectionType::List(inner_ty) => {
+					if let TyKind::Primitive(prim) = inner_ty.kind {
+						assert_eq!(PrimitiveType::String, prim.kind);
+					} else {
+						panic!("expected String, got {:?}", inner_ty.kind);
+					}
+				}
+				_ => panic!("expected list, got {:?}", coll.kind),
+			}
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+
+	#[test]
+	fn generic_type_should_parse_correctly() {}
+
+	#[test]
+	fn map_type_should_parse_correctly() {}
 }

@@ -13,8 +13,5 @@ pub mod stmt;
 pub mod trigger;
 pub mod ty; // "type" is reserved
 
-// TODO specify a FromPair trait?
-
-// trait FromPair {
-// 	fn from_pair(p: Pair<Rule>) -> Self;
-// }
+// TODO implement some kind of visitor pattern
+// https://github.com/rust-unofficial/patterns/blob/master/patterns/visitor.md

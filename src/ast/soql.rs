@@ -156,7 +156,7 @@ impl<'a> From<Pair<'a, Rule>> for GroupByClause {
 	// should come from soql_group_by_clause directly
 	fn from(p: Pair<'a, Rule>) -> GroupByClause {
 		let mut inner = p.into_inner();
-		
+
 		inner.next(); // discarding token
 
 		let func_or_list = inner.next().unwrap();
@@ -305,12 +305,10 @@ mod soql_tests {
 
 	#[test]
 	fn simple_soql_parses_correctly() {
-		let soql = r#"
-			SELECT Name, Id, Foo__c
+		let soql = r#"SELECT Name, Id, Foo__c
 			FROM Bar__c,
 			WHERE Foo__c IN :listOfFoos
-			ORDER BY Name ASC
-		"#;
+			ORDER BY Name ASC"#;
 
 		let mut parsed = GrammarParser::parse(Rule::soql_query, soql).unwrap();
 
