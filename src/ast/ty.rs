@@ -3,7 +3,7 @@ use crate::parser::Rule;
 use pest::iterators::{Pair, Pairs};
 
 // "Ty" corresponds to the "basic_type" rule
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ty {
 	// does it contain array brackets?
 	// sets, lists, and maps proper are always false
@@ -11,11 +11,29 @@ pub struct Ty {
 	pub kind: TyKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TyKind {
 	Collection(Collection),
 	Primitive(Primitive),
 	ClassOrInterface(ClassOrInterface),
+}
+
+impl From<Collection> for TyKind {
+	fn from(c: Collection) -> TyKind {
+		TyKind::Collection(c)
+	}
+}
+
+impl From<Primitive> for TyKind {
+	fn from(p: Primitive) -> TyKind {
+		TyKind::Primitive(p)
+	}
+}
+
+impl From<ClassOrInterface> for TyKind {
+	fn from(coi: ClassOrInterface) -> TyKind {
+		TyKind::ClassOrInterface(coi)
+	}
 }
 
 // this should be called when we encounter Rule::basic_type
@@ -23,7 +41,6 @@ impl<'a> From<Pair<'a, Rule>> for Ty {
 	fn from(p: Pair<'a, Rule>) -> Ty {
 		let rule = p.as_rule();
 
-		println!("from rule: {:?}, {:?}", rule, p);
 		let mut inner = p.into_inner();
 
 		let first = inner.next().unwrap();
@@ -34,17 +51,18 @@ impl<'a> From<Pair<'a, Rule>> for Ty {
 			Rule::collection_type => parse_collection_type(first),
 			Rule::primitive_type => parse_primitive_type(first, contains_brakets),
 			Rule::class_or_interface_type => parse_class_or_interface_type(first, contains_brakets),
+			Rule::typed_type => parse_typed_type(first),
 			_ => unreachable!("expected basic_type, got {:?}", rule),
 		}
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Collection {
 	pub kind: CollectionType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CollectionType {
 	Map(Box<Ty>, Box<Ty>),
 	Set(Box<Ty>),
@@ -65,88 +83,9 @@ impl<'a> From<Pair<'a, Rule>> for Collection {
 	}
 }
 
-// parsed when pair is Rule::colection_type
-fn parse_collection_type(p: Pair<Rule>) -> Ty {
-	let outer_rule = p.as_rule();
-	let mut inner = p.into_inner().next().unwrap();
-
-	match inner.as_rule() {
-		Rule::set_type => parse_set_type(inner),
-		Rule::list_type => parse_list_type(inner),
-		Rule::map_type => parse_map_type(inner),
-		_ => unreachable!("expected collection_type, got {:?}", outer_rule),
-	}
-}
-
-fn parse_set_type(p: Pair<Rule>) -> Ty {
-	let collection = Collection {
-		kind: CollectionType::Set(Box::new(Ty::from(p.into_inner().next().unwrap()))),
-	};
-
-	Ty {
-		array: false,
-		kind: TyKind::Collection(collection),
-	}
-}
-
-fn parse_list_type(p: Pair<Rule>) -> Ty {
-	let collection = Collection {
-		kind: CollectionType::List(Box::new(Ty::from(p.into_inner().next().unwrap()))),
-	};
-
-	Ty {
-		array: false,
-		kind: TyKind::Collection(collection),
-	}
-}
-
-fn parse_map_type(p: Pair<Rule>) -> Ty {
-	let mut inner = p.into_inner();
-
-	let inner_types = (
-		Ty::from(inner.next().unwrap()),
-		Ty::from(inner.next().unwrap()),
-	);
-	let collection = Collection {
-		kind: CollectionType::Map(Box::new(inner_types.0), Box::new(inner_types.1)),
-	};
-
-	Ty {
-		array: false,
-		kind: TyKind::Collection(collection),
-	}
-}
-
-// typed_type is recursive
-fn parse_typed_type(p: Pair<Rule>) -> Ty {
-	Ty::from(p.into_inner().next().unwrap())
-}
-
-fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
-	// NOTE this will have to be reworked for spans
-	let kind_str = pair.as_str();
-
-	let kind = PrimitiveType::from(kind_str);
-
-	Ty {
-		kind: TyKind::Primitive(kind.into()),
-		array: is_array,
-	}
-}
-
-fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
-	let mut inner = pair.into_inner();
-
-	let class: Identifier = inner.next().unwrap().into();
-
-	let subclass: Option<Identifier> = match inner.next() {
-		Some(pair) => Some(pair.into()),
-		None => None,
-	};
-
-	Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface { class, subclass }),
-		array: is_array,
+impl From<CollectionType> for Collection {
+	fn from(ct: CollectionType) -> Collection {
+		Collection { kind: ct }
 	}
 }
 
@@ -208,13 +147,139 @@ impl<'a> From<Pair<'a, Rule>> for Primitive {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ClassOrInterface {
-	pub class: Identifier,
+	pub kind: ClassOrInterfaceType,
+}
 
-	// if None, this would be like "String",
-	// if Some, this would be like "Foo.Bar"
-	pub subclass: Option<Identifier>,
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClassOrInterfaceType {
+	// e.g. Foo or Foo[]
+	Class(Identifier, bool),
+
+	// e.g. Foo<Bar>
+	Generic(Identifier, Box<Ty>),
+
+	// e.g. Foo.Bar, Foo.Bar<Baz> or some combination
+	Inner(Identifier, Box<Ty>),
+}
+
+// parsed when pair is Rule::colection_type
+fn parse_collection_type(p: Pair<Rule>) -> Ty {
+	let outer_rule = p.as_rule();
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::set_type => parse_set_type(inner),
+		Rule::list_type => parse_list_type(inner),
+		Rule::map_type => parse_map_type(inner),
+		_ => unreachable!("expected collection_type, got {:?}", outer_rule),
+	}
+}
+
+fn parse_set_type(p: Pair<Rule>) -> Ty {
+	let collection = Collection {
+		kind: CollectionType::Set(Box::new(Ty::from(p.into_inner().next().unwrap()))),
+	};
+
+	Ty {
+		array: false,
+		kind: TyKind::Collection(collection),
+	}
+}
+
+fn parse_list_type(p: Pair<Rule>) -> Ty {
+	let collection = Collection {
+		kind: CollectionType::List(Box::new(Ty::from(p.into_inner().next().unwrap()))),
+	};
+
+	Ty {
+		array: false,
+		kind: TyKind::Collection(collection),
+	}
+}
+
+fn parse_map_type(p: Pair<Rule>) -> Ty {
+	let mut inner = p.into_inner();
+
+	let inner_types = (
+		Ty::from(inner.next().unwrap()),
+		Ty::from(inner.next().unwrap()),
+	);
+	let collection = Collection {
+		kind: CollectionType::Map(Box::new(inner_types.0), Box::new(inner_types.1)),
+	};
+
+	Ty {
+		array: false,
+		kind: TyKind::Collection(collection),
+	}
+}
+
+fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
+	// NOTE this will have to be reworked for spans
+	let kind_str = pair.as_str();
+
+	let kind = PrimitiveType::from(kind_str);
+
+	Ty {
+		kind: TyKind::Primitive(kind.into()),
+		array: is_array,
+	}
+}
+
+fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
+	let mut inner = pair.into_inner();
+
+	let class: Identifier = inner.next().unwrap().into();
+
+	let subclass: Option<ClassOrInterface> = match inner.next() {
+		Some(pair) => Some(pair.into()),
+		None => None,
+	};
+
+	Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			class,
+			subclass,
+			generic: None,
+		}),
+		array: is_array,
+	}
+}
+
+fn parse_typed_type(pair: Pair<Rule>) -> Ty {
+	let mut inner = pair.into_inner();
+
+	let class: Identifier = inner.next().unwrap().into();
+
+	let generic: Option<ClassOrInterface> = match inner.next() {
+		Some(pair) => Some(parse_class_or_interface_type()),
+		None => None,
+	};
+
+	Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			class,
+			generic,
+			subclass: None,
+		}),
+		array: false,
+	}
+}
+
+fn parse_subclass(pair: Pair<Rule>) -> ClassOrInterfaceType {
+	let mut inner = pair.into_inner();
+
+	let first = inner.next();
+
+	match first.as_rule() {
+		Rule::typed_type => {
+			let identifier = Identifier::from(first);
+
+			let gen_type = inner.next().unwrap().into();
+		}
+	}
 }
 
 #[cfg(test)]
@@ -254,13 +319,31 @@ mod expr_tests {
 		assert!(!ty.array);
 
 		if let TyKind::ClassOrInterface(coi) = ty.kind {
-			assert_eq!("Foo", coi.class.name);
-			assert!(coi.subclass.is_none());
+			assert_eq!(ClassOrInterfaceType::Class("Foo".into(), false), coi.kind);
 		} else {
 			panic!("unexpected type kind found");
 		}
 	}
 
+	#[test]
+	fn class_type_array_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Foo[]")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(ty.array);
+
+		if let TyKind::ClassOrInterface(coi) = ty.kind {
+			assert_eq!(ClassOrInterfaceType::Class("Foo".into(), true), coi.kind);
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+	#[test]
 	fn composite_class_type_should_parse_correctly() {
 		let parsed = GrammarParser::parse(Rule::basic_type, "Foo.Bar")
 			.unwrap()
@@ -272,10 +355,54 @@ mod expr_tests {
 		assert!(!ty.array);
 
 		if let TyKind::ClassOrInterface(coi) = ty.kind {
-			assert_eq!("Foo", coi.class.name);
+			let expected_inner = Ty {
+				array: false,
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: ClassOrInterfaceType::Class("Bar".into(), false),
+				}),
+			};
+			let expected = ClassOrInterface {
+				kind: ClassOrInterfaceType::Inner("Foo".into(), Box::new(expected_inner)),
+			};
 
-			// Identifier implements PartialEq<str>, so str must be rhs value
-			assert_eq!(coi.subclass.unwrap(), "Bar");
+			assert_eq!(expected, coi);
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
+
+	#[test]
+	fn composite_typed_class_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Foo.Bar<Baz>")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::ClassOrInterface(coi) = ty.kind {
+			let expected_gen_type = Ty {
+				array: false,
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Class("Baz".into(), false),
+			})
+			};
+
+			let expected_gen = Ty {
+				array: false,
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Generic("Bar".into(), Box::new(expected_gen_type)),
+			})
+			};
+			
+
+			let expected = ClassOrInterface {
+				kind: ClassOrInterfaceType::Inner("Foo".into(), Box::new(expected_gen)),
+			};
+
+			assert_eq!(expected, coi);
 		} else {
 			panic!("unexpected type kind found");
 		}
@@ -311,9 +438,34 @@ mod expr_tests {
 
 
 	// TODO
-	// #[test]
-	// fn generic_type_should_parse_correctly() {
-	// }
+	#[test]
+	fn generic_type_should_parse_correctly() {
+		let parsed = GrammarParser::parse(Rule::basic_type, "Foo<Bar>")
+			.unwrap()
+			.next()
+			.unwrap();
+
+		let ty = Ty::from(parsed);
+
+		assert!(!ty.array);
+
+		if let TyKind::ClassOrInterface(coi) = ty.kind {
+			let expected_inner = Ty {
+				array: false,
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Class("Bar".into(), false)
+			}),
+			};
+
+			let expected = ClassOrInterface {
+				kind: ClassOrInterfaceType::Generic("Foo".into(), Box::new(expected_inner)),
+			};
+
+			assert_eq!(expected, coi);
+		} else {
+			panic!("unexpected type kind found");
+		}
+	}
 
 	#[test]
 	fn map_type_should_parse_correctly() {
@@ -331,7 +483,12 @@ mod expr_tests {
 				CollectionType::Map(key_ty, val_ty) => match (key_ty.kind, val_ty.kind) {
 					(TyKind::Primitive(prim), TyKind::ClassOrInterface(coi)) => {
 						assert_eq!(prim.kind, PrimitiveType::ID);
-						assert_eq!(coi.class, "Case");
+
+						let expected_case = ClassOrInterface {
+							kind: ClassOrInterfaceType::Class("Case".into(), false)
+						};
+
+						assert_eq!(expected_case, coi);
 					}
 					_ => panic!("inner types did not parse correctly"),
 				},
