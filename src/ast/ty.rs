@@ -231,14 +231,36 @@ fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 	let mut inner = pair.into_inner();
 
-	println!("parse_class_or_interface: {:?}", inner);
+	println!("pairs {:?}", inner);
 
 	let class: Identifier = inner.next().unwrap().into();
 
 	match inner.next() {
-		Some(p) => match p.into_inner().next().unwrap().as_rule() {
-			Rule::typed_type => unimplemented!(),
-			Rule::identifier => unimplemented!(),
+		Some(p) => match p.as_rule() {
+			Rule::typed_type => Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: ClassOrInterfaceType::Inner(class, Box::new(parse_typed_type(p))),
+				}),
+				array: is_array,
+			},
+			Rule::identifier => {
+				let id = Identifier::from(p);
+				let is_array = inner.next().is_some();
+
+				let inner_ty = Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						kind: ClassOrInterfaceType::Class(id),
+					}),
+					array: is_array,
+				};
+
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						kind: ClassOrInterfaceType::Inner(class, Box::new(inner_ty)),
+					}),
+					array: is_array,
+				}
+			}
 			_ => unreachable!("expected typed type"),
 		},
 		None => Ty {
@@ -262,25 +284,6 @@ fn parse_typed_type(pair: Pair<Rule>) -> Ty {
 			kind: ClassOrInterfaceType::Generic(class, inner_type),
 		}),
 		array: false,
-	}
-}
-
-fn parse_subclass(pair: Pair<Rule>) -> ClassOrInterface {
-	let mut inner = pair.into_inner();
-
-	let first = inner.next().unwrap();
-
-	match first.as_rule() {
-		Rule::typed_type => ClassOrInterface {
-			kind: ClassOrInterfaceType::Generic(
-				Identifier::from(first),
-				Box::new(Ty::from(inner.next().unwrap())),
-			),
-		},
-		Rule::identifier => ClassOrInterface {
-			kind: ClassOrInterfaceType::Class(Identifier::from(first)),
-		},
-		_ => unreachable!("expected Rule::subclass"),
 	}
 }
 
