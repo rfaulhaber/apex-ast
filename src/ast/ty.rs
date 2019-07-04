@@ -154,8 +154,8 @@ pub struct ClassOrInterface {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClassOrInterfaceType {
-	// e.g. Foo or Foo[]
-	Class(Identifier, bool),
+	// e.g. Foo
+	Class(Identifier),
 
 	// e.g. Foo<Bar>
 	Generic(Identifier, Box<Ty>),
@@ -231,54 +231,56 @@ fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 	let mut inner = pair.into_inner();
 
+	println!("parse_class_or_interface: {:?}", inner);
+
 	let class: Identifier = inner.next().unwrap().into();
 
-	let subclass: Option<ClassOrInterface> = match inner.next() {
-		Some(pair) => Some(pair.into()),
-		None => None,
-	};
-
-	Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
-			class,
-			subclass,
-			generic: None,
-		}),
-		array: is_array,
+	match inner.next() {
+		Some(p) => match p.into_inner().next().unwrap().as_rule() {
+			Rule::typed_type => unimplemented!(),
+			Rule::identifier => unimplemented!(),
+			_ => unreachable!("expected typed type"),
+		},
+		None => Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Class(class),
+			}),
+			array: is_array,
+		},
 	}
 }
 
 fn parse_typed_type(pair: Pair<Rule>) -> Ty {
 	let mut inner = pair.into_inner();
 
-	let class: Identifier = inner.next().unwrap().into();
+	let class = Identifier::from(inner.next().unwrap());
 
-	let generic: Option<ClassOrInterface> = match inner.next() {
-		Some(pair) => Some(parse_class_or_interface_type()),
-		None => None,
-	};
+	let inner_type = Box::new(Ty::from(inner.next().unwrap()));
 
 	Ty {
 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-			class,
-			generic,
-			subclass: None,
+			kind: ClassOrInterfaceType::Generic(class, inner_type),
 		}),
 		array: false,
 	}
 }
 
-fn parse_subclass(pair: Pair<Rule>) -> ClassOrInterfaceType {
+fn parse_subclass(pair: Pair<Rule>) -> ClassOrInterface {
 	let mut inner = pair.into_inner();
 
-	let first = inner.next();
+	let first = inner.next().unwrap();
 
 	match first.as_rule() {
-		Rule::typed_type => {
-			let identifier = Identifier::from(first);
-
-			let gen_type = inner.next().unwrap().into();
-		}
+		Rule::typed_type => ClassOrInterface {
+			kind: ClassOrInterfaceType::Generic(
+				Identifier::from(first),
+				Box::new(Ty::from(inner.next().unwrap())),
+			),
+		},
+		Rule::identifier => ClassOrInterface {
+			kind: ClassOrInterfaceType::Class(Identifier::from(first)),
+		},
+		_ => unreachable!("expected Rule::subclass"),
 	}
 }
 
@@ -319,7 +321,7 @@ mod expr_tests {
 		assert!(!ty.array);
 
 		if let TyKind::ClassOrInterface(coi) = ty.kind {
-			assert_eq!(ClassOrInterfaceType::Class("Foo".into(), false), coi.kind);
+			assert_eq!(ClassOrInterfaceType::Class("Foo".into()), coi.kind);
 		} else {
 			panic!("unexpected type kind found");
 		}
@@ -337,7 +339,7 @@ mod expr_tests {
 		assert!(ty.array);
 
 		if let TyKind::ClassOrInterface(coi) = ty.kind {
-			assert_eq!(ClassOrInterfaceType::Class("Foo".into(), true), coi.kind);
+			assert_eq!(ClassOrInterfaceType::Class("Foo".into()), coi.kind);
 		} else {
 			panic!("unexpected type kind found");
 		}
@@ -358,7 +360,7 @@ mod expr_tests {
 			let expected_inner = Ty {
 				array: false,
 				kind: TyKind::ClassOrInterface(ClassOrInterface {
-					kind: ClassOrInterfaceType::Class("Bar".into(), false),
+					kind: ClassOrInterfaceType::Class("Bar".into()),
 				}),
 			};
 			let expected = ClassOrInterface {
@@ -386,17 +388,17 @@ mod expr_tests {
 			let expected_gen_type = Ty {
 				array: false,
 				kind: TyKind::ClassOrInterface(ClassOrInterface {
-				kind: ClassOrInterfaceType::Class("Baz".into(), false),
-			})
+					kind: ClassOrInterfaceType::Class("Baz".into()),
+				}),
 			};
 
 			let expected_gen = Ty {
 				array: false,
 				kind: TyKind::ClassOrInterface(ClassOrInterface {
-				kind: ClassOrInterfaceType::Generic("Bar".into(), Box::new(expected_gen_type)),
-			})
+					kind: ClassOrInterfaceType::Generic("Bar".into(), Box::new(expected_gen_type)),
+				}),
 			};
-			
+
 
 			let expected = ClassOrInterface {
 				kind: ClassOrInterfaceType::Inner("Foo".into(), Box::new(expected_gen)),
@@ -453,8 +455,8 @@ mod expr_tests {
 			let expected_inner = Ty {
 				array: false,
 				kind: TyKind::ClassOrInterface(ClassOrInterface {
-				kind: ClassOrInterfaceType::Class("Bar".into(), false)
-			}),
+					kind: ClassOrInterfaceType::Class("Bar".into()),
+				}),
 			};
 
 			let expected = ClassOrInterface {
@@ -485,7 +487,7 @@ mod expr_tests {
 						assert_eq!(prim.kind, PrimitiveType::ID);
 
 						let expected_case = ClassOrInterface {
-							kind: ClassOrInterfaceType::Class("Case".into(), false)
+							kind: ClassOrInterfaceType::Class("Case".into()),
 						};
 
 						assert_eq!(expected_case, coi);
