@@ -1,5 +1,5 @@
 /// binary operators
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinOp {
 	Add,
 	Sub,
@@ -97,7 +97,7 @@ impl BinOp {
 }
 
 /// UnOp is prefix operators exclusively.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnOp {
 	/// `!` operator
 	Not,
@@ -132,7 +132,7 @@ impl UnOp {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PostfixOp {
 	Inc,
 	Dec,

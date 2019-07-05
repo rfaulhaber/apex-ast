@@ -8,12 +8,12 @@ use super::ty::*;
 use crate::parser::Rule;
 use pest::iterators::{Pair, Pairs};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
 	pub kind: ExprKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
 	/// any expression surrounded by parentheses, like `(1 + 2)`
 	Braced(Box<Expr>),
@@ -177,7 +177,6 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Expr {
 		}
 		_ => unreachable!(),
 	}
-
 }
 
 fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {

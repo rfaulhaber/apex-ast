@@ -5,7 +5,7 @@ use pest::iterators::{Pair, Pairs};
 
 // TODO create general conditional expression for WHERE, WITH, HAVING, etc.
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SoqlQuery {
 	pub select: Vec<QueryTerm>,
 	pub from: FromClause,
@@ -21,12 +21,12 @@ pub struct SoqlQuery {
 	pub for_clause: Option<ForTerm>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct QueryTerm {
 	pub kind: QueryTermKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum QueryTermKind {
 	/// an aggregate function, such as COUNT(Id)
 	Func(String, Vec<String>),
@@ -37,13 +37,13 @@ pub enum QueryTermKind {
 	SubQuery(SoqlSubQuery),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FromClause {
 	fields: Vec<String>,
 	using_scope: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WhereClause {
 	terms: Box<WhereTerm>,
 }
@@ -51,7 +51,7 @@ pub struct WhereClause {
 // TODO: rename?
 /// Each WhereTerm is a single piece of a WHERE clause.
 /// For example: `Id IN :ids` or `FirstName = 'John'`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WhereTerm {
 	/// A WHERE expression surrounded by parentheses.
 	Braced(Box<WhereTerm>),
@@ -71,7 +71,7 @@ pub enum WhereTerm {
 
 /// The left-hand side of a WHERE field expression can be either a field or a
 /// function.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WhereFieldOrFunction {
 	/// A field, such as `Foo__c`
 	Field(String),
@@ -80,7 +80,7 @@ pub enum WhereFieldOrFunction {
 	Function(String, Vec<String>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SoqlCompOp {
 	NotIn,
 	In,
@@ -93,7 +93,7 @@ pub enum SoqlCompOp {
 	Eq,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WhereLiteral {
 	Integer(i64),
 	Float(f64),
@@ -102,14 +102,14 @@ pub enum WhereLiteral {
 	Null,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SoqlSubQuery {
 	pub select: Vec<String>, // subqueries don't allow for aggregate functions
 	pub from: FromClause,
 	pub where_clause: Option<WhereClause>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SubQueryTerm {
 	/// an aggregate function, such as COUNT(Id)
 	Func(String, Vec<String>),
@@ -118,21 +118,21 @@ pub enum SubQueryTerm {
 	Field(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WithClause {
 	pub kind: WithClauseKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WithClauseKind {
 	DataCategory(Vec<DataCategorySelection>),
 	SecurityEnforced,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DataCategorySelection(pub String, pub DataCategoryOp, pub String);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataCategoryOp {
 	AboveOrBelow,
 	Above,
@@ -140,13 +140,13 @@ pub enum DataCategoryOp {
 	At,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GroupByClause {
 	pub kind: GroupByKind,
 	pub having: Option<Box<WhereTerm>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GroupByKind {
 	Func(GroupByFunc, Vec<String>),
 	FieldList(Vec<String>),
@@ -169,7 +169,7 @@ impl<'a> From<Pair<'a, Rule>> for GroupByClause {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GroupByFunc {
 	Rollup,
 	Cube,
@@ -184,7 +184,7 @@ impl<'a> From<Pair<'a, Rule>> for GroupByFunc {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OrderBy {
 	pub fields: Vec<Identifier>,
 	pub order: Option<OrderOp>,
@@ -247,7 +247,7 @@ impl<'a> From<Pair<'a, Rule>> for OrderBy {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OrderOp {
 	Asc,
 	Desc,
@@ -263,7 +263,7 @@ impl<'a> From<Pair<'a, Rule>> for OrderOp {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OrderNulls {
 	First,
 	Last,
@@ -279,7 +279,7 @@ impl<'a> From<Pair<'a, Rule>> for OrderNulls {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ForTerm {
 	View,
 	Reference,
