@@ -372,7 +372,7 @@ WITH = { ^"WITH" }
 WHEN = { ^"WHEN" }
 
 // expressions 
-expression = { ternary_expr | infix_expr | expr_inner }
+expression = _{ ternary_expr | infix_expr | expr_inner }
 
 // these are "terminal" expressions
 expr_inner = { 
@@ -405,6 +405,7 @@ inc_dec_postfix = { (list_access | identifier) ~ (inc_op | dec_op) }
 instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
 // annotations
+// TODO make indefinite key value pairs
 annotation = { "@" ~ identifier ~ ("(" ~ identifier ~ "=" ~ identifier ~ ")")? } // do we really care what these values are?
 
 // types

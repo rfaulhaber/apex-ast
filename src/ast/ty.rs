@@ -231,8 +231,6 @@ fn parse_primitive_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 fn parse_class_or_interface_type(pair: Pair<Rule>, is_array: bool) -> Ty {
 	let mut inner = pair.into_inner();
 
-	println!("pairs {:?}", inner);
-
 	let class: Identifier = inner.next().unwrap().into();
 
 	match inner.next() {
@@ -310,7 +308,6 @@ mod expr_tests {
 			panic!("unexpected type kind found");
 		}
 	}
-
 
 	#[test]
 	fn class_type_should_parse_correctly() {
@@ -402,7 +399,6 @@ mod expr_tests {
 				}),
 			};
 
-
 			let expected = ClassOrInterface {
 				kind: ClassOrInterfaceType::Inner("Foo".into(), Box::new(expected_gen)),
 			};
@@ -412,7 +408,6 @@ mod expr_tests {
 			panic!("unexpected type kind found");
 		}
 	}
-
 
 	#[test]
 	fn collection_type_should_parse_correctly() {
@@ -440,7 +435,6 @@ mod expr_tests {
 			panic!("unexpected type kind found");
 		}
 	}
-
 
 	// TODO
 	#[test]

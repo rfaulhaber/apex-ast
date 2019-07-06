@@ -39,23 +39,23 @@ pub enum ExprKind {
 	PropAccess(Vec<Expr>),
 
 	// direct method call, like foo(2 + 3, x)
-	Call(String, Option<Vec<Expr>>),
+	Call(Identifier, Option<Vec<Expr>>),
 
 	// new object instantiation, like "new Foo(one, 2)" or "new Account(Name = 'Foo');"
-	New(String, Option<Vec<Expr>>),
+	New(Ty, Option<NewType>),
 
 	// ternary expression, like the right-hand side of:
 	// String foo = isTrue() ? 'Yes' : 'No';
 	Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
 
 	// a cast expression, like `(String) list.get(0)`
-	CastExpr(String, Box<Expr>),
+	CastExpr(Ty, Box<Expr>),
 
 	// instanceof expressions, like: `x instanceof Account`
 	InstanceOf(Identifier, Ty),
 
 	// direct list array access, like `foo[2]`
-	ListAccess(String, Box<Expr>),
+	ListAccess(Identifier, Box<Expr>),
 
 	// a soql query expression
 	SoqlQuery(SoqlQuery),
@@ -68,6 +68,16 @@ impl Into<Expr> for ExprKind {
 	fn into(self) -> Expr {
 		Expr { kind: self }
 	}
+}
+
+// this type is only constructed if there's any arguments passed,
+// otherwise it's None
+#[derive(Debug, Clone, PartialEq)]
+pub enum NewType {
+	Map(Vec<(Expr, Expr)>),
+	List(Vec<Expr>),
+	Array(Vec<Expr>),
+	Args(Vec<Expr>),
 }
 
 pub fn parse_expr(p: Pair<Rule>) -> Expr {
@@ -110,7 +120,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::NULL => Expr {
 				kind: ExprKind::Literal(LiteralKind::Null.into()),
 			},
-			_ => unimplemented!(),
+			_ => unimplemented!("got this rule: {:?}", pair.as_rule()),
 		}
 	}
 }
@@ -139,9 +149,9 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 			ExprKind::PropAccess(inner.into_inner().map(|expr| expr.into()).collect()).into()
 		}
 		Rule::query_expression => unimplemented!(),
-		Rule::new_instance_declaration => unimplemented!(),
-		Rule::method_invocation => unimplemented!(),
-		Rule::instanceof_expr => unimplemented!(),
+		Rule::new_instance_declaration => parse_new_instance_declaration(inner),
+		Rule::method_invocation => parse_method_invocation(inner),
+		Rule::instanceof_expr => parse_instanceof(inner),
 		Rule::unary_expr => parse_unary_expr(inner),
 		Rule::list_access => parse_list_access(inner),
 		Rule::literal => inner.into(),
@@ -152,7 +162,7 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 
 fn parse_list_access(pair: Pair<Rule>) -> Expr {
 	let mut inner = pair.into_inner();
-	let id = String::from(inner.next().unwrap().as_str());
+	let id = Identifier::from(inner.next().unwrap());
 	let inner_expr = parse_pair(inner.next().unwrap());
 
 	let kind = ExprKind::ListAccess(id, Box::new(inner_expr));
@@ -216,15 +226,57 @@ fn parse_instanceof(pair: Pair<Rule>) -> Expr {
 	let id: Identifier = inner.next().unwrap().as_str().into();
 	inner.next();
 
-	let type_pair = inner.next().unwrap().into_inner().next().unwrap();
+	let type_pair = inner.next().unwrap();
 
-	let ty = match type_pair.as_rule() {
-		Rule::collection_type => unimplemented!(),
-		Rule::primitive_type => unimplemented!(),
-		_ => unimplemented!(),
-	};
+	let ty = Ty::from(type_pair);
 
-	unimplemented!();
+	Expr {
+		kind: ExprKind::InstanceOf(id, ty),
+	}
+}
+
+fn parse_method_invocation(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+
+	let id = Identifier::from(inner.next().unwrap());
+
+	let exprs: Vec<Expr> = inner.next().unwrap().into_inner().map(Expr::from).collect();
+
+	let kind = ExprKind::Call(id, if exprs.is_empty() { None } else { Some(exprs) });
+
+	Expr { kind }
+}
+
+fn parse_new_instance_declaration(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+
+	// TODO keep for spans
+	inner.next();
+
+	let ty = Ty::from(inner.next().unwrap());
+
+	let next = inner.next().unwrap();
+
+	match next.as_rule() {
+		Rule::new_map_literal => unimplemented!(),
+		Rule::new_list_literal => unimplemented!(),
+		Rule::new_array_literal => unimplemented!(),
+		Rule::call_arguments => {
+			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
+
+			Expr {
+				kind: ExprKind::New(
+					ty,
+					if exprs.is_empty() {
+						None
+					} else {
+						Some(NewType::Args(exprs))
+					},
+				),
+			}
+		}
+		_ => unreachable!("expected new argument form, got {:?}", next.as_rule()),
+	}
 }
 
 #[cfg(test)]
@@ -298,5 +350,106 @@ mod expr_tests {
 			},
 			_ => panic!("was not unary expr"),
 		}
+	}
+
+	#[test]
+	fn simple_instanceof_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "x instanceof Foo").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+
+		let expected = Expr {
+			kind: ExprKind::InstanceOf(
+				Identifier::from("x"),
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						kind: ClassOrInterfaceType::Class(Identifier::from("Foo")),
+					}),
+					array: false,
+				},
+			),
+		};
+
+		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn simple_method_call_no_args_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo()").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+
+		let expected = Expr {
+			kind: ExprKind::Call(Identifier::from("foo"), None),
+		};
+
+		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn simple_method_call_simple_arg_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo(bar)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+
+		let expected = Expr {
+			kind: ExprKind::Call(
+				Identifier::from("foo"),
+				Some(vec![Expr {
+					kind: ExprKind::Identifier(Identifier::from("bar")),
+				}]),
+			),
+		};
+
+		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn simple_method_call_two_args_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo(bar, baz)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+
+		let expected = Expr {
+			kind: ExprKind::Call(
+				Identifier::from("foo"),
+				Some(vec![
+					Expr {
+						kind: ExprKind::Identifier(Identifier::from("bar")),
+					},
+					Expr {
+						kind: ExprKind::Identifier(Identifier::from("baz")),
+					},
+				]),
+			),
+		};
+
+		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn new_instance_no_args_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "new Foo()").unwrap();
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+
+		let expected = Expr {
+			kind: ExprKind::New(
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						kind: ClassOrInterfaceType::Class(Identifier::from("Foo")),
+					}),
+					array: false,
+				},
+				None,
+			),
+		};
+
+		assert_eq!(expected, expr);
 	}
 }

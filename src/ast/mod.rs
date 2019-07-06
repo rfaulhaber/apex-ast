@@ -1,3 +1,4 @@
+pub mod annotation;
 pub mod class;
 pub mod entry;
 pub mod expr;
