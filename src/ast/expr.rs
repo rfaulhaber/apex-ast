@@ -74,9 +74,13 @@ impl Into<Expr> for ExprKind {
 // otherwise it's None
 #[derive(Debug, Clone, PartialEq)]
 pub enum NewType {
+	// for Map literals, such as `new Map<Integer, String>{1 => 'one'}`
 	Map(Vec<(Expr, Expr)>),
+	// for List literals, such as `new List<Integer>{1, 2}`
 	List(Vec<Expr>),
+	// for Array literals, such as `new Integer[6]`
 	Array(Vec<Expr>),
+	// for everything else, including Lists, Sets, and Maps. ex. `new Foo(one, 2 + three)`
 	Args(Vec<Expr>),
 }
 
@@ -154,9 +158,9 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 		Rule::instanceof_expr => parse_instanceof(inner),
 		Rule::unary_expr => parse_unary_expr(inner),
 		Rule::list_access => parse_list_access(inner),
-		Rule::literal => inner.into(),
+		Rule::literal => Expr::from(inner.into_inner().next().unwrap()),
 		Rule::identifier => inner.into(),
-		_ => unreachable!(),
+		_ => unreachable!("got rule: {:?}", inner.as_rule()),
 	}
 }
 
@@ -259,7 +263,16 @@ fn parse_new_instance_declaration(pair: Pair<Rule>) -> Expr {
 
 	match next.as_rule() {
 		Rule::new_map_literal => unimplemented!(),
-		Rule::new_list_literal => unimplemented!(),
+		Rule::new_list_literal => {
+			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
+
+			Expr {
+				kind: ExprKind::New(
+					ty,
+					Some(NewType::List(exprs))
+				)
+			}
+		}
 		Rule::new_array_literal => unimplemented!(),
 		Rule::call_arguments => {
 			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
@@ -287,22 +300,22 @@ mod expr_tests {
 
 	#[test]
 	fn from_pair_parses_literal_correctly() {
-		let mut parsed = GrammarParser::parse(Rule::literal, "123").unwrap();
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "123").unwrap();
 
-		let expr: Expr = parsed.next().unwrap().into();
+		let result = Expr::from(parsed.next().unwrap());
 
-		match expr.kind {
-			ExprKind::Literal(lit) => match lit.kind {
-				LiteralKind::Integer(int) => assert_eq!(123, int),
-				_ => panic!("LiteralKind was not integer"),
-			},
-			_ => panic!("ExprKind was not literal"),
-		}
+		let expected = Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(123),
+			}),
+		};
+
+		assert_eq!(expected, result);
 	}
 
 	#[test]
 	fn from_pair_parses_identifier_correctly() {
-		let mut parsed = GrammarParser::parse(Rule::identifier, "myVar").unwrap();
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "myVar").unwrap();
 		let single_item = parsed.next().unwrap();
 
 		let expr: Expr = single_item.clone().into();
@@ -451,5 +464,141 @@ mod expr_tests {
 		};
 
 		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn new_instance_with_args_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "new Foo(one, 'two', 3)").unwrap();
+
+		let item = parsed.next().unwrap();
+
+		let expr = Expr::from(item.clone());
+		let expected_arg_1 = Expr {
+			kind: ExprKind::Identifier(Identifier::from("one")),
+		};
+
+		let expected_arg_2 = Expr {
+			kind: ExprKind::Literal(Literal::from("\'two\'")),
+		};
+
+		let expected_arg_3 = Expr {
+			kind: ExprKind::Literal(Literal::from(3)),
+		};
+
+		let new_type = NewType::Args(vec![expected_arg_1, expected_arg_2, expected_arg_3]);
+
+		let expected = Expr {
+			kind: ExprKind::New(
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						kind: ClassOrInterfaceType::Class(Identifier::from("Foo")),
+					}),
+					array: false,
+				},
+				Some(new_type),
+			),
+		};
+
+		assert_eq!(expected, expr);
+	}
+
+	#[test]
+	fn new_instance_list_type_no_args_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "new List<Foo>()").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let foo_ty = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Class(Identifier::from("Foo")),
+			}),
+			array: false,
+		};
+
+		let expected_ty = Ty {
+			kind: TyKind::Collection(Collection {
+				kind: CollectionType::List(Box::new(foo_ty)),
+			}),
+			array: false,
+		};
+
+		let expected = Expr {
+			kind: ExprKind::New(expected_ty, None),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn new_instance_list_type_with_arg_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "new List<Foo>(bar)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let foo_ty = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				kind: ClassOrInterfaceType::Class(Identifier::from("Foo")),
+			}),
+			array: false,
+		};
+
+		let expected_ty = Ty {
+			kind: TyKind::Collection(Collection {
+				kind: CollectionType::List(Box::new(foo_ty)),
+			}),
+			array: false,
+		};
+
+		let expected_newtype = NewType::Args(vec![Expr {
+			kind: ExprKind::Identifier(Identifier::from("bar")),
+		}]);
+
+		let expected = Expr {
+			kind: ExprKind::New(expected_ty, Some(expected_newtype)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn new_instance_list_type_literal_parses_correctly() {
+		let mut parsed =
+			GrammarParser::parse(Rule::expr_inner, "new List<Integer>{one, 2}").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let int_ty = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveType::Integer,
+			}),
+			array: false,
+		};
+
+		let expected_ty = Ty {
+			kind: TyKind::Collection(Collection {
+				kind: CollectionType::List(Box::new(int_ty)),
+			}),
+			array: false,
+		};
+
+		let expected_args = vec![
+			Expr {
+				kind: ExprKind::Identifier(Identifier::from("one")),
+			},
+			Expr {
+				kind: ExprKind::Literal(Literal::from(2)),
+			},
+		];
+
+		let expected_newtype = NewType::List(expected_args);
+
+		let expected = Expr {
+			kind: ExprKind::New(expected_ty, Some(expected_newtype)),
+		};
+
+		assert_eq!(expected, result);
 	}
 }

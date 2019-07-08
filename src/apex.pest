@@ -445,7 +445,7 @@ sharing_modifier = { INHERITED_SHARING | WITH_SHARING | WITHOUT_SHARING }
 storage_modifier = { ABSTRACT | VIRTUAL }
 
 // literals
-literal = _{ string_literal | number_literal | boolean_literal | NULL }
+literal = { string_literal | number_literal | boolean_literal | NULL }
 boolean_literal = { TRUE | FALSE }
 string_literal = @{ "'" ~ string_inner ~ "'" }
 string_inner = @{ char* }
