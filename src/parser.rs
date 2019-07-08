@@ -9,7 +9,7 @@ pub(crate) struct GrammarParser;
 pub fn parse_apex(contents: String) -> Result<EntryKind, String> {
 	let pairs = match GrammarParser::parse(Rule::apex_file, contents.as_str()) {
 		Ok(pairs) => pairs,
-		Err(err)  => return Err(err.to_string()),
+		Err(err) => return Err(err.to_string()),
 	};
 
 	println!("paris: {:?}", pairs);

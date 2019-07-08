@@ -262,18 +262,28 @@ fn parse_new_instance_declaration(pair: Pair<Rule>) -> Expr {
 	let next = inner.next().unwrap();
 
 	match next.as_rule() {
-		Rule::new_map_literal => unimplemented!(),
+		Rule::new_map_literal => {
+			let mappings: Vec<(Expr, Expr)> =
+				next.into_inner().map(parse_map_literal_mapping).collect();
+
+			Expr {
+				kind: ExprKind::New(ty, Some(NewType::Map(mappings))),
+			}
+		}
 		Rule::new_list_literal => {
 			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
 
 			Expr {
-				kind: ExprKind::New(
-					ty,
-					Some(NewType::List(exprs))
-				)
+				kind: ExprKind::New(ty, Some(NewType::List(exprs))),
 			}
 		}
-		Rule::new_array_literal => unimplemented!(),
+		Rule::new_array_literal => {
+			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
+
+			Expr {
+				kind: ExprKind::New(ty, Some(NewType::Array(exprs))),
+			}
+		}
 		Rule::call_arguments => {
 			let exprs: Vec<Expr> = next.into_inner().map(Expr::from).collect();
 
@@ -290,6 +300,16 @@ fn parse_new_instance_declaration(pair: Pair<Rule>) -> Expr {
 		}
 		_ => unreachable!("expected new argument form, got {:?}", next.as_rule()),
 	}
+}
+
+fn parse_map_literal_mapping(p: Pair<Rule>) -> (Expr, Expr) {
+	let mut inner = p.into_inner();
+
+	// we have to parse Rule::literal and get the more specific rule
+	let literal = Expr::from(inner.next().unwrap().into_inner().next().unwrap());
+	let expr_mapping = Expr::from(inner.next().unwrap());
+
+	(literal, expr_mapping)
 }
 
 #[cfg(test)]
@@ -594,6 +614,93 @@ mod expr_tests {
 		];
 
 		let expected_newtype = NewType::List(expected_args);
+
+		let expected = Expr {
+			kind: ExprKind::New(expected_ty, Some(expected_newtype)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn new_instance_array_type_literal_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "new Integer[6]").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let expected_ty = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveType::Integer,
+			}),
+			array: false,
+		};
+
+		let expected_args = vec![Expr {
+			kind: ExprKind::Literal(Literal::from(6)),
+		}];
+
+		let expected_newtype = NewType::Array(expected_args);
+
+		let expected = Expr {
+			kind: ExprKind::New(expected_ty, Some(expected_newtype)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn new_instance_map_type_literal_parses_correctly() {
+		let mut parsed = GrammarParser::parse(
+			Rule::expr_inner,
+			"new Map<Id, String>{1 => 'one', 2 => 'two'}",
+		)
+		.unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let id_type = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveType::ID,
+			}),
+			array: false,
+		};
+
+		let string_type = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveType::String,
+			}),
+			array: false,
+		};
+
+		let expected_ty = Ty {
+			kind: TyKind::Collection(Collection {
+				kind: CollectionType::Map(Box::new(id_type), Box::new(string_type)),
+			}),
+			array: false,
+		};
+
+		let expected_args = vec![
+			(
+				Expr {
+					kind: ExprKind::Literal(Literal::from(1)),
+				},
+				Expr {
+					kind: ExprKind::Literal(Literal::from("\'one\'")),
+				},
+			),
+			(
+				Expr {
+					kind: ExprKind::Literal(Literal::from(2)),
+				},
+				Expr {
+					kind: ExprKind::Literal(Literal::from("\'two\'")),
+				},
+			),
+		];
+
+		let expected_newtype = NewType::Map(expected_args);
 
 		let expected = Expr {
 			kind: ExprKind::New(expected_ty, Some(expected_newtype)),

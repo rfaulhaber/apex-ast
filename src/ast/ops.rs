@@ -116,7 +116,7 @@ impl From<&str> for UnOp {
 			"~" => UnOp::BitNot,
 			"++" => UnOp::Inc,
 			"--" => UnOp::Dec,
-			_ => panic!("invalid string: {}", s)
+			_ => panic!("invalid string: {}", s),
 		}
 	}
 }
@@ -143,7 +143,7 @@ impl From<&str> for PostfixOp {
 		match s {
 			"++" => PostfixOp::Inc,
 			"--" => PostfixOp::Dec,
-			_ => panic!("invalid string: {}", s)
+			_ => panic!("invalid string: {}", s),
 		}
 	}
 }
