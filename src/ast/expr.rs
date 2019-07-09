@@ -95,7 +95,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::infix_expr => parse_infix_expr(pair),
 			Rule::ternary_expr => parse_ternary_expr(pair),
 			Rule::expr_inner => parse_expr_inner(pair),
-			// TODO add all children of expr_inner, ternary_expr, and infix
+			Rule::method_invocation => parse_method_invocation(pair),
 			Rule::identifier => Expr {
 				kind: ExprKind::Identifier(pair.as_str().into()),
 			},
@@ -124,12 +124,13 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::NULL => Expr {
 				kind: ExprKind::Literal(LiteralKind::Null.into()),
 			},
-			_ => unimplemented!("got this rule: {:?}", pair.as_rule()),
+			_ => unreachable!("got this rule: {:?}", pair.as_rule()),
 		}
 	}
 }
 
 // parse pair after having gone into it already
+// TODO remove
 fn parse_pair(pair: Pair<Rule>) -> Expr {
 	match pair.as_rule() {
 		Rule::identifier | Rule::literal => pair.into(),
@@ -138,11 +139,31 @@ fn parse_pair(pair: Pair<Rule>) -> Expr {
 }
 
 fn parse_ternary_expr(pair: Pair<Rule>) -> Expr {
-	unimplemented!();
+	let mut inner = pair.into_inner();
+
+	let expr_test = Expr::from(inner.next().unwrap());
+	let expr_true = Expr::from(inner.next().unwrap());
+	let expr_false = Expr::from(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Ternary(
+			Box::new(expr_test),
+			Box::new(expr_true),
+			Box::new(expr_false),
+		),
+	}
 }
 
 fn parse_infix_expr(pair: Pair<Rule>) -> Expr {
-	unimplemented!();
+	let mut inner = pair.into_inner();
+
+	let left = Expr::from(inner.next().unwrap());
+	let op = BinOp::from(inner.next().unwrap().as_str());
+	let right = Expr::from(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Binary(Box::new(left), op, Box::new(right)),
+	}
 }
 
 fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
@@ -167,7 +188,7 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 fn parse_list_access(pair: Pair<Rule>) -> Expr {
 	let mut inner = pair.into_inner();
 	let id = Identifier::from(inner.next().unwrap());
-	let inner_expr = parse_pair(inner.next().unwrap());
+	let inner_expr = Expr::from(inner.next().unwrap());
 
 	let kind = ExprKind::ListAccess(id, Box::new(inner_expr));
 
@@ -317,6 +338,7 @@ mod expr_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
+	use pretty_assertions::{assert_eq, assert_ne};
 
 	#[test]
 	fn from_pair_parses_literal_correctly() {
@@ -705,6 +727,139 @@ mod expr_tests {
 		let expected = Expr {
 			kind: ExprKind::New(expected_ty, Some(expected_newtype)),
 		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn infix_expr_simple_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::infix_expr, "x * 2").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let left = Expr {
+			kind: ExprKind::Identifier(Identifier::from("x")),
+		};
+
+		let right = Expr {
+			kind: ExprKind::Literal(Literal::from(2)),
+		};
+
+		let op = BinOp::Mul;
+
+		let expected = Expr {
+			kind: ExprKind::Binary(Box::new(left), op, Box::new(right)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn infix_expr_long_expr_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::infix_expr, "pi * Math.pow(r, 2)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let left = Expr {
+			kind: ExprKind::Identifier(Identifier::from("pi")),
+		};
+
+		let right = Expr {
+			kind: ExprKind::PropAccess(vec![
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("Math")),
+				},
+				Expr {
+					kind: ExprKind::Call(
+						Identifier::from("pow"),
+						Some(vec![
+							Expr {
+								kind: ExprKind::Identifier(Identifier::from("r")),
+							},
+							Expr {
+								kind: ExprKind::Literal(Literal::from(2)),
+							},
+						]),
+					),
+				},
+			]),
+		};
+
+		let expected = Expr {
+			kind: ExprKind::Binary(Box::new(left), BinOp::Mul, Box::new(right)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn list_access_simple_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "list[2]").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let expected = Expr {
+			kind: ExprKind::ListAccess(
+				Identifier::from("list"),
+				Box::new(Expr {
+					kind: ExprKind::Literal(Literal::from(2)),
+				}),
+			),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn property_access_simple_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo.bar").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let expected = Expr {
+			kind: ExprKind::PropAccess(vec![
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("foo")),
+				},
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("bar")),
+				},
+			]),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn ternary_op_simple_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::ternary_expr, "foo ? 'bar' : 42").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let expected_test = Expr {
+			kind: ExprKind::Identifier(Identifier::from("foo")),
+		};
+
+		let expected_true = Expr {
+			kind: ExprKind::Literal(Literal::from("'bar'")),
+		};
+
+		let expected_false = Expr {
+			kind: ExprKind::Literal(Literal::from(42)),
+		};
+
+		let ternary = ExprKind::Ternary(
+			Box::new(expected_test),
+			Box::new(expected_true),
+			Box::new(expected_false),
+		);
+
+		let expected = Expr { kind: ternary };
 
 		assert_eq!(expected, result);
 	}

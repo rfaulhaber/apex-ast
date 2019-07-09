@@ -125,7 +125,7 @@ condition_statement = { "(" ~ expression ~ ")" }
 
 list_access = { identifier ~ "[" ~ expression ~ "]" }
 property_access = { accessible ~ ("." ~ accessible)+ }
-accessible = _{ soql_expression | new_instance_declaration | method_invocation | literal | identifier } 
+accessible = _{ soql_expression | new_instance_declaration | method_invocation | list_access | literal | identifier } 
 
 // dml
 dml_statement = { dml_action ~ (new_instance_declaration | identifier) ~ ";" }
