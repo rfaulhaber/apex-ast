@@ -49,7 +49,7 @@ pub enum ExprKind {
 	Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
 
 	// a cast expression, like `(String) list.get(0)`
-	CastExpr(Ty, Box<Expr>),
+	Cast(Ty, Box<Expr>),
 
 	// instanceof expressions, like: `x instanceof Account`
 	InstanceOf(Identifier, Ty),
@@ -58,9 +58,11 @@ pub enum ExprKind {
 	ListAccess(Identifier, Box<Expr>),
 
 	// a soql query expression
+	// TODO change to Box?
 	SoqlQuery(SoqlQuery),
 
 	// a sosl query expression
+	// TODO change to Box?
 	SoslQuery(SoslQuery),
 }
 
@@ -95,6 +97,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::infix_expr => parse_infix_expr(pair),
 			Rule::ternary_expr => parse_ternary_expr(pair),
 			Rule::expr_inner => parse_expr_inner(pair),
+			Rule::property_access => parse_property_access(pair),
 			Rule::method_invocation => parse_method_invocation(pair),
 			Rule::identifier => Expr {
 				kind: ExprKind::Identifier(pair.as_str().into()),
@@ -170,9 +173,8 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 	let inner = pair.into_inner().next().unwrap();
 	match inner.as_rule() {
 		Rule::braced_expr => ExprKind::Braced(Box::new(inner.into())).into(),
-		Rule::property_access => {
-			ExprKind::PropAccess(inner.into_inner().map(|expr| expr.into()).collect()).into()
-		}
+		Rule::property_access => parse_property_access(inner),
+		Rule::cast_expr => parse_cast_expr(inner),
 		Rule::query_expression => unimplemented!(),
 		Rule::new_instance_declaration => parse_new_instance_declaration(inner),
 		Rule::method_invocation => parse_method_invocation(inner),
@@ -183,6 +185,10 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 		Rule::identifier => inner.into(),
 		_ => unreachable!("got rule: {:?}", inner.as_rule()),
 	}
+}
+
+fn parse_property_access(pair: Pair<Rule>) -> Expr {
+	ExprKind::PropAccess(pair.into_inner().map(|expr| expr.into()).collect()).into()
 }
 
 fn parse_list_access(pair: Pair<Rule>) -> Expr {
@@ -331,6 +337,17 @@ fn parse_map_literal_mapping(p: Pair<Rule>) -> (Expr, Expr) {
 	let expr_mapping = Expr::from(inner.next().unwrap());
 
 	(literal, expr_mapping)
+}
+
+fn parse_cast_expr(p: Pair<Rule>) -> Expr {
+	let mut inner = p.into_inner();
+
+	let ty = Ty::from(inner.next().unwrap().into_inner().next().unwrap());
+	let expr = Expr::from(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Cast(ty, Box::new(expr)),
+	}
 }
 
 #[cfg(test)]
@@ -860,6 +877,43 @@ mod expr_tests {
 		);
 
 		let expected = Expr { kind: ternary };
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn cast_exprs_simple_parse_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "(String) obj.get('foo')").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let expected_ty = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveType::String,
+			}),
+			array: false,
+		};
+
+		let expected_expr = Expr {
+			kind: ExprKind::PropAccess(vec![
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("obj")),
+				},
+				Expr {
+					kind: ExprKind::Call(
+						Identifier::from("get"),
+						Some(vec![Expr {
+							kind: ExprKind::Literal(Literal::from("'foo'")),
+						}]),
+					),
+				},
+			]),
+		};
+
+		let expected = Expr {
+			kind: ExprKind::Cast(expected_ty, Box::new(expected_expr)),
+		};
 
 		assert_eq!(expected, result);
 	}
