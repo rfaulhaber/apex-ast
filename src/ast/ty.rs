@@ -286,7 +286,7 @@ fn parse_typed_type(pair: Pair<Rule>) -> Ty {
 }
 
 #[cfg(test)]
-mod expr_tests {
+mod ty_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
