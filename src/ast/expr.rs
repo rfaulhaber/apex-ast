@@ -94,6 +94,7 @@ pub fn parse_expr(p: Pair<Rule>) -> Expr {
 impl<'a> From<Pair<'a, Rule>> for Expr {
 	fn from(pair: Pair<Rule>) -> Expr {
 		match pair.as_rule() {
+			Rule::braced_expr => parse_braced_expr(pair),
 			Rule::infix_expr => parse_infix_expr(pair),
 			Rule::ternary_expr => parse_ternary_expr(pair),
 			Rule::expr_inner => parse_expr_inner(pair),
@@ -172,7 +173,7 @@ fn parse_infix_expr(pair: Pair<Rule>) -> Expr {
 fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 	let inner = pair.into_inner().next().unwrap();
 	match inner.as_rule() {
-		Rule::braced_expr => ExprKind::Braced(Box::new(inner.into())).into(),
+		Rule::braced_expr => parse_braced_expr(inner),
 		Rule::property_access => parse_property_access(inner),
 		Rule::cast_expr => parse_cast_expr(inner),
 		Rule::query_expression => unimplemented!(),
@@ -184,6 +185,14 @@ fn parse_expr_inner(pair: Pair<Rule>) -> Expr {
 		Rule::literal => Expr::from(inner.into_inner().next().unwrap()),
 		Rule::identifier => inner.into(),
 		_ => unreachable!("got rule: {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_braced_expr(pair: Pair<Rule>) -> Expr {
+	let inner = Expr::from(pair.into_inner().next().unwrap());
+
+	Expr {
+		kind: ExprKind::Braced(Box::new(inner)),
 	}
 }
 
@@ -355,7 +364,7 @@ mod expr_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
-	use pretty_assertions::{assert_eq, assert_ne};
+	// use pretty_assertions::{assert_eq, assert_ne};
 
 	#[test]
 	fn from_pair_parses_literal_correctly() {
@@ -913,6 +922,70 @@ mod expr_tests {
 
 		let expected = Expr {
 			kind: ExprKind::Cast(expected_ty, Box::new(expected_expr)),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn simple_braced_expr_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expr_inner, "(x * 2)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let left = Expr {
+			kind: ExprKind::Identifier(Identifier::from("x")),
+		};
+
+		let right = Expr {
+			kind: ExprKind::Literal(Literal::from(2)),
+		};
+
+		let op = BinOp::Mul;
+
+		let inner = Box::new(Expr {
+			kind: ExprKind::Binary(Box::new(left), op, Box::new(right)),
+		});
+
+		let expected = Expr {
+			kind: ExprKind::Braced(inner),
+		};
+
+		assert_eq!(expected, result);
+	}
+
+	#[test]
+	fn nested_braced_expr_parses_correctly() {
+		let mut parsed = GrammarParser::parse(Rule::expression, "x + (y * 2)").unwrap();
+		let item = parsed.next().unwrap();
+
+		let result = Expr::from(item);
+
+		let left = Expr {
+			kind: ExprKind::Identifier(Identifier::from("x")),
+		};
+
+		let left_inner = Expr {
+			kind: ExprKind::Identifier(Identifier::from("y")),
+		};
+
+		let right_inner = Expr {
+			kind: ExprKind::Literal(Literal::from(2)),
+		};
+
+		let op = BinOp::Mul;
+
+		let right = Box::new(Expr {
+			kind: ExprKind::Binary(Box::new(left_inner), op, Box::new(right_inner)),
+		});
+
+		let braced_right = Expr {
+			kind: ExprKind::Braced(right),
+		};
+
+		let expected = Expr {
+			kind: ExprKind::Binary(Box::new(left), BinOp::Add, Box::new(braced_right)),
 		};
 
 		assert_eq!(expected, result);
