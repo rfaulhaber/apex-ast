@@ -1,21 +1,23 @@
 use super::expr::Expr;
+use super::identifier::Identifier;
+use super::ty::Ty;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Stmt {
 	pub kind: StmtKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StmtKind {
 	// inits, condition, update
 	ForIter(Vec<Local>, Option<Expr>, Vec<Expr>),
-	ForEach(String, String, Expr, Block),
-	DoWhile(Block, Expr),
-	While(Block),
+	ForEach(Ty, Identifier, Expr, BlockRef),
+	DoWhile(BlockRef, Expr),
+	While(BlockRef),
 	// if block, else if blocks, else block
-	If(Block, Option<Vec<Block>>, Option<Block>),
+	If(BlockRef, Option<Vec<Block>>, Option<BlockRef>),
 	// try block, catch block, any further catch blocks, finally block
-	TryCatch(Block, Block, Option<Vec<Block>>, Option<Block>),
+	TryCatch(BlockRef, BlockRef, Option<Vec<Block>>, Option<Block>),
 	// Switch(Expr, Vec<Expr>, ),
 	Throw(Expr),
 	Dml(DmlKind, Expr),
@@ -26,7 +28,20 @@ pub enum StmtKind {
 	Expr(Expr),
 }
 
-#[derive(Debug, Clone)]
+type BlockRef = Box<Block>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Block {
+	kind: BlockKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum BlockKind {
+	Body(Vec<Stmt>),
+	Inline(Box<Stmt>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum DmlKind {
 	Insert,
 	Update,
@@ -35,15 +50,12 @@ pub enum DmlKind {
 	Undelete,
 }
 
-#[derive(Debug, Clone)]
+// Local assignment
+#[derive(Debug, Clone, PartialEq)]
 pub struct Local {
 	pub is_final: bool,
-	pub return_type: Option<String>, // if None, reassignment
-	pub identifier: String,
+	// the "Integer" in `Integer foo = 22;`
+	pub ty: Option<Ty>, // if None, reassignment
+	pub identifier: Identifier,
 	pub rhs: Option<Expr>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Block {
-	stmts: Vec<Stmt>,
 }
