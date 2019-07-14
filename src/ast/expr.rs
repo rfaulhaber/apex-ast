@@ -125,6 +125,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 					_ => unreachable!(), // we hope!
 				}
 			}
+			Rule::query_expression => unimplemented!("query expressions are unimplemented"),
 			Rule::NULL => Expr {
 				kind: ExprKind::Literal(LiteralKind::Null.into()),
 			},

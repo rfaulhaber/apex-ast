@@ -2,6 +2,9 @@ use super::expr::Expr;
 use super::identifier::Identifier;
 use super::ty::Ty;
 
+use crate::parser::Rule;
+use pest::iterators::{Pair, Pairs};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Stmt {
 	pub kind: StmtKind,
@@ -58,4 +61,25 @@ pub struct Local {
 	pub ty: Option<Ty>, // if None, reassignment
 	pub identifier: Identifier,
 	pub rhs: Option<Expr>,
+}
+
+impl<'a> From<Pair<'a, Rule>> for Stmt {
+	fn from(pair: Pair<Rule>) -> Stmt {
+		let inner = pair.into_inner().next().unwrap();
+		match inner.as_rule() {
+			Rule::for_statement => unimplemented!(),
+			Rule::do_while_statement => unimplemented!(),
+			Rule::while_statement => unimplemented!(),
+			Rule::if_statement => unimplemented!(),
+			Rule::try_catch_statement => unimplemented!(),
+			Rule::throw_statement => unimplemented!(),
+			Rule::dml_statement => unimplemented!(),
+			Rule::code_block => unimplemented!(),
+			Rule::return_statement => unimplemented!(),
+			Rule::continue_statement => unimplemented!(),
+			Rule::break_statement => unimplemented!(),
+			Rule::local_assignment => unimplemented!(),
+			_ => unreachable!("got {:?}", inner.as_rule()),
+		}
+	}
 }
