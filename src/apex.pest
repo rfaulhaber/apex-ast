@@ -406,7 +406,8 @@ instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
 // annotations
 // TODO make indefinite key value pairs
-annotation = { "@" ~ identifier ~ ("(" ~ identifier ~ "=" ~ identifier ~ ")")? } // do we really care what these values are?
+annotation = { "@" ~ identifier ~ ("(" ~ annotation_keypair+ ~ ")")? } // do we really care what these values are?
+annotation_keypair = _{ identifier ~ "=" ~ literal }
 
 // types
 basic_type = { collection_type | typed_type | (primitive_type | class_or_interface_type) ~ (array_brackets)? }
