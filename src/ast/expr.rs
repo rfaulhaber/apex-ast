@@ -100,6 +100,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::expr_inner => parse_expr_inner(pair),
 			Rule::property_access => parse_property_access(pair),
 			Rule::method_invocation => parse_method_invocation(pair),
+			Rule::new_instance_declaration => parse_new_instance_declaration(pair),
 			Rule::identifier => Expr {
 				kind: ExprKind::Identifier(pair.as_str().into()),
 			},

@@ -1,4 +1,4 @@
-use super::expr::Expr;
+use super::expr::{Expr, ExprKind};
 use super::identifier::Identifier;
 use super::ty::Ty;
 
@@ -21,12 +21,13 @@ pub enum StmtKind {
 	If(BlockRef, Option<Vec<Block>>, Option<BlockRef>),
 	// try block, catch block, any further catch blocks, finally block
 	TryCatch(BlockRef, BlockRef, Option<Vec<Block>>, Option<Block>),
-	// Switch(Expr, Vec<Expr>, ),
-	Throw(Expr),
+	Switch(Expr, Vec<(Expr, Block)>),
+	Throw(Expr), // NOTE should this be more granular?
 	Dml(DmlKind, Expr),
 	Return(Expr),
-	Continue(Expr),
-	Break(Expr),
+	// TODO: for continue and break, we'll want to store span in parent?
+	Continue,
+	Break,
 	Local(Local),
 	Expr(Expr),
 }
@@ -44,6 +45,29 @@ pub enum BlockKind {
 	Inline(Box<Stmt>),
 }
 
+// from either Rule::code_block or Rule::inline_code_block
+impl<'a> From<Pair<'a, Rule>> for Block {
+	fn from(pair: Pair<Rule>) -> Block {
+		match pair.as_rule() {
+			Rule::code_block => {
+				let stmts = pair.into_inner().map(Stmt::from).collect();
+
+				Block {
+					kind: BlockKind::Body(stmts),
+				}
+			}
+			Rule::inline_code_block => {
+				let stmt = Stmt::from(pair.into_inner().next().unwrap());
+
+				Block {
+					kind: BlockKind::Inline(Box::new(stmt)),
+				}
+			}
+			_ => unreachable!("got {:?}", pair.as_rule()),
+		}
+	}
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DmlKind {
 	Insert,
@@ -51,6 +75,22 @@ pub enum DmlKind {
 	Upsert,
 	Delete,
 	Undelete,
+}
+
+// parses Rule::dml_action
+impl<'a> From<Pair<'a, Rule>> for DmlKind {
+	fn from(pair: Pair<Rule>) -> DmlKind {
+		let inner = pair.into_inner().next().unwrap();
+
+		match inner.as_rule() {
+			Rule::INSERT => DmlKind::Insert,
+			Rule::UPDATE => DmlKind::Update,
+			Rule::UPSERT => DmlKind::Upsert,
+			Rule::DELETE => DmlKind::Delete,
+			Rule::UNDELETE => DmlKind::Undelete,
+			_ => unreachable!("got {:?}", inner.as_rule()),
+		}
+	}
 }
 
 // Local assignment
@@ -72,14 +112,183 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::while_statement => unimplemented!(),
 			Rule::if_statement => unimplemented!(),
 			Rule::try_catch_statement => unimplemented!(),
-			Rule::throw_statement => unimplemented!(),
-			Rule::dml_statement => unimplemented!(),
-			Rule::code_block => unimplemented!(),
-			Rule::return_statement => unimplemented!(),
-			Rule::continue_statement => unimplemented!(),
-			Rule::break_statement => unimplemented!(),
+			Rule::throw_statement => parse_throw_statement(inner),
+			Rule::dml_statement => parse_dml_statement(inner),
+			Rule::return_statement => parse_return_statement(inner),
+			Rule::continue_statement => parse_continue_statement(inner),
+			Rule::break_statement => parse_break_statement(inner),
 			Rule::local_assignment => unimplemented!(),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
 	}
+}
+
+fn parse_return_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+	inner.next(); //discard "return", TODO: save for span
+
+	let expr = Expr::from(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::Return(expr),
+	}
+}
+
+fn parse_throw_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+	inner.next(); //discard "throw", TODO: save for span
+
+	let expr = Expr::from(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::Throw(expr),
+	}
+}
+
+fn parse_continue_statement(pair: Pair<Rule>) -> Stmt {
+	Stmt {
+		kind: StmtKind::Continue,
+	}
+}
+
+fn parse_break_statement(pair: Pair<Rule>) -> Stmt {
+	Stmt {
+		kind: StmtKind::Break,
+	}
+}
+
+fn parse_dml_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	let action = DmlKind::from(inner.next().unwrap());
+	let expr = Expr::from(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::Dml(action, expr),
+	}
+}
+
+#[cfg(test)]
+mod stmt_tests {
+	use super::super::expr::*;
+	use super::super::literal::*;
+	use super::super::ty::*;
+	use super::*;
+	use crate::parser::GrammarParser;
+	use pest::Parser;
+
+	macro_rules! parse_correctly {
+		($name:ident, $parse:literal, $expected:expr) => {
+			#[test]
+			fn $name() {
+				let mut parsed = GrammarParser::parse(Rule::body_statement, $parse).unwrap();
+				let item = parsed.next().unwrap();
+
+				let result = Stmt::from(item);
+
+				let expected = $expected;
+				assert_eq!(expected, result);
+			}
+		};
+	}
+
+	parse_correctly!(
+		parse_return_parses_correctly,
+		"return x;",
+		Stmt {
+			kind: StmtKind::Return(Expr {
+				kind: ExprKind::Identifier(Identifier::from("x")),
+			}),
+		}
+	);
+
+	parse_correctly!(
+		parse_continue_parses_correctly,
+		"continue;",
+		Stmt {
+			kind: StmtKind::Continue,
+		}
+	);
+
+	parse_correctly!(
+		parse_break_parses_correctly,
+		"break;",
+		Stmt {
+			kind: StmtKind::Break,
+		}
+	);
+
+	parse_correctly!(
+		parse_dml_parses_correctly,
+		"insert list;",
+		Stmt {
+			kind: StmtKind::Dml(
+				DmlKind::Insert,
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("list"))
+				}
+			)
+		}
+	);
+
+	parse_correctly!(
+		parse_dml_new_list_parses_correctly,
+		"insert new List<Integer>{one, 2};",
+		Stmt {
+			kind: StmtKind::Dml(
+				DmlKind::Insert,
+				Expr {
+					kind: ExprKind::New(
+						Ty {
+							kind: TyKind::Collection(Collection {
+								kind: CollectionType::List(Box::new(Ty {
+									kind: TyKind::Primitive(Primitive {
+										kind: PrimitiveType::Integer,
+									}),
+									array: false,
+								})),
+							}),
+							array: false,
+						},
+						Some(NewType::List(vec![
+							Expr {
+								kind: ExprKind::Identifier(Identifier::from("one")),
+							},
+							Expr {
+								kind: ExprKind::Literal(Literal::from(2)),
+							},
+						]))
+					),
+				}
+			)
+		}
+	);
+
+	parse_correctly!(
+		parse_throw_throwable_parses_correctly,
+		"throw err;",
+		Stmt {
+			kind: StmtKind::Throw(Expr {
+				kind: ExprKind::Identifier(Identifier::from("err"))
+			})
+		}
+	);
+
+	parse_correctly!(
+		parse_throw_new_err_parses_correctly,
+		"throw new TestException();",
+		Stmt {
+			kind: StmtKind::Throw(Expr {
+				kind: ExprKind::New(
+					Ty {
+						array: false,
+						kind: TyKind::ClassOrInterface(ClassOrInterface {
+							kind: ClassOrInterfaceType::Class(Identifier::from("TestException"))
+						})
+					},
+					None
+				)
+			})
+		}
+	);
 }
