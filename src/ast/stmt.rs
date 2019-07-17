@@ -107,7 +107,8 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 	fn from(pair: Pair<Rule>) -> Stmt {
 		let inner = pair.into_inner().next().unwrap();
 		match inner.as_rule() {
-			Rule::for_statement => unimplemented!(),
+			Rule::for_each_statement => unimplemented!(),
+			Rule::for_iter_statement => unimplemented!(),
 			Rule::do_while_statement => unimplemented!(),
 			Rule::while_statement => unimplemented!(),
 			Rule::if_statement => unimplemented!(),
@@ -117,7 +118,7 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::return_statement => parse_return_statement(inner),
 			Rule::continue_statement => parse_continue_statement(inner),
 			Rule::break_statement => parse_break_statement(inner),
-			Rule::local_assignment => unimplemented!(),
+			Rule::local_assignment => parse_local_assignment(inner),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
 	}
@@ -165,6 +166,44 @@ fn parse_dml_statement(pair: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::Dml(action, expr),
+	}
+}
+
+fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
+	let dec_or_resassign = pair.into_inner().next().unwrap();
+
+	match dec_or_resassign.as_rule() {
+		Rule::local_variable_declaration => {
+			let mut inner = dec_or_resassign.into_inner();
+
+			let first = inner.next().unwrap();
+
+			let is_final = first.as_rule() == Rule::FINAL;
+
+			let ty = if is_final {
+				Ty::from(inner.next().unwrap())
+			} else {
+				Ty::from(first)
+			};
+
+			let id = Identifier::from(inner.next().unwrap());
+
+			let rhs = match inner.next() {
+				Some(expr_pair) => Some(Expr::from(expr_pair)),
+				None => None,
+			};
+
+			Stmt {
+				kind: StmtKind::Local(Local {
+					is_final,
+					ty: Some(ty),
+					identifier: id,
+					rhs,
+				}),
+			}
+		}
+		Rule::variable_reassignment => unimplemented!(),
+		_ => unreachable!("got {:?}", dec_or_resassign.as_rule()),
 	}
 }
 
@@ -288,6 +327,26 @@ mod stmt_tests {
 					},
 					None
 				)
+			})
+		}
+	);
+
+	parse_correctly!(
+		parse_local_assignment_simple_parses_correctly,
+		"final Integer foo = 22;",
+		Stmt {
+			kind: StmtKind::Local(Local {
+				is_final: true,
+				ty: Some(Ty {
+					array: false,
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveType::Integer,
+					})
+				}),
+				identifier: Identifier::from("foo"),
+				rhs: Some(Expr {
+					kind: ExprKind::Literal(Literal::from(22)),
+				})
 			})
 		}
 	);
