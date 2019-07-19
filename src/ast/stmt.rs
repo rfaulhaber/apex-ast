@@ -13,12 +13,22 @@ pub struct Stmt {
 #[derive(Debug, Clone, PartialEq)]
 pub enum StmtKind {
 	// inits, condition, update
-	ForIter(Vec<Local>, Option<Expr>, Vec<Expr>),
+	ForIter(
+		Option<Vec<Local>>,
+		Option<Expr>,
+		Option<Vec<Expr>>,
+		BlockRef,
+	),
 	ForEach(Ty, Identifier, Expr, BlockRef),
 	DoWhile(BlockRef, Expr),
-	While(BlockRef),
-	// if block, else if blocks, else block
-	If(BlockRef, Option<Vec<Block>>, Option<BlockRef>),
+	While(Expr, BlockRef),
+	// if statement. condition, block, else if blocks, else block
+	If(
+		Expr,
+		BlockRef,
+		Option<Vec<(Expr, BlockRef)>>,
+		Option<BlockRef>,
+	),
 	// try block, catch block, any further catch blocks, finally block
 	TryCatch(BlockRef, BlockRef, Option<Vec<Block>>, Option<Block>),
 	Switch(Expr, Vec<(Expr, Block)>),
@@ -48,22 +58,23 @@ pub enum BlockKind {
 // from either Rule::code_block or Rule::inline_code_block
 impl<'a> From<Pair<'a, Rule>> for Block {
 	fn from(pair: Pair<Rule>) -> Block {
-		match pair.as_rule() {
+		let inner = pair.into_inner().next().unwrap();
+		match inner.as_rule() {
 			Rule::code_block => {
-				let stmts = pair.into_inner().map(Stmt::from).collect();
+				let stmts = inner.into_inner().map(Stmt::from).collect();
 
 				Block {
 					kind: BlockKind::Body(stmts),
 				}
 			}
 			Rule::inline_code_block => {
-				let stmt = Stmt::from(pair.into_inner().next().unwrap());
+				let stmt = Stmt::from(inner.into_inner().next().unwrap());
 
 				Block {
 					kind: BlockKind::Inline(Box::new(stmt)),
 				}
 			}
-			_ => unreachable!("got {:?}", pair.as_rule()),
+			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
 	}
 }
@@ -96,11 +107,14 @@ impl<'a> From<Pair<'a, Rule>> for DmlKind {
 // Local assignment
 #[derive(Debug, Clone, PartialEq)]
 pub struct Local {
-	pub is_final: bool,
-	// the "Integer" in `Integer foo = 22;`
-	pub ty: Option<Ty>, // if None, reassignment
-	pub identifier: Identifier,
-	pub rhs: Option<Expr>,
+	pub kind: LocalKind,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum LocalKind {
+	// whether or not it's final, type, identiifer, and rhs
+	Assignment(bool, Option<Ty>, Identifier, Option<Expr>),
+	Reassignment(Expr, Expr),
 }
 
 impl<'a> From<Pair<'a, Rule>> for Stmt {
@@ -195,10 +209,7 @@ fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
 
 			Stmt {
 				kind: StmtKind::Local(Local {
-					is_final,
-					ty: Some(ty),
-					identifier: id,
-					rhs,
+					kind: LocalKind::Assignment(is_final, Some(ty), id, rhs),
 				}),
 			}
 		}
@@ -216,10 +227,13 @@ mod stmt_tests {
 	use crate::parser::GrammarParser;
 	use pest::Parser;
 
-	macro_rules! parse_correctly {
-		($name:ident, $parse:literal, $expected:expr) => {
+	// TODO: should these be one macro?
+	// could "type"::from be abstracted?
+
+	macro_rules! stmt_parse_correctly {
+		($test_name:ident, $parse:literal, $expected:expr) => {
 			#[test]
-			fn $name() {
+			fn $test_name() {
 				let mut parsed = GrammarParser::parse(Rule::body_statement, $parse).unwrap();
 				let item = parsed.next().unwrap();
 
@@ -231,7 +245,22 @@ mod stmt_tests {
 		};
 	}
 
-	parse_correctly!(
+	macro_rules! block_parse_correctly {
+		($test_name:ident, $parse:literal, $expected:expr) => {
+			#[test]
+			fn $test_name() {
+				let mut parsed = GrammarParser::parse(Rule::body_statement, $parse).unwrap();
+				let item = parsed.next().unwrap();
+
+				let result = Block::from(item);
+
+				let expected = $expected;
+				assert_eq!(expected, result);
+			}
+		};
+	}
+
+	stmt_parse_correctly!(
 		parse_return_parses_correctly,
 		"return x;",
 		Stmt {
@@ -241,7 +270,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_continue_parses_correctly,
 		"continue;",
 		Stmt {
@@ -249,7 +278,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_break_parses_correctly,
 		"break;",
 		Stmt {
@@ -257,7 +286,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_dml_parses_correctly,
 		"insert list;",
 		Stmt {
@@ -270,7 +299,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_dml_new_list_parses_correctly,
 		"insert new List<Integer>{one, 2};",
 		Stmt {
@@ -303,7 +332,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_throw_throwable_parses_correctly,
 		"throw err;",
 		Stmt {
@@ -313,7 +342,7 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_throw_new_err_parses_correctly,
 		"throw new TestException();",
 		Stmt {
@@ -331,23 +360,56 @@ mod stmt_tests {
 		}
 	);
 
-	parse_correctly!(
+	stmt_parse_correctly!(
 		parse_local_assignment_simple_parses_correctly,
 		"final Integer foo = 22;",
 		Stmt {
 			kind: StmtKind::Local(Local {
-				is_final: true,
-				ty: Some(Ty {
-					array: false,
-					kind: TyKind::Primitive(Primitive {
-						kind: PrimitiveType::Integer,
+				kind: LocalKind::Assignment(
+					true,
+					Some(Ty {
+						array: false,
+						kind: TyKind::Primitive(Primitive {
+							kind: PrimitiveType::Integer,
+						})
+					}),
+					Identifier::from("foo"),
+					Some(Expr {
+						kind: ExprKind::Literal(Literal::from(22)),
 					})
-				}),
-				identifier: Identifier::from("foo"),
-				rhs: Some(Expr {
-					kind: ExprKind::Literal(Literal::from(22)),
-				})
+				)
 			})
+		}
+	);
+
+	block_parse_correctly!(
+		parse_block_simple_parses_correctly,
+		"{ final Integer foo = 22; return foo; }",
+		Block {
+			kind: BlockKind::Body(vec![
+				Stmt {
+					kind: StmtKind::Local(Local {
+						kind: LocalKind::Assignment(
+							true,
+							Some(Ty {
+								array: false,
+								kind: TyKind::Primitive(Primitive {
+									kind: PrimitiveType::Integer,
+								})
+							}),
+							Identifier::from("foo"),
+							Some(Expr {
+								kind: ExprKind::Literal(Literal::from(22)),
+							})
+						)
+					})
+				},
+				Stmt {
+					kind: StmtKind::Return(Expr {
+						kind: ExprKind::Identifier(Identifier::from("foo")),
+					}),
+				}
+			])
 		}
 	);
 }
