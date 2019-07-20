@@ -110,7 +110,7 @@ for_iter_statement = { FOR ~ "(" ~ (local_assignment ~ ("," ~ local_assignment)*
 while_statement = { WHILE ~ condition_statement ~ (code_block | inline_code_block) }
 
 // do-while statements
-do_while_statement = { DO ~ code_block ~ WHILE ~ condition_statement ~ ";" }
+do_while_statement = { DO ~ (code_block | inline_code_block) ~ WHILE ~ condition_statement ~ ";" }
 
 // if statements
 if_statement = { IF ~ condition_statement ~ (code_block | inline_code_block) ~ else_if_statement* ~ (ELSE ~ (code_block | inline_code_block))? }
