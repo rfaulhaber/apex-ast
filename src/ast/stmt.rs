@@ -39,6 +39,7 @@ pub enum StmtKind {
 	Continue,
 	Break,
 	Local(Local),
+	Block(Block),
 	Expr(Expr),
 }
 
@@ -58,23 +59,24 @@ pub enum BlockKind {
 // from either Rule::code_block or Rule::inline_code_block
 impl<'a> From<Pair<'a, Rule>> for Block {
 	fn from(pair: Pair<Rule>) -> Block {
-		let inner = pair.into_inner().next().unwrap();
-		match inner.as_rule() {
+		match pair.as_rule() {
 			Rule::code_block => {
-				let stmts = inner.into_inner().map(Stmt::from).collect();
+				let inner = pair.into_inner();
+				let stmts = inner.map(Stmt::from).collect();
 
 				Block {
 					kind: BlockKind::Body(stmts),
 				}
 			}
 			Rule::inline_code_block => {
-				let stmt = Stmt::from(inner.into_inner().next().unwrap());
+				let mut inner = pair.into_inner();
+				let stmt = Stmt::from(inner.next().unwrap());
 
 				Block {
 					kind: BlockKind::Inline(Box::new(stmt)),
 				}
 			}
-			_ => unreachable!("got {:?}", inner.as_rule()),
+			_ => unreachable!("got {:?}", pair.as_rule()),
 		}
 	}
 }
@@ -123,16 +125,18 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 		match inner.as_rule() {
 			Rule::for_each_statement => unimplemented!(),
 			Rule::for_iter_statement => unimplemented!(),
-			Rule::do_while_statement => unimplemented!(),
-			Rule::while_statement => unimplemented!(),
+			Rule::do_while_statement => parse_do_while_statement(inner),
+			Rule::while_statement => parse_while_statement(inner),
 			Rule::if_statement => unimplemented!(),
 			Rule::try_catch_statement => unimplemented!(),
 			Rule::throw_statement => parse_throw_statement(inner),
 			Rule::dml_statement => parse_dml_statement(inner),
+			Rule::code_block => parse_code_block(inner),
 			Rule::return_statement => parse_return_statement(inner),
 			Rule::continue_statement => parse_continue_statement(inner),
 			Rule::break_statement => parse_break_statement(inner),
 			Rule::local_assignment => parse_local_assignment(inner),
+			Rule::expr_inner | Rule::ternary_expr | Rule::infix_expr => parse_expr_statement(inner),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
 	}
@@ -183,6 +187,14 @@ fn parse_dml_statement(pair: Pair<Rule>) -> Stmt {
 	}
 }
 
+fn parse_code_block(pair: Pair<Rule>) -> Stmt {
+	let block = Block::from(pair);
+
+	Stmt {
+		kind: StmtKind::Block(block),
+	}
+}
+
 fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
 	let dec_or_resassign = pair.into_inner().next().unwrap();
 
@@ -218,10 +230,46 @@ fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
 	}
 }
 
+fn parse_expr_statement(pair: Pair<Rule>) -> Stmt {
+	Stmt {
+		kind: StmtKind::Expr(Expr::from(pair)),
+	}
+}
+
+fn parse_while_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	inner.next(); // discard "WHILE"
+
+	let expr = Expr::from(inner.next().unwrap());
+	let block = Box::new(Block::from(inner.next().unwrap()));
+
+	Stmt {
+		kind: StmtKind::While(expr, block),
+	}
+}
+
+fn parse_do_while_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	inner.next(); // discoard "DO"
+
+	let block = Box::new(Block::from(inner.next().unwrap()));
+
+	inner.next(); // discard "WHILE"
+
+	let expr = Expr::from(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::DoWhile(block, expr),
+	}
+}
+
 #[cfg(test)]
 mod stmt_tests {
 	use super::super::expr::*;
 	use super::super::literal::*;
+	use super::super::ops::*;
 	use super::super::ty::*;
 	use super::*;
 	use crate::parser::GrammarParser;
@@ -238,21 +286,6 @@ mod stmt_tests {
 				let item = parsed.next().unwrap();
 
 				let result = Stmt::from(item);
-
-				let expected = $expected;
-				assert_eq!(expected, result);
-			}
-		};
-	}
-
-	macro_rules! block_parse_correctly {
-		($test_name:ident, $parse:literal, $expected:expr) => {
-			#[test]
-			fn $test_name() {
-				let mut parsed = GrammarParser::parse(Rule::body_statement, $parse).unwrap();
-				let item = parsed.next().unwrap();
-
-				let result = Block::from(item);
 
 				let expected = $expected;
 				assert_eq!(expected, result);
@@ -382,34 +415,100 @@ mod stmt_tests {
 		}
 	);
 
-	block_parse_correctly!(
+	stmt_parse_correctly!(
 		parse_block_simple_parses_correctly,
 		"{ final Integer foo = 22; return foo; }",
-		Block {
-			kind: BlockKind::Body(vec![
-				Stmt {
-					kind: StmtKind::Local(Local {
-						kind: LocalKind::Assignment(
-							true,
-							Some(Ty {
-								array: false,
-								kind: TyKind::Primitive(Primitive {
-									kind: PrimitiveType::Integer,
+		Stmt {
+			kind: StmtKind::Block(Block {
+				kind: BlockKind::Body(vec![
+					Stmt {
+						kind: StmtKind::Local(Local {
+							kind: LocalKind::Assignment(
+								true,
+								Some(Ty {
+									array: false,
+									kind: TyKind::Primitive(Primitive {
+										kind: PrimitiveType::Integer,
+									})
+								}),
+								Identifier::from("foo"),
+								Some(Expr {
+									kind: ExprKind::Literal(Literal::from(22)),
 								})
-							}),
-							Identifier::from("foo"),
-							Some(Expr {
-								kind: ExprKind::Literal(Literal::from(22)),
-							})
-						)
-					})
+							)
+						})
+					},
+					Stmt {
+						kind: StmtKind::Return(Expr {
+							kind: ExprKind::Identifier(Identifier::from("foo")),
+						}),
+					}
+				])
+			})
+		}
+	);
+
+	stmt_parse_correctly!(
+		parse_while_inline_parses_correctly,
+		"while (x < 10) x++;",
+		Stmt {
+			kind: StmtKind::While(
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
 				},
-				Stmt {
-					kind: StmtKind::Return(Expr {
-						kind: ExprKind::Identifier(Identifier::from("foo")),
-					}),
-				}
-			])
+				Box::new(Block {
+					kind: BlockKind::Inline(Box::new(Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							)
+						})
+					}))
+				})
+			)
+		}
+	);
+
+	stmt_parse_correctly!(
+		parse_while_block_parses_correctly,
+		"while (x < 10) { x++; }",
+		Stmt {
+			kind: StmtKind::While(
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				},
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							)
+						})
+					}])
+				})
+			)
 		}
 	);
 }

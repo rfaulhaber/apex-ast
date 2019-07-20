@@ -121,7 +121,7 @@ break_statement = { BREAK ~ ";" }
 continue_statement = { CONTINUE ~ ";" }
 return_statement = { RETURN ~ expression ~ ";" }
 
-condition_statement = { "(" ~ expression ~ ")" }
+condition_statement = _{ "(" ~ expression ~ ")" }
 
 list_access = { identifier ~ "[" ~ expression ~ "]" }
 property_access = { accessible ~ ("." ~ accessible)+ }
