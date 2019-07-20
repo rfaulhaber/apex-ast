@@ -59,6 +59,7 @@ body_statement = {
     | while_statement 
     | if_statement 
     | try_catch_statement 
+    | switch_statement
     | throw_statement 
     | dml_statement 
     | code_block

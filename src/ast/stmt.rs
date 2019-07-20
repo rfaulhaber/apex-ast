@@ -30,8 +30,14 @@ pub enum StmtKind {
 		Option<BlockRef>,
 	),
 	// try block, catch block, any further catch blocks, finally block
-	TryCatch(BlockRef, BlockRef, Option<Vec<Block>>, Option<Block>),
-	Switch(Expr, Vec<(Expr, Block)>),
+	// TODO make this a type?
+	TryCatch(
+		BlockRef,
+		(Ty, Identifier, Block),
+		Option<Vec<(Ty, Identifier, Block)>>,
+		Option<Block>,
+	),
+	Switch(Expr, Vec<(Expr, Block)>, Block),
 	Throw(Expr), // NOTE should this be more granular?
 	Dml(DmlKind, Expr),
 	Return(Expr),
@@ -123,12 +129,13 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 	fn from(pair: Pair<Rule>) -> Stmt {
 		let inner = pair.into_inner().next().unwrap();
 		match inner.as_rule() {
-			Rule::for_each_statement => unimplemented!(),
+			Rule::for_each_statement => parse_for_each_statement(inner),
 			Rule::for_iter_statement => unimplemented!(),
 			Rule::do_while_statement => parse_do_while_statement(inner),
 			Rule::while_statement => parse_while_statement(inner),
 			Rule::if_statement => unimplemented!(),
 			Rule::try_catch_statement => unimplemented!(),
+			Rule::switch_statement => unimplemented!(),
 			Rule::throw_statement => parse_throw_statement(inner),
 			Rule::dml_statement => parse_dml_statement(inner),
 			Rule::code_block => parse_code_block(inner),
@@ -139,6 +146,21 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::expr_inner | Rule::ternary_expr | Rule::infix_expr => parse_expr_statement(inner),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
+	}
+}
+
+fn parse_for_each_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	inner.next(); // discard "FOR" token
+
+	let ty = Ty::from(inner.next().unwrap());
+	let id = Identifier::from(inner.next().unwrap());
+	let expr = Expr::from(inner.next().unwrap());
+	let block = Block::from(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::ForEach(ty, id, expr, Box::new(block)),
 	}
 }
 
@@ -274,9 +296,6 @@ mod stmt_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
-
-	// TODO: should these be one macro?
-	// could "type"::from be abstracted?
 
 	macro_rules! stmt_parse_correctly {
 		($test_name:ident, $parse:literal, $expected:expr) => {
@@ -572,6 +591,42 @@ mod stmt_tests {
 						})
 					)
 				}
+			)
+		}
+	);
+
+	stmt_parse_correctly!(
+		parse_for_each_parses_correctly,
+		r#"for (Integer i : ints) {
+			sum += i;
+		}"#,
+		Stmt {
+			kind: StmtKind::ForEach(
+				Ty {
+					array: false,
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveType::Integer,
+					})
+				},
+				Identifier::from("i"),
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("ints"))
+				},
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Binary(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("sum"))
+								}),
+								BinOp::AddAssign,
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("i"))
+								})
+							)
+						})
+					}])
+				})
 			)
 		}
 	);
