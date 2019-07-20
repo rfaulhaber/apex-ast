@@ -511,4 +511,68 @@ mod stmt_tests {
 			)
 		}
 	);
+
+	stmt_parse_correctly!(
+		parse_do_while_inline_parses_correctly,
+		"do x++; while (x < 10);",
+		Stmt {
+			kind: StmtKind::DoWhile(
+				Box::new(Block {
+					kind: BlockKind::Inline(Box::new(Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							)
+						})
+					}))
+				}),
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				}
+			)
+		}
+	);
+
+	stmt_parse_correctly!(
+		parse_do_while_block_parses_correctly,
+		"do { x++; } while (x < 10);",
+		Stmt {
+			kind: StmtKind::DoWhile(
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							)
+						})
+					}])
+				}),
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				}
+			)
+		}
+	);
 }
