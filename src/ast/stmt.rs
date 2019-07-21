@@ -14,7 +14,7 @@ pub struct Stmt {
 pub enum StmtKind {
 	// inits, condition, update
 	ForIter(
-		Option<Vec<(Ty, Identifier)>>,
+		Option<Vec<Local>>,
 		Option<Expr>,
 		Option<Vec<Expr>>,
 		BlockRef,
@@ -125,6 +125,12 @@ pub enum LocalKind {
 	Reassignment(Expr, Expr),
 }
 
+impl<'a> From<Pair<'a, Rule>> for Local {
+	fn from(pair: Pair<Rule>) -> Local {
+		unimplemented!();
+	}
+}
+
 impl<'a> From<Pair<'a, Rule>> for Stmt {
 	fn from(pair: Pair<Rule>) -> Stmt {
 		let inner = pair.into_inner().next().unwrap();
@@ -165,6 +171,7 @@ fn parse_for_each_statement(pair: Pair<Rule>) -> Stmt {
 }
 
 fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
+	unimplemented!();
 	let mut inner = pair.into_inner();
 
 	inner.next(); // discard "FOR"
@@ -198,10 +205,8 @@ fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
 	// Option<Vec<Expr>>,
 	// BlockRef,
 
-	let variable_decs = if local_pairs.len() > 0 {
-	}
-
-	unimplemented!();
+	// let variable_decs = if local_pairs.len() > 0 {
+	// }
 }
 
 fn parse_return_statement(pair: Pair<Rule>) -> Stmt {
