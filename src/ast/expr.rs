@@ -86,8 +86,8 @@ pub enum NewType {
 	Args(Vec<Expr>),
 }
 
-pub fn parse_expr(p: Pair<Rule>) -> Expr {
-	p.into()
+pub fn is_expr(r: Rule) -> bool {
+	r == Rule::expr_inner || r == Rule::infix_expr || r == Rule::ternary_expr
 }
 
 // needs to contain all forms of Rule::expression and children

@@ -1,4 +1,4 @@
-use super::expr::{Expr, ExprKind};
+use super::expr::{is_expr, Expr, ExprKind};
 use super::identifier::Identifier;
 use super::ty::Ty;
 
@@ -14,7 +14,7 @@ pub struct Stmt {
 pub enum StmtKind {
 	// inits, condition, update
 	ForIter(
-		Option<Vec<Local>>,
+		Option<Vec<(Ty, Identifier)>>,
 		Option<Expr>,
 		Option<Vec<Expr>>,
 		BlockRef,
@@ -130,7 +130,7 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 		let inner = pair.into_inner().next().unwrap();
 		match inner.as_rule() {
 			Rule::for_each_statement => parse_for_each_statement(inner),
-			Rule::for_iter_statement => unimplemented!(),
+			Rule::for_iter_statement => parse_for_iter_statement(inner),
 			Rule::do_while_statement => parse_do_while_statement(inner),
 			Rule::while_statement => parse_while_statement(inner),
 			Rule::if_statement => unimplemented!(),
@@ -162,6 +162,46 @@ fn parse_for_each_statement(pair: Pair<Rule>) -> Stmt {
 	Stmt {
 		kind: StmtKind::ForEach(ty, id, expr, Box::new(block)),
 	}
+}
+
+fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	inner.next(); // discard "FOR"
+
+	let mut local_pairs: Vec<Pair<Rule>> = Vec::new();
+
+	let mut current_pair = inner.next().unwrap();
+	let mut current_pair_rule = current_pair.as_rule();
+
+	while current_pair_rule == Rule::local_assignment {
+		local_pairs.push(current_pair);
+		current_pair = inner.next().unwrap();
+		current_pair_rule = current_pair.as_rule();
+	}
+
+	let expr_pair = current_pair.clone();
+
+	let mut inc_pairs: Vec<Pair<Rule>> = Vec::new();
+
+	current_pair = inner.next().unwrap();
+	current_pair_rule = current_pair.as_rule();
+
+	while is_expr(current_pair_rule) {
+		inc_pairs.push(current_pair);
+		current_pair = inner.next().unwrap();
+		current_pair_rule = current_pair.as_rule();
+	}
+
+	// Option<Vec<(Ty, Identifier)>>,
+	// Option<Expr>,
+	// Option<Vec<Expr>>,
+	// BlockRef,
+
+	let variable_decs = if local_pairs.len() > 0 {
+	}
+
+	unimplemented!();
 }
 
 fn parse_return_statement(pair: Pair<Rule>) -> Stmt {
@@ -627,6 +667,66 @@ mod stmt_tests {
 						})
 					}])
 				})
+			)
+		}
+	);
+
+	stmt_parse_correctly!(
+		parse_for_iter_parses_correctly,
+		r#"for (Integer i = 0; i < 100; i++) {
+			sum += i;
+		}"#,
+		Stmt {
+			kind: StmtKind::ForIter(
+				Some(vec![Local {
+					kind: LocalKind::Assignment(
+						false,
+						Some(Ty {
+							array: false,
+							kind: TyKind::Primitive(Primitive {
+								kind: PrimitiveType::Integer
+							})
+						}),
+						Identifier::from("i"),
+						Some(Expr {
+							kind: ExprKind::Literal(Literal::from(0))
+						})
+					)
+				}]),
+				Some(Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("i"))
+						}),
+						BinOp::Le,
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(100))
+						})
+					)
+				}),
+				Some(vec![Expr {
+					kind: ExprKind::Postfix(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("i"))
+						}),
+						PostfixOp::Inc
+					)
+				}]),
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Binary(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("sum"))
+								}),
+								BinOp::AddAssign,
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("i"))
+								})
+							)
+						})
+					}])
+				}),
 			)
 		}
 	);
