@@ -1,4 +1,4 @@
-use super::expr::{is_expr, Expr, ExprKind};
+use super::expr::{is_expr, parse_inc_dec_postfix, parse_inc_dec_prefix, Expr, ExprKind};
 use super::identifier::Identifier;
 use super::ty::Ty;
 
@@ -127,7 +127,40 @@ pub enum LocalKind {
 
 impl<'a> From<Pair<'a, Rule>> for Local {
 	fn from(pair: Pair<Rule>) -> Local {
-		unimplemented!();
+		let mut inner = pair.into_inner();
+
+		let first = inner.next().unwrap();
+
+		match first.as_rule() {
+			Rule::local_variable_declaration => {
+				let mut inner = first.into_inner();
+
+				let first = inner.next().unwrap();
+
+				let is_final = first.as_rule() == Rule::FINAL;
+
+				let ty = if is_final {
+					Ty::from(inner.next().unwrap())
+				} else {
+					Ty::from(first)
+				};
+
+				let id = Identifier::from(inner.next().unwrap());
+
+				let rhs = match inner.next() {
+					Some(expr_pair) => Some(Expr::from(expr_pair)),
+					None => None,
+				};
+
+				Local {
+					kind: LocalKind::Assignment(is_final, Some(ty), id, rhs),
+				}
+			}
+			Rule::variable_reassignment => {
+				unimplemented!();
+			}
+			_ => unreachable!("got {:?}", first.as_rule()),
+		}
 	}
 }
 
@@ -149,7 +182,21 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::continue_statement => parse_continue_statement(inner),
 			Rule::break_statement => parse_break_statement(inner),
 			Rule::local_assignment => parse_local_assignment(inner),
-			Rule::expr_inner | Rule::ternary_expr | Rule::infix_expr => parse_expr_statement(inner),
+			Rule::inc_dec_prefix => {
+				let expr = parse_inc_dec_prefix(inner);
+
+				Stmt {
+					kind: StmtKind::Expr(expr),
+				}
+			}
+			Rule::inc_dec_postfix => {
+				let expr = parse_inc_dec_postfix(inner);
+
+				Stmt {
+					kind: StmtKind::Expr(expr),
+				}
+			}
+			Rule::property_access | Rule::method_invocation => parse_expr_statement(inner),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
 	}
@@ -176,36 +223,12 @@ fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
 
 	inner.next(); // discard "FOR"
 
-	let mut local_pairs: Vec<Pair<Rule>> = Vec::new();
+	let first = inner.next().unwrap();
 
-	let mut current_pair = inner.next().unwrap();
-	let mut current_pair_rule = current_pair.as_rule();
-
-	while current_pair_rule == Rule::local_assignment {
-		local_pairs.push(current_pair);
-		current_pair = inner.next().unwrap();
-		current_pair_rule = current_pair.as_rule();
-	}
-
-	let expr_pair = current_pair.clone();
-
-	let mut inc_pairs: Vec<Pair<Rule>> = Vec::new();
-
-	current_pair = inner.next().unwrap();
-	current_pair_rule = current_pair.as_rule();
-
-	while is_expr(current_pair_rule) {
-		inc_pairs.push(current_pair);
-		current_pair = inner.next().unwrap();
-		current_pair_rule = current_pair.as_rule();
-	}
-
-	// Option<Vec<(Ty, Identifier)>>,
-	// Option<Expr>,
-	// Option<Vec<Expr>>,
-	// BlockRef,
-
-	// let variable_decs = if local_pairs.len() > 0 {
+	// let for_init = if first.as_rule() == Rule::for_init {
+	// 	Some()
+	// } else {
+	// 	None
 	// }
 }
 
@@ -263,37 +286,8 @@ fn parse_code_block(pair: Pair<Rule>) -> Stmt {
 }
 
 fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
-	let dec_or_resassign = pair.into_inner().next().unwrap();
-
-	match dec_or_resassign.as_rule() {
-		Rule::local_variable_declaration => {
-			let mut inner = dec_or_resassign.into_inner();
-
-			let first = inner.next().unwrap();
-
-			let is_final = first.as_rule() == Rule::FINAL;
-
-			let ty = if is_final {
-				Ty::from(inner.next().unwrap())
-			} else {
-				Ty::from(first)
-			};
-
-			let id = Identifier::from(inner.next().unwrap());
-
-			let rhs = match inner.next() {
-				Some(expr_pair) => Some(Expr::from(expr_pair)),
-				None => None,
-			};
-
-			Stmt {
-				kind: StmtKind::Local(Local {
-					kind: LocalKind::Assignment(is_final, Some(ty), id, rhs),
-				}),
-			}
-		}
-		Rule::variable_reassignment => unimplemented!(),
-		_ => unreachable!("got {:?}", dec_or_resassign.as_rule()),
+	Stmt {
+		kind: StmtKind::Local(Local::from(pair)),
 	}
 }
 

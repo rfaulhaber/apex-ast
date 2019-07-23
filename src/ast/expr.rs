@@ -8,6 +8,8 @@ use super::ty::*;
 use crate::parser::Rule;
 use pest::iterators::{Pair, Pairs};
 
+// TODO parse assignement expressions
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Expr {
 	pub kind: ExprKind,
@@ -231,7 +233,7 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Expr {
 	}
 }
 
-fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {
+pub fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {
 	let mut inner = pair.into_inner();
 	let op = UnOp::from(inner.next().unwrap().as_str());
 
@@ -246,7 +248,7 @@ fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {
 	ExprKind::Unary(op, Box::new(postfix)).into()
 }
 
-fn parse_inc_dec_postfix(pair: Pair<Rule>) -> Expr {
+pub fn parse_inc_dec_postfix(pair: Pair<Rule>) -> Expr {
 	let mut inner = pair.into_inner();
 
 	let right_pair = inner.next().unwrap();

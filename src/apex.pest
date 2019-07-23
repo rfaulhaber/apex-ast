@@ -66,10 +66,16 @@ body_statement = {
     | return_statement 
     | continue_statement 
     | break_statement 
-    | (local_assignment | expression) 
+    | statement_expression
     ~ ";" 
 }
 
+// only a subset of expressions are valid statements on their own
+statement_expression = _{ assignment_statement | property_access | method_invocation }
+
+assignment_statement = _{ local_assignment | assignment_expr | inc_dec_expr } 
+
+// note: should be called "delcaration"
 local_assignment = { local_variable_declaration | variable_reassignment }
 variable_reassignment = { (property_access | list_access | identifier) ~ "=" ~ assignment_rhs }
 local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ ("=" ~ assignment_rhs)? } 
@@ -105,7 +111,12 @@ throw_statement = { THROW ~ (new_instance_declaration | identifier) ~ ";" }
 // for statements
 for_statement = _{ for_iter_statement | for_each_statement }
 for_each_statement = { FOR ~ "(" ~ basic_type ~ identifier ~ ":" ~ expression ~ ")" ~ (code_block | inline_code_block) }
-for_iter_statement = { FOR ~ "(" ~ (local_assignment ~ ("," ~ local_assignment)*)? ~ ";" ~ expression? ~ ";" ~ (expression ~ ("," ~ expression)*)? ~ ")" ~ (code_block | inline_code_block) }
+for_iter_statement = { FOR ~ "(" ~ for_init? ~ ";" ~ expression? ~ ";" ~ for_update? ~ ")" ~ (code_block | inline_code_block) }
+
+// these sub-rules exist for the convenience of parsing. Otherwise the AST
+// generator has no way of knowing which statement is which
+for_init = { statement_expression ~ ("," ~ statement_expression)* }
+for_update = { statement_expression ~ ("," ~ statement_expression)* }
 
 // while statements
 while_statement = { WHILE ~ condition_statement ~ (code_block | inline_code_block) }
@@ -125,6 +136,8 @@ return_statement = { RETURN ~ expression ~ ";" }
 condition_statement = _{ "(" ~ expression ~ ")" }
 
 list_access = { identifier ~ "[" ~ expression ~ "]" }
+
+// TODO make more fine-grained, distinguish between list[0] and list.isEmpty()
 property_access = { accessible ~ ("." ~ accessible)+ }
 accessible = _{ soql_expression | new_instance_declaration | method_invocation | list_access | literal | identifier } 
 
@@ -373,7 +386,7 @@ WITH = { ^"WITH" }
 WHEN = { ^"WHEN" }
 
 // expressions 
-expression = _{ ternary_expr | infix_expr | expr_inner }
+expression = _{ ternary_expr | infix_expr | assignment_expr | expr_inner }
 
 // these are "terminal" expressions
 expr_inner = { 
@@ -395,6 +408,7 @@ unary_expr = { inc_dec_expr | unary_operator ~ unary_rhs }
 unary_rhs = _{ braced_expr | property_access | method_invocation | identifier | literal }
 cast_expr = { cast_operator ~ unary_rhs }
 infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
+assignment_expr = { expr_inner ~ assignment_operator ~ expression }
 ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ (infix_expr | expr_inner) ~ ":" ~ (infix_expr | expr_inner) }
 cast_operator = { "(" ~ basic_type ~ ")" } // thank you java grammar
 inc_dec_expr = _{ inc_dec_prefix | inc_dec_postfix }
@@ -482,13 +496,8 @@ integer_binary              = @{ ('0'..'1') ~ ('0'..'1' | "_")* }
 integer_binary_sigil        = _{ "0b" ~ integer_binary }
 integer_zero                =  { "0" }
 
-binary_operator = _{
-    logic_and
-    | logic_or
-    | ge
-    | le
-    | eq
-    | not_eq
+assignment_operator = _{
+    assignment_standard
     | add_assign
     | sub_assign
     | mul_assign
@@ -498,6 +507,26 @@ binary_operator = _{
     | xor_assign
     | left_shift_assign
     | right_shift_assign
+}
+
+assignment_standard = { "=" }
+
+binary_operator = _{
+    logic_and
+    | logic_or
+    | ge
+    | le
+    | eq
+    | not_eq
+    // | add_assign
+    // | sub_assign
+    // | mul_assign
+    // | div_assign
+    // | and_assign
+    // | or_assign
+    // | xor_assign
+    // | left_shift_assign
+    // | right_shift_assign
     | bit_shift_left
     | bit_shift_right
     | gt
