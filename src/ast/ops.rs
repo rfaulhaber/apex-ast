@@ -10,23 +10,14 @@ pub enum BinOp {
 	Lt,
 	Le,
 	Eq,
-	AddAssign,
-	SubAssign,
-	MulAssign,
-	DivAssign,
 	NotEq,
 	And,
 	Or,
-	AndAssign,
-	OrAssign,
-	XorAssign,
 	BitAnd,
 	BitOr,
 	BitXor,
 	ShiftLeft,
 	ShiftRight,
-	ShiftLeftAssign,
-	ShiftRightAssign,
 }
 
 impl From<&str> for BinOp {
@@ -41,23 +32,14 @@ impl From<&str> for BinOp {
 			"<" => BinOp::Lt,
 			"<=" => BinOp::Le,
 			"=" => BinOp::Eq,
-			"+=" => BinOp::AddAssign,
-			"-=" => BinOp::SubAssign,
-			"*=" => BinOp::MulAssign,
-			"/=" => BinOp::DivAssign,
 			"!=" => BinOp::NotEq,
 			"&&" => BinOp::And,
 			"||" => BinOp::Or,
-			"&=" => BinOp::AndAssign,
-			"|=" => BinOp::OrAssign,
-			"^=" => BinOp::XorAssign,
 			"&" => BinOp::BitAnd,
 			"|" => BinOp::BitOr,
 			"^" => BinOp::BitXor,
 			"<<" => BinOp::ShiftLeft,
 			">>" => BinOp::ShiftRight,
-			"<<=" => BinOp::ShiftLeftAssign,
-			">>=" => BinOp::ShiftRightAssign,
 			_ => panic!("invalid string found: {}", s),
 		}
 	}
@@ -75,23 +57,14 @@ impl BinOp {
 			BinOp::Lt => "<",
 			BinOp::Le => "<=",
 			BinOp::Eq => "=",
-			BinOp::AddAssign => "+=",
-			BinOp::SubAssign => "-=",
-			BinOp::MulAssign => "*=",
-			BinOp::DivAssign => "/=",
 			BinOp::NotEq => "!=",
 			BinOp::And => "&&",
 			BinOp::Or => "||",
-			BinOp::AndAssign => "&=",
-			BinOp::OrAssign => "|=",
-			BinOp::XorAssign => "^=",
 			BinOp::BitAnd => "&",
 			BinOp::BitOr => "|",
 			BinOp::BitXor => "^",
 			BinOp::ShiftLeft => "<<",
 			BinOp::ShiftRight => ">>",
-			BinOp::ShiftLeftAssign => "<<=",
-			BinOp::ShiftRightAssign => ">>=",
 		}
 	}
 }
@@ -153,6 +126,55 @@ impl PostfixOp {
 		match self {
 			PostfixOp::Inc => "++",
 			PostfixOp::Dec => "--",
+		}
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum AssignOp {
+	Eq,
+	Add,
+	Sub,
+	Mul,
+	Div,
+	And,
+	Or,
+	Xor,
+	ShiftLeft,
+	ShiftRight,
+}
+
+impl AssignOp {
+	pub fn as_str(&self) -> &str {
+		match self {
+			AssignOp::Eq => "=",
+			AssignOp::Add => "+=",
+			AssignOp::Sub => "-=",
+			AssignOp::Mul => "*=",
+			AssignOp::Div => "/=",
+			AssignOp::And => "&=",
+			AssignOp::Or => "|=",
+			AssignOp::Xor => "^=",
+			AssignOp::ShiftLeft => "<<=",
+			AssignOp::ShiftRight => ">>=",
+		}
+	}
+}
+
+impl From<&str> for AssignOp {
+	fn from(s: &str) -> AssignOp {
+		match s {
+			"=" => AssignOp::Eq,
+			"+=" => AssignOp::Add,
+			"-=" => AssignOp::Sub,
+			"*=" => AssignOp::Mul,
+			"/=" => AssignOp::Div,
+			"&=" => AssignOp::And,
+			"|=" => AssignOp::Or,
+			"^=" => AssignOp::Xor,
+			"<<=" => AssignOp::ShiftLeft,
+			">>=" => AssignOp::ShiftRight,
+			_ => panic!("invalid string found: {}", s),
 		}
 	}
 }

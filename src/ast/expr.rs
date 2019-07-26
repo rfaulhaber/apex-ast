@@ -29,7 +29,6 @@ pub enum ExprKind {
 	/// Either an increment or decrement expression.
 	/// This has to be a different type of enum because they can either come
 	/// before or after the expression.
-	Postfix(Box<Expr>, PostfixOp),
 
 	/// a literal, such as a number or string
 	Literal(Literal),
@@ -58,6 +57,10 @@ pub enum ExprKind {
 
 	// direct list array access, like `foo[2]`
 	ListAccess(Identifier, Box<Expr>),
+
+	// this is "simple" assignment, anything that looks like `x = 2` or
+	// `foo = new Foo()`
+	Assignment(Assignment),
 
 	// a soql query expression
 	// TODO change to Box?
@@ -88,6 +91,16 @@ pub enum NewType {
 	Args(Vec<Expr>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Assignment {
+	Variable(Identifier, AssignOp, Box<Expr>),
+	Array(Identifier, Box<Expr>, AssignOp, Box<Expr>),
+	// NOTE: rename "PostfixOp"
+	// TODO: can this be more precise?
+	Prefix(PostfixOp, Box<Expr>),
+	Postfix(Box<Expr>, PostfixOp),
+}
+
 pub fn is_expr(r: Rule) -> bool {
 	r == Rule::expr_inner || r == Rule::infix_expr || r == Rule::ternary_expr
 }
@@ -99,6 +112,7 @@ impl<'a> From<Pair<'a, Rule>> for Expr {
 			Rule::braced_expr => parse_braced_expr(pair),
 			Rule::infix_expr => parse_infix_expr(pair),
 			Rule::ternary_expr => parse_ternary_expr(pair),
+			Rule::assignment_expr => parse_assignment_expr(pair),
 			Rule::expr_inner => parse_expr_inner(pair),
 			Rule::property_access => parse_property_access(pair),
 			Rule::method_invocation => parse_method_invocation(pair),
@@ -162,6 +176,64 @@ fn parse_ternary_expr(pair: Pair<Rule>) -> Expr {
 	}
 }
 
+fn parse_assignment_expr(pair: Pair<Rule>) -> Expr {
+	let mut inner = pair.into_inner();
+
+	let first = inner.next().unwrap();
+
+	match first.as_rule() {
+		Rule::array_assignment_expr => {
+			let mut arr_inner = first.into_inner();
+
+			let id = Identifier::from(arr_inner.next().unwrap());
+			let expr = Expr::from(arr_inner.next().unwrap());
+			let assign_op = AssignOp::from(arr_inner.next().unwrap().as_str());
+			let expr_rhs = Expr::from(arr_inner.next().unwrap());
+
+			Expr {
+				kind: ExprKind::Assignment(Assignment::Array(
+					id,
+					Box::new(expr),
+					assign_op,
+					Box::new(expr_rhs),
+				)),
+			}
+		}
+		Rule::variable_assignment_expr => {
+			let mut var_inner = first.into_inner();
+
+			let id = Identifier::from(var_inner.next().unwrap());
+			let assign_op = AssignOp::from(var_inner.next().unwrap().as_str());
+			let expr_rhs = Expr::from(var_inner.next().unwrap());
+
+			Expr {
+				kind: ExprKind::Assignment(Assignment::Variable(id, assign_op, Box::new(expr_rhs))),
+			}
+		}
+		Rule::inc_dec_prefix => {
+			let mut prefix_inner = first.into_inner();
+
+			let op = PostfixOp::from(prefix_inner.next().unwrap().as_str());
+			let expr = Expr::from(prefix_inner.next().unwrap());
+
+			Expr {
+				kind: ExprKind::Assignment(Assignment::Prefix(op, Box::new(expr))),
+			}
+		}
+		Rule::inc_dec_postfix => {
+			let mut postfix_inner = first.into_inner();
+
+			let expr = Expr::from(postfix_inner.next().unwrap());
+			let op = PostfixOp::from(postfix_inner.next().unwrap().as_str());
+
+			Expr {
+				kind: ExprKind::Assignment(Assignment::Postfix(Box::new(expr), op)),
+			}
+		}
+		_ => unreachable!("unexpected rule, got {:?}", first.as_rule()),
+	}
+}
+
 fn parse_infix_expr(pair: Pair<Rule>) -> Expr {
 	let mut inner = pair.into_inner();
 
@@ -219,8 +291,6 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Expr {
 	let first = inner.next().unwrap();
 
 	match first.as_rule() {
-		Rule::inc_dec_prefix => parse_inc_dec_prefix(first),
-		Rule::inc_dec_postfix => parse_inc_dec_postfix(first),
 		Rule::unary_operator => {
 			let unary_inner = first.into_inner();
 			let op = UnOp::from(unary_inner.as_str());
@@ -229,7 +299,7 @@ fn parse_unary_expr(pair: Pair<Rule>) -> Expr {
 			let kind = ExprKind::Unary(op, Box::new(expr));
 			Expr { kind }
 		}
-		_ => unreachable!(),
+		_ => unreachable!("got unexpected rule: {:?}", first.as_rule()),
 	}
 }
 
@@ -246,22 +316,6 @@ pub fn parse_inc_dec_prefix(pair: Pair<Rule>) -> Expr {
 	};
 
 	ExprKind::Unary(op, Box::new(postfix)).into()
-}
-
-pub fn parse_inc_dec_postfix(pair: Pair<Rule>) -> Expr {
-	let mut inner = pair.into_inner();
-
-	let right_pair = inner.next().unwrap();
-
-	let postfix = match right_pair.as_rule() {
-		Rule::list_access => parse_list_access(right_pair),
-		Rule::identifier => right_pair.into(),
-		_ => unreachable!(),
-	};
-
-	let op = PostfixOp::from(inner.next().unwrap().as_str());
-
-	ExprKind::Postfix(Box::new(postfix), op).into()
 }
 
 fn parse_instanceof(pair: Pair<Rule>) -> Expr {
@@ -368,7 +422,22 @@ mod expr_tests {
 	use super::*;
 	use crate::parser::GrammarParser;
 	use pest::Parser;
-	// use pretty_assertions::{assert_eq, assert_ne};
+	use pretty_assertions::{assert_eq, assert_ne};
+
+	macro_rules! expr_parse_correctly {
+		($test_name:ident, $expr_rule:ident, $parse:literal, $expected:expr) => {
+			#[test]
+			fn $test_name() {
+				let mut parsed = GrammarParser::parse(Rule::$expr_rule, $parse).unwrap();
+				let item = parsed.next().unwrap();
+
+				let result = Expr::from(item);
+
+				let expected = $expected;
+				assert_eq!(expected, result);
+			}
+		};
+	}
 
 	#[test]
 	fn from_pair_parses_literal_correctly() {
@@ -398,44 +467,80 @@ mod expr_tests {
 		}
 	}
 
-	#[test]
-	fn simple_unary_op_parses_correctly() {
-		let mut parsed = GrammarParser::parse(Rule::expr_inner, "!foo").unwrap();
-		let item = parsed.next().unwrap();
-
-		let expr: Expr = item.clone().into();
-
-		// TODO this sucks, find a better way to handle this
-		match expr.kind {
-			ExprKind::Unary(op, expr) => match op {
-				UnOp::Not => match expr.kind {
-					ExprKind::Identifier(id) => assert_eq!(id.name, "foo"),
-					_ => panic!("wrong exprkind found: {:?}", expr.kind),
-				},
-				_ => panic!("op was not correct"),
-			},
-			_ => panic!("was not unary expr"),
+	expr_parse_correctly!(
+		simple_unary_op_parses_correctly,
+		expr_inner,
+		"!foo",
+		Expr {
+			kind: ExprKind::Unary(
+				UnOp::Not,
+				Box::new(Expr {
+					kind: ExprKind::Identifier(Identifier::from("foo"))
+				})
+			)
 		}
-	}
+	);
 
-	#[test]
-	fn simple_postfix_op_parses_correctly() {
-		let mut parsed = GrammarParser::parse(Rule::expr_inner, "foo++").unwrap();
-		let item = parsed.next().unwrap();
-
-		let expr: Expr = item.clone().into();
-
-		match expr.kind {
-			ExprKind::Postfix(expr, op) => match op {
-				PostfixOp::Inc => match expr.kind {
-					ExprKind::Identifier(id) => assert_eq!(id.name, "foo"),
-					_ => panic!("wrong exprkind found: {:?}", expr.kind),
-				},
-				_ => panic!("op was not correct"),
-			},
-			_ => panic!("was not unary expr"),
+	expr_parse_correctly!(
+		inc_dec_postfix_parses_correctly,
+		assignment_expr,
+		"i++",
+		Expr {
+			kind: ExprKind::Assignment(Assignment::Postfix(
+				Box::new(Expr {
+					kind: ExprKind::Identifier(Identifier::from("i"))
+				}),
+				PostfixOp::Inc
+			))
 		}
-	}
+	);
+
+	expr_parse_correctly!(
+		inc_dec_prefix_parses_correctly,
+		assignment_expr,
+		"++i",
+		Expr {
+			kind: ExprKind::Assignment(Assignment::Prefix(
+				PostfixOp::Inc,
+				Box::new(Expr {
+					kind: ExprKind::Identifier(Identifier::from("i"))
+				})
+			))
+		}
+	);
+
+	expr_parse_correctly!(
+		var_assignment_parses_correctly,
+		assignment_expr,
+		"x = 2",
+		Expr {
+			kind: ExprKind::Assignment(Assignment::Variable(
+				Identifier::from("x"),
+				AssignOp::Eq,
+				Box::new(Expr {
+					kind: ExprKind::Literal(Literal::from(2))
+				})
+			))
+		}
+	);
+
+	expr_parse_correctly!(
+		arr_assignment_parses_correctly,
+		assignment_expr,
+		"x[0] = 2",
+		Expr {
+			kind: ExprKind::Assignment(Assignment::Array(
+				Identifier::from("x"),
+				Box::new(Expr {
+					kind: ExprKind::Literal(Literal::from(0))
+				}),
+				AssignOp::Eq,
+				Box::new(Expr {
+					kind: ExprKind::Literal(Literal::from(2))
+				})
+			))
+		}
+	);
 
 	#[test]
 	fn simple_instanceof_parses_correctly() {
@@ -994,4 +1099,19 @@ mod expr_tests {
 
 		assert_eq!(expected, result);
 	}
+
+	expr_parse_correctly!(
+		assignment_parses_correctly,
+		assignment_expr,
+		"x = 2",
+		Expr {
+			kind: ExprKind::Assignment(Assignment::Variable(
+				Identifier::from("x"),
+				AssignOp::Eq,
+				Box::new(Expr {
+					kind: ExprKind::Literal(Literal::from(2))
+				})
+			))
+		}
+	);
 }

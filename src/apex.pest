@@ -404,11 +404,14 @@ expr_inner = {
 }
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" } // I'm not a fan of this but it works ¯\_(ツ)_/¯
-unary_expr = { inc_dec_expr | unary_operator ~ unary_rhs }
+unary_expr = { unary_operator ~ unary_rhs }
 unary_rhs = _{ braced_expr | property_access | method_invocation | identifier | literal }
 cast_expr = { cast_operator ~ unary_rhs }
 infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
-assignment_expr = { expr_inner ~ assignment_operator ~ expression }
+assignment_expr = { array_assignment_expr | variable_assignment_expr | inc_dec_expr }
+// this rule is the right-hand side of a variable declaration
+variable_assignment_expr = { identifier ~ assignment_operator ~ expression }
+array_assignment_expr = { identifier ~ "[" ~ expression ~ "]" ~ assignment_operator ~ expression }
 ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ (infix_expr | expr_inner) ~ ":" ~ (infix_expr | expr_inner) }
 cast_operator = { "(" ~ basic_type ~ ")" } // thank you java grammar
 inc_dec_expr = _{ inc_dec_prefix | inc_dec_postfix }
@@ -416,7 +419,7 @@ inc_dec_prefix = { (inc_op | dec_op) ~ (list_access | identifier) }
 inc_dec_postfix = { (list_access | identifier) ~ (inc_op | dec_op) }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
-// correct but Salesforce throws a compile-time error rather than a parsing error
+// correct but Salesforce throws a compile-time error rather than a syntax error
 instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
 // annotations
@@ -518,15 +521,6 @@ binary_operator = _{
     | le
     | eq
     | not_eq
-    // | add_assign
-    // | sub_assign
-    // | mul_assign
-    // | div_assign
-    // | and_assign
-    // | or_assign
-    // | xor_assign
-    // | left_shift_assign
-    // | right_shift_assign
     | bit_shift_left
     | bit_shift_right
     | gt
