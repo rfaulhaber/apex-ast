@@ -72,12 +72,8 @@ body_statement = {
 
 // only a subset of expressions are valid statements on their own
 statement_expression = _{ assignment_statement | property_access | method_invocation }
+assignment_statement = _{ local_variable_declaration | assignment_expr | inc_dec_expr } 
 
-assignment_statement = _{ local_assignment | assignment_expr | inc_dec_expr } 
-
-// note: should be called "delcaration"
-local_assignment = { local_variable_declaration | variable_reassignment }
-variable_reassignment = { (property_access | list_access | identifier) ~ "=" ~ assignment_rhs }
 local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ ("=" ~ assignment_rhs)? } 
 new_instance_declaration = { NEW ~ basic_type ~ (new_map_literal | new_list_literal | new_array_literal | call_arguments) }
 call_arguments = { "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }

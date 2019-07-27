@@ -13,12 +13,7 @@ pub struct Stmt {
 #[derive(Debug, Clone, PartialEq)]
 pub enum StmtKind {
 	// inits, condition, update
-	ForIter(
-		Option<Vec<Local>>,
-		Option<Expr>,
-		Option<Vec<Expr>>,
-		BlockRef,
-	),
+	ForIter(Option<Vec<Stmt>>, Option<Expr>, Option<Vec<Stmt>>, BlockRef),
 	ForEach(Ty, Identifier, Expr, BlockRef),
 	DoWhile(BlockRef, Expr),
 	While(Expr, BlockRef),
@@ -44,6 +39,7 @@ pub enum StmtKind {
 	// TODO: for continue and break, we'll want to store span in parent?
 	Continue,
 	Break,
+	// TODO: box
 	Local(Local),
 	Block(Block),
 	Expr(Expr),
@@ -115,14 +111,10 @@ impl<'a> From<Pair<'a, Rule>> for DmlKind {
 // Local assignment
 #[derive(Debug, Clone, PartialEq)]
 pub struct Local {
-	pub kind: LocalKind,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum LocalKind {
-	// whether or not it's final, type, identiifer, and rhs
-	Assignment(bool, Option<Ty>, Identifier, Option<Expr>),
-	Reassignment(Expr, Expr),
+	pub is_final: bool, // "final" is a Rust keyword
+	pub ty: Ty,
+	pub id: Identifier,
+	pub expr: Option<Expr>,
 }
 
 impl<'a> From<Pair<'a, Rule>> for Local {
@@ -131,35 +123,26 @@ impl<'a> From<Pair<'a, Rule>> for Local {
 
 		let first = inner.next().unwrap();
 
-		match first.as_rule() {
-			Rule::local_variable_declaration => {
-				let mut inner = first.into_inner();
+		let is_final = first.as_rule() == Rule::FINAL;
 
-				let first = inner.next().unwrap();
+		let ty = if is_final {
+			Ty::from(inner.next().unwrap())
+		} else {
+			Ty::from(first)
+		};
 
-				let is_final = first.as_rule() == Rule::FINAL;
+		let id = Identifier::from(inner.next().unwrap());
 
-				let ty = if is_final {
-					Ty::from(inner.next().unwrap())
-				} else {
-					Ty::from(first)
-				};
+		let rhs = match inner.next() {
+			Some(expr_pair) => Some(Expr::from(expr_pair)),
+			None => None,
+		};
 
-				let id = Identifier::from(inner.next().unwrap());
-
-				let rhs = match inner.next() {
-					Some(expr_pair) => Some(Expr::from(expr_pair)),
-					None => None,
-				};
-
-				Local {
-					kind: LocalKind::Assignment(is_final, Some(ty), id, rhs),
-				}
-			}
-			Rule::variable_reassignment => {
-				unimplemented!();
-			}
-			_ => unreachable!("got {:?}", first.as_rule()),
+		Local {
+			is_final,
+			ty,
+			id,
+			expr: rhs,
 		}
 	}
 }
@@ -181,21 +164,7 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::return_statement => parse_return_statement(inner),
 			Rule::continue_statement => parse_continue_statement(inner),
 			Rule::break_statement => parse_break_statement(inner),
-			Rule::local_assignment => parse_local_assignment(inner),
-			// Rule::inc_dec_prefix => {
-			// 	let expr = parse_inc_dec_prefix(inner);
-
-			// 	Stmt {
-			// 		kind: StmtKind::Expr(expr),
-			// 	}
-			// }
-			// Rule::inc_dec_postfix => {
-			// 	let expr = parse_inc_dec_postfix(inner);
-
-			// 	Stmt {
-			// 		kind: StmtKind::Expr(expr),
-			// 	}
-			// }
+			Rule::local_variable_declaration => unimplemented!(),
 			Rule::assignment_expr | Rule::property_access | Rule::method_invocation => {
 				parse_expr_statement(inner)
 			}
@@ -220,18 +189,46 @@ fn parse_for_each_statement(pair: Pair<Rule>) -> Stmt {
 }
 
 fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
-	unimplemented!();
 	let mut inner = pair.into_inner();
 
 	inner.next(); // discard "FOR"
 
-	let first = inner.next().unwrap();
+	let mut current = inner.next().unwrap();
 
-	// let for_init = if first.as_rule() == Rule::for_init {
-	// 	Some()
-	// } else {
-	// 	None
-	// }
+	let for_init: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_init {
+		let current_inner = current.into_inner();
+		let ret = Some(current_inner.map(Stmt::from).collect());
+
+		current = inner.next().unwrap();
+
+		ret
+	} else {
+		None
+	};
+
+	let for_expr: Option<Expr> = match current.as_rule() {
+		Rule::ternary_expr | Rule::infix_expr | Rule::assignment_expr | Rule::expr_inner => {
+			let expr = Expr::from(current);
+
+			current = inner.next().unwrap();
+
+			Some(expr)
+		}
+		_ => None,
+	};
+
+	let for_update: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_init {
+		let current_inner = current.into_inner();
+		Some(current_inner.map(Stmt::from).collect())
+	} else {
+		None
+	};
+
+	let block = Box::new(Block::from(inner.next().unwrap()));
+
+	Stmt {
+		kind: StmtKind::ForIter(for_init, for_expr, for_update, block),
+	}
 }
 
 fn parse_return_statement(pair: Pair<Rule>) -> Stmt {
@@ -459,19 +456,17 @@ mod stmt_tests {
 		"final Integer foo = 22;",
 		Stmt {
 			kind: StmtKind::Local(Local {
-				kind: LocalKind::Assignment(
-					true,
-					Some(Ty {
-						array: false,
-						kind: TyKind::Primitive(Primitive {
-							kind: PrimitiveType::Integer,
-						})
-					}),
-					Identifier::from("foo"),
-					Some(Expr {
-						kind: ExprKind::Literal(Literal::from(22)),
+				is_final: true,
+				ty: Ty {
+					array: false,
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveType::Integer,
 					})
-				)
+				},
+				id: Identifier::from("foo"),
+				expr: Some(Expr {
+					kind: ExprKind::Literal(Literal::from(22)),
+				})
 			})
 		}
 	);
@@ -484,19 +479,17 @@ mod stmt_tests {
 				kind: BlockKind::Body(vec![
 					Stmt {
 						kind: StmtKind::Local(Local {
-							kind: LocalKind::Assignment(
-								true,
-								Some(Ty {
-									array: false,
-									kind: TyKind::Primitive(Primitive {
-										kind: PrimitiveType::Integer,
-									})
-								}),
-								Identifier::from("foo"),
-								Some(Expr {
-									kind: ExprKind::Literal(Literal::from(22)),
+							is_final: true,
+							ty: Ty {
+								array: false,
+								kind: TyKind::Primitive(Primitive {
+									kind: PrimitiveType::Integer,
 								})
-							)
+							},
+							id: Identifier::from("foo"),
+							expr: Some(Expr {
+								kind: ExprKind::Literal(Literal::from(22)),
+							})
 						})
 					},
 					Stmt {
@@ -509,227 +502,225 @@ mod stmt_tests {
 		}
 	);
 
-	// stmt_parse_correctly!(
-	// 	parse_while_inline_parses_correctly,
-	// 	"while (x < 10) x++;",
-	// 	Stmt {
-	// 		kind: StmtKind::While(
-	// 			Expr {
-	// 				kind: ExprKind::Binary(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("x"))
-	// 					}),
-	// 					BinOp::from("<"),
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(10))
-	// 					})
-	// 				)
-	// 			},
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Inline(Box::new(Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Postfix(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("x"))
-	// 							}),
-	// 							PostfixOp::Inc
-	// 						)
-	// 					})
-	// 				}))
-	// 			})
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_while_inline_parses_correctly,
+		"while (x < 10) x++;",
+		Stmt {
+			kind: StmtKind::While(
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				},
+				Box::new(Block {
+					kind: BlockKind::Inline(Box::new(Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							))
+						})
+					}))
+				})
+			)
+		}
+	);
 
-	// stmt_parse_correctly!(
-	// 	parse_while_block_parses_correctly,
-	// 	"while (x < 10) { x++; }",
-	// 	Stmt {
-	// 		kind: StmtKind::While(
-	// 			Expr {
-	// 				kind: ExprKind::Binary(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("x"))
-	// 					}),
-	// 					BinOp::from("<"),
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(10))
-	// 					})
-	// 				)
-	// 			},
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Body(vec![Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Postfix(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("x"))
-	// 							}),
-	// 							PostfixOp::Inc
-	// 						)
-	// 					})
-	// 				}])
-	// 			})
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_while_block_parses_correctly,
+		"while (x < 10) { x++; }",
+		Stmt {
+			kind: StmtKind::While(
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				},
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							))
+						})
+					}])
+				})
+			)
+		}
+	);
 
-	// stmt_parse_correctly!(
-	// 	parse_do_while_inline_parses_correctly,
-	// 	"do x++; while (x < 10);",
-	// 	Stmt {
-	// 		kind: StmtKind::DoWhile(
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Inline(Box::new(Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Postfix(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("x"))
-	// 							}),
-	// 							PostfixOp::Inc
-	// 						)
-	// 					})
-	// 				}))
-	// 			}),
-	// 			Expr {
-	// 				kind: ExprKind::Binary(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("x"))
-	// 					}),
-	// 					BinOp::from("<"),
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(10))
-	// 					})
-	// 				)
-	// 			}
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_do_while_inline_parses_correctly,
+		"do x++; while (x < 10);",
+		Stmt {
+			kind: StmtKind::DoWhile(
+				Box::new(Block {
+					kind: BlockKind::Inline(Box::new(Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							))
+						})
+					}))
+				}),
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				}
+			)
+		}
+	);
 
-	// stmt_parse_correctly!(
-	// 	parse_do_while_block_parses_correctly,
-	// 	"do { x++; } while (x < 10);",
-	// 	Stmt {
-	// 		kind: StmtKind::DoWhile(
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Body(vec![Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Postfix(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("x"))
-	// 							}),
-	// 							PostfixOp::Inc
-	// 						)
-	// 					})
-	// 				}])
-	// 			}),
-	// 			Expr {
-	// 				kind: ExprKind::Binary(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("x"))
-	// 					}),
-	// 					BinOp::from("<"),
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(10))
-	// 					})
-	// 				)
-	// 			}
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_do_while_block_parses_correctly,
+		"do { x++; } while (x < 10);",
+		Stmt {
+			kind: StmtKind::DoWhile(
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Postfix(
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("x"))
+								}),
+								PostfixOp::Inc
+							))
+						})
+					}])
+				}),
+				Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("x"))
+						}),
+						BinOp::from("<"),
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(10))
+						})
+					)
+				}
+			)
+		}
+	);
 
-	// stmt_parse_correctly!(
-	// 	parse_for_each_parses_correctly,
-	// 	r#"for (Integer i : ints) {
-	// 		sum += i;
-	// 	}"#,
-	// 	Stmt {
-	// 		kind: StmtKind::ForEach(
-	// 			Ty {
-	// 				array: false,
-	// 				kind: TyKind::Primitive(Primitive {
-	// 					kind: PrimitiveType::Integer,
-	// 				})
-	// 			},
-	// 			Identifier::from("i"),
-	// 			Expr {
-	// 				kind: ExprKind::Identifier(Identifier::from("ints"))
-	// 			},
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Body(vec![Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Assignment(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("sum"))
-	// 							}),
-	// 							AssignOp::Add,
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("i"))
-	// 							})
-	// 						)
-	// 					})
-	// 				}])
-	// 			})
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_for_each_parses_correctly,
+		r#"for (Integer i : ints) {
+			sum += i;
+		}"#,
+		Stmt {
+			kind: StmtKind::ForEach(
+				Ty {
+					array: false,
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveType::Integer,
+					})
+				},
+				Identifier::from("i"),
+				Expr {
+					kind: ExprKind::Identifier(Identifier::from("ints"))
+				},
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Variable(
+								Identifier::from("sum"),
+								AssignOp::Add,
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("i"))
+								})
+							))
+						})
+					}])
+				})
+			)
+		}
+	);
 
-	// stmt_parse_correctly!(
-	// 	parse_for_iter_parses_correctly,
-	// 	r#"for (Integer i = 0; i < 100; i++) {
-	// 		sum += i;
-	// 	}"#,
-	// 	Stmt {
-	// 		kind: StmtKind::ForIter(
-	// 			Some(vec![Local {
-	// 				kind: LocalKind::Assignment(
-	// 					false,
-	// 					Some(Ty {
-	// 						array: false,
-	// 						kind: TyKind::Primitive(Primitive {
-	// 							kind: PrimitiveType::Integer
-	// 						})
-	// 					}),
-	// 					Identifier::from("i"),
-	// 					Some(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(0))
-	// 					})
-	// 				)
-	// 			}]),
-	// 			Some(Expr {
-	// 				kind: ExprKind::Binary(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("i"))
-	// 					}),
-	// 					BinOp::Le,
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Literal(Literal::from(100))
-	// 					})
-	// 				)
-	// 			}),
-	// 			Some(vec![Expr {
-	// 				kind: ExprKind::Postfix(
-	// 					Box::new(Expr {
-	// 						kind: ExprKind::Identifier(Identifier::from("i"))
-	// 					}),
-	// 					PostfixOp::Inc
-	// 				)
-	// 			}]),
-	// 			Box::new(Block {
-	// 				kind: BlockKind::Body(vec![Stmt {
-	// 					kind: StmtKind::Expr(Expr {
-	// 						kind: ExprKind::Assignment(
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("sum"))
-	// 							}),
-	// 							AssignOp::Add,
-	// 							Box::new(Expr {
-	// 								kind: ExprKind::Identifier(Identifier::from("i"))
-	// 							})
-	// 						)
-	// 					})
-	// 				}])
-	// 			}),
-	// 		)
-	// 	}
-	// );
+	stmt_parse_correctly!(
+		parse_for_iter_parses_correctly,
+		r#"for (Integer i = 0; i < 100; i++) {
+			sum += i;
+		}"#,
+		Stmt {
+			kind: StmtKind::ForIter(
+				Some(vec![Stmt {
+					kind: StmtKind::Local(Local {
+						is_final: true,
+						ty: Ty {
+							array: false,
+							kind: TyKind::Primitive(Primitive {
+								kind: PrimitiveType::Integer,
+							})
+						},
+						id: Identifier::from("foo"),
+						expr: Some(Expr {
+							kind: ExprKind::Literal(Literal::from(22)),
+						})
+					})
+				}]),
+				Some(Expr {
+					kind: ExprKind::Binary(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier::from("i"))
+						}),
+						BinOp::Le,
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal::from(100))
+						})
+					)
+				}),
+				Some(vec![Stmt {
+					kind: StmtKind::Expr(Expr {
+						kind: ExprKind::Assignment(Assignment::Postfix(
+							Box::new(Expr {
+								kind: ExprKind::Identifier(Identifier::from("i"))
+							}),
+							PostfixOp::Inc
+						))
+					})
+				}]),
+				Box::new(Block {
+					kind: BlockKind::Body(vec![Stmt {
+						kind: StmtKind::Expr(Expr {
+							kind: ExprKind::Assignment(Assignment::Variable(
+								Identifier::from("sum"),
+								AssignOp::Add,
+								Box::new(Expr {
+									kind: ExprKind::Identifier(Identifier::from("i"))
+								})
+							))
+						})
+					}])
+				})
+			)
+		}
+	);
 }
