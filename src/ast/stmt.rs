@@ -197,6 +197,7 @@ fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
 
 	let for_init: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_init {
 		let current_inner = current.into_inner();
+		// TODO parse possible expressions
 		let ret = Some(current_inner.map(Stmt::from).collect());
 
 		current = inner.next().unwrap();
