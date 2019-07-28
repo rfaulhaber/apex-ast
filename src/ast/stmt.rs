@@ -164,12 +164,41 @@ impl<'a> From<Pair<'a, Rule>> for Stmt {
 			Rule::return_statement => parse_return_statement(inner),
 			Rule::continue_statement => parse_continue_statement(inner),
 			Rule::break_statement => parse_break_statement(inner),
-			Rule::local_variable_declaration => unimplemented!(),
-			Rule::assignment_expr | Rule::property_access | Rule::method_invocation => {
-				parse_expr_statement(inner)
-			}
+			Rule::local_variable_declaration => parse_local_variable_declaration(inner),
+			Rule::assignment_expr
+			| Rule::property_access
+			| Rule::method_invocation
+			| Rule::inc_dec_prefix
+			| Rule::inc_dec_postfix => parse_expr_statement(inner),
 			_ => unreachable!("got {:?}", inner.as_rule()),
 		}
+	}
+}
+
+// parses a child of Rule::body_statement that's already been unwrapped.
+// hopefully I can rewrite this so I won't need this anymore!
+fn parse_unwrapped_body_statement(pair: Pair<Rule>) -> Stmt {
+	match pair.as_rule() {
+		Rule::for_each_statement => parse_for_each_statement(pair),
+		Rule::for_iter_statement => parse_for_iter_statement(pair),
+		Rule::do_while_statement => parse_do_while_statement(pair),
+		Rule::while_statement => parse_while_statement(pair),
+		Rule::if_statement => unimplemented!(),
+		Rule::try_catch_statement => unimplemented!(),
+		Rule::switch_statement => unimplemented!(),
+		Rule::throw_statement => parse_throw_statement(pair),
+		Rule::dml_statement => parse_dml_statement(pair),
+		Rule::code_block => parse_code_block(pair),
+		Rule::return_statement => parse_return_statement(pair),
+		Rule::continue_statement => parse_continue_statement(pair),
+		Rule::break_statement => parse_break_statement(pair),
+		Rule::local_variable_declaration => parse_local_variable_declaration(pair),
+		Rule::assignment_expr
+		| Rule::property_access
+		| Rule::method_invocation
+		| Rule::inc_dec_prefix
+		| Rule::inc_dec_postfix => parse_expr_statement(pair),
+		_ => unreachable!("got {:?}", pair.as_rule()),
 	}
 }
 
@@ -197,8 +226,7 @@ fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
 
 	let for_init: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_init {
 		let current_inner = current.into_inner();
-		// TODO parse possible expressions
-		let ret = Some(current_inner.map(Stmt::from).collect());
+		let ret = Some(current_inner.map(parse_unwrapped_body_statement).collect());
 
 		current = inner.next().unwrap();
 
@@ -218,9 +246,9 @@ fn parse_for_iter_statement(pair: Pair<Rule>) -> Stmt {
 		_ => None,
 	};
 
-	let for_update: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_init {
+	let for_update: Option<Vec<Stmt>> = if current.as_rule() == Rule::for_update {
 		let current_inner = current.into_inner();
-		Some(current_inner.map(Stmt::from).collect())
+		Some(current_inner.map(parse_unwrapped_body_statement).collect())
 	} else {
 		None
 	};
@@ -266,6 +294,35 @@ fn parse_break_statement(pair: Pair<Rule>) -> Stmt {
 	}
 }
 
+fn parse_local_variable_declaration(pair: Pair<Rule>) -> Stmt {
+	let mut inner = pair.into_inner();
+
+	let mut current = inner.next().unwrap();
+
+	let is_final = current.as_rule() == Rule::FINAL;
+
+	if is_final {
+		current = inner.next().unwrap();
+	}
+
+	let ty = Ty::from(current);
+	let id = Identifier::from(inner.next().unwrap());
+
+	let expr = match inner.next() {
+		Some(next_pair) => Some(Expr::from(next_pair)),
+		None => None,
+	};
+
+	Stmt {
+		kind: StmtKind::Local(Local {
+			is_final,
+			ty,
+			id,
+			expr,
+		}),
+	}
+}
+
 fn parse_dml_statement(pair: Pair<Rule>) -> Stmt {
 	let mut inner = pair.into_inner();
 
@@ -282,12 +339,6 @@ fn parse_code_block(pair: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::Block(block),
-	}
-}
-
-fn parse_local_assignment(pair: Pair<Rule>) -> Stmt {
-	Stmt {
-		kind: StmtKind::Local(Local::from(pair)),
 	}
 }
 
@@ -632,6 +683,26 @@ mod stmt_tests {
 	);
 
 	stmt_parse_correctly!(
+		parse_local_variable_declaration_parses_correctly,
+		"Integer foo = 22;",
+		Stmt {
+			kind: StmtKind::Local(Local {
+				is_final: false,
+				ty: Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveType::Integer
+					}),
+					array: false
+				},
+				id: Identifier::from("foo"),
+				expr: Some(Expr {
+					kind: ExprKind::Literal(Literal::from(22))
+				})
+			}),
+		}
+	);
+
+	stmt_parse_correctly!(
 		parse_for_each_parses_correctly,
 		r#"for (Integer i : ints) {
 			sum += i;
@@ -667,14 +738,14 @@ mod stmt_tests {
 
 	stmt_parse_correctly!(
 		parse_for_iter_parses_correctly,
-		r#"for (Integer i = 0; i < 100; i++) {
-			sum += i;
+		r#"for (Integer foo = 22; foo < 100; foo++) {
+			sum += foo;
 		}"#,
 		Stmt {
 			kind: StmtKind::ForIter(
 				Some(vec![Stmt {
 					kind: StmtKind::Local(Local {
-						is_final: true,
+						is_final: false,
 						ty: Ty {
 							array: false,
 							kind: TyKind::Primitive(Primitive {
@@ -690,9 +761,9 @@ mod stmt_tests {
 				Some(Expr {
 					kind: ExprKind::Binary(
 						Box::new(Expr {
-							kind: ExprKind::Identifier(Identifier::from("i"))
+							kind: ExprKind::Identifier(Identifier::from("foo"))
 						}),
-						BinOp::Le,
+						BinOp::Lt,
 						Box::new(Expr {
 							kind: ExprKind::Literal(Literal::from(100))
 						})
@@ -702,7 +773,7 @@ mod stmt_tests {
 					kind: StmtKind::Expr(Expr {
 						kind: ExprKind::Assignment(Assignment::Postfix(
 							Box::new(Expr {
-								kind: ExprKind::Identifier(Identifier::from("i"))
+								kind: ExprKind::Identifier(Identifier::from("foo"))
 							}),
 							PostfixOp::Inc
 						))
@@ -715,7 +786,7 @@ mod stmt_tests {
 								Identifier::from("sum"),
 								AssignOp::Add,
 								Box::new(Expr {
-									kind: ExprKind::Identifier(Identifier::from("i"))
+									kind: ExprKind::Identifier(Identifier::from("foo"))
 								})
 							))
 						})
