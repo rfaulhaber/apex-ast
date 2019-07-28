@@ -75,6 +75,8 @@ statement_expression = _{ assignment_statement | property_access | method_invoca
 assignment_statement = _{ local_variable_declaration | assignment_expr | inc_dec_expr } 
 
 local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ ("=" ~ assignment_rhs)? } 
+// TODO cover this situation:
+//      SObjectType domainSObjectType = new List<Id>(recordIds)[0].getSObjectType();
 new_instance_declaration = { NEW ~ basic_type ~ (new_map_literal | new_list_literal | new_array_literal | call_arguments) }
 call_arguments = { "(" ~ (expression ~ ("," ~ expression)*)? ~ ")" }
 new_list_literal = { "{" ~ expression ~ ("," ~ expression)* ~ "}" } // should be *?
@@ -468,6 +470,19 @@ char = {
     !("\'" | "\\") ~ ANY
     | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+// fragment EscapeSequence
+//     : '\\' [btnfr"'\\]
+//     | '\\' ([0-3]? [0-7])? [0-7]
+//     | '\\' 'u'+ HexDigit HexDigit HexDigit HexDigit
+//     ;
+
+
+escape_sequence = {
+    "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
+    | "\\" ~ ('0' .. '3')? ~ ('0' .. '7')? ~ ('0' .. '7')
+    | "\\" ~ "u" ~ ASCII_HEX_DIGIT{4}
 }
 
 number_literal = _{ float_literal | long_literal | integer_literal }
