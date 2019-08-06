@@ -493,20 +493,6 @@
 //     ;
 
 // expression
-//     : primary
-//      this is the key to understanding method calls!
-//     | expression bop='.'
-//       ( IDENTIFIER
-//       | methodCall
-//       | THIS
-//       | NEW nonWildcardTypeArguments? innerCreator
-//       | SUPER superSuffix
-//       | explicitGenericInvocation
-//       )
-//     | expression '[' expression ']'
-//     | methodCall
-//     | NEW creator
-//     | '(' typeType ')' expression
 //     | expression postfix=('++' | '--')
 //     | prefix=('+'|'-'|'++'|'--') expression
 //     | prefix=('~'|'!') expression
@@ -526,14 +512,67 @@
 //       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
 //       expression
 
-expression = {
-    primary
+// expressions 
+expression = { expr_inner }
+
+// expr_inner = { 
+//     braced_expr 
+//     | property_access 
+//     | query_expression
+//     | new_instance_declaration 
+//     | method_invocation 
+//     | instanceof_expr 
+//     | cast_expr
+//     | unary_expr 
+//     | list_access 
+//     | literal 
+//     | identifier 
+// }
+
+expr_inner = {
+    braced_expr
+    | property_access
+    | new_instance_expr
+    | method_call
+    | unary_expr
+    | instanceof_expr
+    | cast_expression
+    | list_access
+    | primary
 }
+
+braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
 
 // infix_expr = { expression ~ (binary_operator ~ expression)+ }
 
-// prefix_expr = { (INC_OP | DEC_OP) ~ expression }
-// postfix_expr = { expression ~ (INC_OP | DEC_OP) }
+unary_expr = { unary_operator  ~ expression }
+
+prefix_expr = { (INC_OP | DEC_OP) ~ expression }
+postfix_expr = { expression ~ (INC_OP | DEC_OP) }
+
+// technically, something like "1 instanceof Integer" is apparently syntactically
+// correct but Salesforce throws a compile-time error rather than a syntax error
+instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
+
+property_access = { (list_access | access_partial) ~ "." ~ expression }
+
+list_access = { access_partial ~ "[" ~ expression ~ "]" }
+
+cast_expression = { cast_operator ~ expression }
+cast_operator = _{ "(" ~ basic_type ~ ")" }
+
+access_partial = {
+    new_instance_expr
+    | SUPER ~ super_suffix
+    | method_call
+    | THIS
+    | identifier
+}
+
+accessible = {
+    literal
+    | identifier
+}
 
 // Primary: 
 //     Literal
@@ -547,20 +586,16 @@ expression = {
 //     void . class
 
 
-// this name comes courtesy to us from java
+// this name comes to us courtesy of java
 primary = {
     THIS ~ arguments?
     | SUPER ~ super_suffix
-    | new_instance_expr
-    | method_call
+    | type_expr
     | literal
     | identifier
 }
 
-super_suffix = {
-    arguments
-    | "." ~ identifier ~ arguments
-}
+super_suffix = { arguments | "." ~ identifier ~ arguments }
 
 method_call = { 
     identifier ~ arguments
@@ -568,10 +603,22 @@ method_call = {
     | SUPER ~ arguments?
 }
 
-new_instance_expr = { NEW ~ basic_type ~ arguments }
+new_instance_expr = {NEW ~ (map_literal_init | array_literal_init | new_class)}
+
+map_literal_init = { ^"MAP" ~ two_type_arguments ~ (map_literal_values | arguments) }
+map_literal_values = { "{" ~ mapping_pair ~ ("," ~ mapping_pair)* ~ "}" }
+mapping_pair = { expression ~ "=>" ~ expression }
+
+array_literal_init = { collection_type ~ one_type_argument ~ (new_array_literal | arguments) }
+collection_type = { ^"LIST" | ^"SET" }
+new_array_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
+
+new_class = { basic_type ~ arguments }
 
 arguments = { "(" ~ argument_list? ~ ")" } 
 argument_list = _{ expression ~ ("," ~ expression)* }
+
+type_expr = { basic_type ~ "." ~ CLASS }
 
 basic_type = { class_or_interface_type | primitive_type }
 
@@ -626,9 +673,7 @@ literal = {
 // integer_binary_sigil        = _{ "0b" ~ integer_binary }
 
 long_literal = @{ integer_literal ~ ^"L" }
-
-integer_literal = @{ "-"? ~ ASCII_NONZERO_DIGIT ~ (ASCII_DIGIT | "_")* }
-
+integer_literal = @{ "0" | "-"? ~ ASCII_NONZERO_DIGIT ~ (ASCII_DIGIT | "_")* }
 float_literal = @{ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT* | "." ~ ASCII_DIGIT* }
 
 // TODO: hex float literal?
