@@ -513,21 +513,7 @@
 //       expression
 
 // expressions 
-expression = { expr_inner }
-
-// expr_inner = { 
-//     braced_expr 
-//     | property_access 
-//     | query_expression
-//     | new_instance_declaration 
-//     | method_invocation 
-//     | instanceof_expr 
-//     | cast_expr
-//     | unary_expr 
-//     | list_access 
-//     | literal 
-//     | identifier 
-// }
+expression = { infix_expr | ternary_expr | expr_inner }
 
 expr_inner = {
     braced_expr
@@ -535,6 +521,8 @@ expr_inner = {
     | new_instance_expr
     | method_call
     | unary_expr
+    | prefix_expr
+    | postfix_expr
     | instanceof_expr
     | cast_expression
     | list_access
@@ -543,12 +531,16 @@ expr_inner = {
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
 
-// infix_expr = { expression ~ (binary_operator ~ expression)+ }
+ternary_expr = { expr_inner ~ "?" ~ expr_inner ~ ":" ~ expr_inner }
+
+infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
 
 unary_expr = { unary_operator  ~ expression }
 
-prefix_expr = { (INC_OP | DEC_OP) ~ expression }
-postfix_expr = { expression ~ (INC_OP | DEC_OP) }
+prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
+postfix_expr = { affixable ~ (INC_OP | DEC_OP) }
+
+affixable = { property_access | list_access | identifier }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
 // correct but Salesforce throws a compile-time error rather than a syntax error
