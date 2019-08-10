@@ -312,209 +312,112 @@
 //     : DEFAULT elementValue
 //     ;
 
-// // STATEMENTS / BLOCKS
+// annotations
 
-// block
-//     : '{' blockStatement* '}'
-//     ;
+annotation = { "@" ~ identifier ~ annotation_pair_list? }
+annotation_pair_list = _{ "(" ~ annotation_pair+ ~ ")" }
 
-// blockStatement
-//     : localVariableDeclaration ';'
-//     | statement
-//     | localTypeDeclaration
-//     ;
+// we're making it easy on ourselves! apex annotations aren't complex!
+annotation_pair = { identifier ~ "=" ~ literal }
 
-// localVariableDeclaration
-//     : variableModifier* typeType variableDeclarators
-//     ;
+access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
 
-// localTypeDeclaration
-//     : classOrInterfaceModifier*
-//       (classDeclaration | interfaceDeclaration)
-//     | ';'
-//     ;
+// methods
 
-// statement
-//     : blockLabel=block
-//     | ASSERT expression (':' expression)? ';'
-//     | IF parExpression statement (ELSE statement)?
-//     | FOR '(' forControl ')' statement
-//     | WHILE parExpression statement
-//     | DO statement WHILE parExpression ';'
-//     | TRY block (catchClause+ finallyBlock? | finallyBlock)
-//     | TRY resourceSpecification block catchClause* finallyBlock?
-//     | SWITCH parExpression '{' switchBlockStatementGroup* switchLabel* '}'
-//     | SYNCHRONIZED parExpression block
-//     | RETURN expression? ';'
-//     | THROW expression ';'
-//     | BREAK IDENTIFIER? ';'
-//     | CONTINUE IDENTIFIER? ';'
-//     | SEMI
-//     | statementExpression=expression ';'
-//     | identifierLabel=IDENTIFIER ':' statement
-//     ;
+parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
+parameter = { basic_type ~ identifier }
+class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC)? ~ basic_type ~ identifier ~ parameter_list ~ block }
+interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" }
 
-// catchClause
-//     : CATCH '(' variableModifier* catchType IDENTIFIER ')' block
-//     ;
+block = { "{" ~ statement* ~ "}" }
+inline_block = { statement }
 
-// catchType
-//     : qualifiedName ('|' qualifiedName)*
-//     ;
+// statements
 
-// finallyBlock
-//     : FINALLY block
-//     ;
+statement = {
+    for_stmt
+    | do_while_stmt
+    | while_stmt
+    | if_stmt
+    | switch_stmt
+    | try_catch_stmt
+    | return_stmt
+    | throw_stmt
+    | break_stmt
+    | continue_stmt
+    | local_variable_declaration
+    | stmt_expr ~ ";"
+}
 
-// resourceSpecification
-//     : '(' resources ';'? ')'
-//     ;
+// if statements
+if_stmt = { IF ~ if_condition ~ (inline_block | block) ~ else_if_block* ~ else_block? }
+if_condition = { "(" ~ expression ~ ")" }
+else_if_block = { ELSE ~ IF ~ if_condition ~ (inline_block | block) }
+else_block = { ELSE ~ (inline_block | block) }
 
-// resources
-//     : resource (';' resource)*
-//     ;
+// switch statements
+switch_stmt = { SWITCH ~ ON ~ expression ~ "{" ~ when_case* ~ when_else? ~ "}" }
+when_case = { WHEN ~ when_condition ~ block }
+when_condition = { when_type | when_value_list }
+when_type = { basic_type ~ identifier }
+when_value_list = { literal ~ ("," ~ literal)* | identifier ~ ("," ~ identifier)* }
+when_else = { WHEN ~ ELSE ~ block }
 
-// resource
-//     : variableModifier* classOrInterfaceType variableDeclaratorId '=' expression
-//     ;
+// for statements
+// these names come to us courtesy of java as well
+for_stmt = { for_basic | for_enhanced }
 
-// /** Matches cases then statements, both of which are mandatory.
-//  *  To handle empty cases at the end, we add switchLabel* to statement.
-//  */
-// switchBlockStatementGroup
-//     : switchLabel+ blockStatement+
-//     ;
+// "basic" for loops. 
+// infinite for loops are allowed in apex.
+// by means of experimentation, apex doesn't allow for multiple statement 
+// expressions in the update term, leading to this unusual rule.
+for_basic = { FOR ~ "(" ~ for_init? ~ ";" ~ expression? ~ ";" ~ stmt_expr? ~ ")" ~ (inline_block | block) }
+for_init = { stmt_expr ~ ("," ~ stmt_expr)* }
 
-// switchLabel
-//     : CASE (constantExpression=expression | enumConstantName=IDENTIFIER) ':'
-//     | DEFAULT ':'
-//     ;
+// "enhanced" for loop
+for_enhanced = { FOR ~ "(" ~ basic_type ~ identifier ~ ":" ~ expression ~ ")" ~ (inline_block | block) }
 
-// forControl
-//     : enhancedForControl
-//     | forInit? ';' expression? ';' forUpdate=expressionList?
-//     ;
+// while statements
+while_stmt = { WHILE ~ "(" ~ expression ~ ")" ~ (inline_block | block) }
 
-// forInit
-//     : localVariableDeclaration
-//     | expressionList
-//     ;
+// do while statements
+do_while_stmt = { DO ~ (inline_block | block) ~ WHILE ~ "(" ~ expression ~ ")" ~ ";" }
 
-// enhancedForControl
-//     : variableModifier* typeType variableDeclaratorId ':' expression
-//     ;
+// try / catch blocks
+try_catch_stmt = { TRY ~ block ~ catch_clause+ ~ (FINALLY ~ block)? }
+catch_clause = { CATCH ~ "(" ~ basic_type ~ identifier ~ ")" ~ block }
 
-// // EXPRESSIONS
+// return statements
+return_stmt = { RETURN ~ expression ~ ";" }
+// throw statements
+throw_stmt = { THROW ~ expression ~ ";"  }
 
-// parExpression
-//     : '(' expression ')'
-//     ;
+// break statements
+break_stmt = { BREAK ~ ";" }
 
-// expressionList
-//     : expression (',' expression)*
-//     ;
+// continue statements
+continue_stmt = { CONTINUE ~ ";"  }
 
-// methodCall
-//     : IDENTIFIER '(' expressionList? ')'
-//     | THIS '(' expressionList? ')'
-//     | SUPER '(' expressionList? ')'
-//     ;
+local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
+declaration_rhs = _{ "=" ~ expression }
 
-// expression
-//     : primary
-//     | expression bop='.'
-//       ( IDENTIFIER
-//       | methodCall
-//       | THIS
-//       | NEW nonWildcardTypeArguments? innerCreator
-//       | SUPER superSuffix
-//       | explicitGenericInvocation
-//       )
-//     | expression '[' expression ']'
-//     | methodCall
-//     | NEW creator
-//     | '(' typeType ')' expression
-//     | expression postfix=('++' | '--')
-//     | prefix=('+'|'-'|'++'|'--') expression
-//     | prefix=('~'|'!') expression
-//     | expression bop=('*'|'/'|'%') expression
-//     | expression bop=('+'|'-') expression
-//     | expression ('<' '<' | '>' '>' '>' | '>' '>') expression
-//     | expression bop=('<=' | '>=' | '>' | '<') expression
-//     | expression bop=INSTANCEOF typeType
-//     | expression bop=('==' | '!=') expression
-//     | expression bop='&' expression
-//     | expression bop='^' expression
-//     | expression bop='|' expression
-//     | expression bop='&&' expression
-//     | expression bop='||' expression
-//     | expression bop='?' expression ':' expression
-//     | <assoc=right> expression
-//       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
-//       expression
-
-// classType
-//     : (classOrInterfaceType '.')? annotation* IDENTIFIER typeArguments?
-//     ;
-
-// creator
-//     : nonWildcardTypeArguments createdName classCreatorRest
-//     | createdName (arrayCreatorRest | classCreatorRest)
-//     ;
-
-// createdName
-//     : IDENTIFIER typeArgumentsOrDiamond? ('.' IDENTIFIER typeArgumentsOrDiamond?)*
-//     | primitiveType
-//     ;
-
-// innerCreator
-//     : IDENTIFIER nonWildcardTypeArgumentsOrDiamond? classCreatorRest
-//     ;
-
-// arrayCreatorRest
-//     : '[' (']' ('[' ']')* arrayInitializer | expression ']' ('[' expression ']')* ('[' ']')*)
-//     ;
-
-// classCreatorRest
-//     : arguments classBody?
-//     ;
-
-// nonWildcardTypeArguments
-//     : '<' typeList '>'
-//     ;
-
-// explicitGenericInvocationSuffix
-//     : SUPER superSuffix
-//     | IDENTIFIER arguments
-//     ;
-
-// arguments
-//     : '(' expressionList? ')'
-//     ;
-
-// expression
-//     | expression postfix=('++' | '--')
-//     | prefix=('+'|'-'|'++'|'--') expression
-//     | prefix=('~'|'!') expression
-//     | expression bop=('*'|'/'|'%') expression
-//     | expression bop=('+'|'-') expression
-//     | expression ('<' '<' | '>' '>' '>' | '>' '>') expression
-//     | expression bop=('<=' | '>=' | '>' | '<') expression
-//     | expression bop=INSTANCEOF typeType
-//     | expression bop=('==' | '!=') expression
-//     | expression bop='&' expression
-//     | expression bop='^' expression
-//     | expression bop='|' expression
-//     | expression bop='&&' expression
-//     | expression bop='||' expression
-//     | expression bop='?' expression ':' expression
-//     | <assoc=right> expression
-//       bop=('=' | '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '>>=' | '>>>=' | '<<=' | '%=')
-//       expression
+// statement expressions. these are expressions that can stand alone as
+// statements themselves. for example, "i++" is an expression until you add a
+// semicolon, making "i++;" a statement.
+stmt_expr = { 
+    property_access
+    | assignment_expr 
+    | prefix_expr 
+    | postfix_expr 
+    | method_call 
+    | new_instance_expr
+}
 
 // expressions 
-expression = { infix_expr | ternary_expr | expr_inner }
 
+expression = { infix_expr | assignment_expr | ternary_expr | expr_inner }
+
+// these are supposed to be "terminal" expressions, to avoid left-recursion 
 expr_inner = {
     braced_expr
     | property_access
@@ -529,25 +432,22 @@ expr_inner = {
     | primary
 }
 
+
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
-
 ternary_expr = { expr_inner ~ "?" ~ expr_inner ~ ":" ~ expr_inner }
-
 infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
-
+assignment_expr = { expr_inner ~ assignment_operator ~ expr_inner }
 unary_expr = { unary_operator  ~ expression }
-
 prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
 postfix_expr = { affixable ~ (INC_OP | DEC_OP) }
-
 affixable = { property_access | list_access | identifier }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
 // correct but Salesforce throws a compile-time error rather than a syntax error
 instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
+// TODO make method calls distinct from property access
 property_access = { (list_access | access_partial) ~ "." ~ expression }
-
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
@@ -878,6 +778,7 @@ UPDATE = { ^"update" }
 UPSERT = { ^"upsert" }
 VIRTUAL = { ^"virtual" }
 VOID = { ^"void" }
+WHEN = {^"when"}
 WHILE = { ^"while" }
 WITHOUT_SHARING = { ^"without sharing" }
 WITH_SHARING = { ^"with sharing" }
