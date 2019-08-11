@@ -204,19 +204,6 @@
 //     | '?' ((EXTENDS | SUPER) typeType)?
 //     ;
 
-// qualifiedNameList
-//     : qualifiedName (',' qualifiedName)*
-//     ;
-
-// formalParameters
-//     : '(' formalParameterList? ')'
-//     ;
-
-// formalParameterList
-//     : formalParameter (',' formalParameter)* (',' lastFormalParameter)?
-//     | lastFormalParameter
-//     ;
-
 // formalParameter
 //     : variableModifier* typeType variableDeclaratorId
 //     ;
@@ -229,89 +216,6 @@
 //     : IDENTIFIER ('.' IDENTIFIER)*
 //     ;
 
-// literal
-//     : integerLiteral
-//     | floatLiteral
-//     | CHAR_LITERAL
-//     | STRING_LITERAL
-//     | BOOL_LITERAL
-//     | NULL_LITERAL
-//     ;
-
-// integerLiteral
-//     : DECIMAL_LITERAL
-//     | HEX_LITERAL
-//     | OCT_LITERAL
-//     | BINARY_LITERAL
-//     ;
-
-// floatLiteral
-//     : FLOAT_LITERAL
-//     | HEX_FLOAT_LITERAL
-//     ;
-
-// // ANNOTATIONS
-
-// annotation
-//     : '@' qualifiedName ('(' ( elementValuePairs | elementValue )? ')')?
-//     ;
-
-// elementValuePairs
-//     : elementValuePair (',' elementValuePair)*
-//     ;
-
-// elementValuePair
-//     : IDENTIFIER '=' elementValue
-//     ;
-
-// elementValue
-//     : expression
-//     | annotation
-//     | elementValueArrayInitializer
-//     ;
-
-// elementValueArrayInitializer
-//     : '{' (elementValue (',' elementValue)*)? (',')? '}'
-//     ;
-
-// annotationTypeDeclaration
-//     : '@' INTERFACE IDENTIFIER annotationTypeBody
-//     ;
-
-// annotationTypeBody
-//     : '{' (annotationTypeElementDeclaration)* '}'
-//     ;
-
-// annotationTypeElementDeclaration
-//     : modifier* annotationTypeElementRest
-//     | ';' // this is not allowed by the grammar, but apparently allowed by the actual compiler
-//     ;
-
-// annotationTypeElementRest
-//     : typeType annotationMethodOrConstantRest ';'
-//     | classDeclaration ';'?
-//     | interfaceDeclaration ';'?
-//     | enumDeclaration ';'?
-//     | annotationTypeDeclaration ';'?
-//     ;
-
-// annotationMethodOrConstantRest
-//     : annotationMethodRest
-//     | annotationConstantRest
-//     ;
-
-// annotationMethodRest
-//     : IDENTIFIER '(' ')' defaultValue?
-//     ;
-
-// annotationConstantRest
-//     : variableDeclarators
-//     ;
-
-// defaultValue
-//     : DEFAULT elementValue
-//     ;
-
 // annotations
 
 annotation = { "@" ~ identifier ~ annotation_pair_list? }
@@ -320,13 +224,30 @@ annotation_pair_list = _{ "(" ~ annotation_pair+ ~ ")" }
 // we're making it easy on ourselves! apex annotations aren't complex!
 annotation_pair = { identifier ~ "=" ~ literal }
 
-access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
+
+// non-method class members
+
+class_member_variable_declaration = { 
+    annotation? 
+    ~ member_access_modifier? 
+    ~ (STATIC | TRANSIENT)? 
+    ~ FINAL? 
+    ~ basic_type 
+    ~ identifier 
+    ~ declaration_rhs? 
+}
+
+// static blocks
+
+static_block = { STATIC ~ block }
 
 // methods
 
+member_access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
+
 parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 parameter = { basic_type ~ identifier }
-class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC)? ~ basic_type ~ identifier ~ parameter_list ~ block }
+class_method_declaration = { annotation? ~ member_access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ basic_type ~ identifier ~ parameter_list ~ block }
 interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" }
 
 block = { "{" ~ statement* ~ "}" }
