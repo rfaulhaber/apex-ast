@@ -1,225 +1,11 @@
-// typeDeclaration
-//     : classOrInterfaceModifier*
-//       (classDeclaration | enumDeclaration | interfaceDeclaration | annotationTypeDeclaration)
-//     | ';'
-//     ;
+// apex
 
-// modifier
-//     : classOrInterfaceModifier
-//     | NATIVE
-//     | SYNCHRONIZED
-//     | TRANSIENT
-//     | VOLATILE
-//     ;
+apex_file = { SOI ~ (class_declaration | interface_declaration | trigger_declaration) ~ EOI }
 
-// classOrInterfaceModifier
-//     : annotation
-//     | PUBLIC
-//     | PROTECTED
-//     | PRIVATE
-//     | STATIC
-//     | ABSTRACT
-//     | FINAL    // FINAL for class only -- does not apply to interfaces
-//     | STRICTFP
-//     ;
-
-// variableModifier
-//     : FINAL
-//     | annotation
-//     ;
-
-// classDeclaration
-//     : CLASS IDENTIFIER typeParameters?
-//       (EXTENDS typeType)?
-//       (IMPLEMENTS typeList)?
-//       classBody
-//     ;
-
-// typeParameters
-//     : '<' typeParameter (',' typeParameter)* '>'
-//     ;
-
-// typeParameter
-//     : annotation* IDENTIFIER (EXTENDS typeBound)?
-//     ;
-
-// typeBound
-//     : typeType ('&' typeType)*
-//     ;
-
-// enumDeclaration
-//     : ENUM IDENTIFIER (IMPLEMENTS typeList)? '{' enumConstants? ','? enumBodyDeclarations? '}'
-//     ;
-
-// enumConstants
-//     : enumConstant (',' enumConstant)*
-//     ;
-
-// enumConstant
-//     : annotation* IDENTIFIER arguments? classBody?
-//     ;
-
-// enumBodyDeclarations
-//     : ';' classBodyDeclaration*
-//     ;
-
-// interfaceDeclaration
-//     : INTERFACE IDENTIFIER typeParameters? (EXTENDS typeList)? interfaceBody
-//     ;
-
-// classBody
-//     : '{' classBodyDeclaration* '}'
-//     ;
-
-// interfaceBody
-//     : '{' interfaceBodyDeclaration* '}'
-//     ;
-
-// classBodyDeclaration
-//     : ';'
-//     | STATIC? block
-//     | modifier* memberDeclaration
-//     ;
-
-// memberDeclaration
-//     : methodDeclaration
-//     | genericMethodDeclaration
-//     | fieldDeclaration
-//     | constructorDeclaration
-//     | genericConstructorDeclaration
-//     | interfaceDeclaration
-//     | annotationTypeDeclaration
-//     | classDeclaration
-//     | enumDeclaration
-//     ;
-
-// /* We use rule this even for void methods which cannot have [] after parameters.
-//    This simplifies grammar and we can consider void to be a type, which
-//    renders the [] matching as a context-sensitive issue or a semantic check
-//    for invalid return type after parsing.
-//  */
-// methodDeclaration
-//     : typeTypeOrVoid IDENTIFIER formalParameters ('[' ']')*
-//       (THROWS qualifiedNameList)?
-//       methodBody
-//     ;
-
-// methodBody
-//     : block
-//     | ';'
-//     ;
-
-// typeTypeOrVoid
-//     : typeType
-//     | VOID
-//     ;
-
-// genericMethodDeclaration
-//     : typeParameters methodDeclaration
-//     ;
-
-// genericConstructorDeclaration
-//     : typeParameters constructorDeclaration
-//     ;
-
-// constructorDeclaration
-//     : IDENTIFIER formalParameters (THROWS qualifiedNameList)? constructorBody=block
-//     ;
-
-// fieldDeclaration
-//     : typeType variableDeclarators ';'
-//     ;
-
-// interfaceBodyDeclaration
-//     : modifier* interfaceMemberDeclaration
-//     | ';'
-//     ;
-
-// interfaceMemberDeclaration
-//     : constDeclaration
-//     | interfaceMethodDeclaration
-//     | genericInterfaceMethodDeclaration
-//     | interfaceDeclaration
-//     | annotationTypeDeclaration
-//     | classDeclaration
-//     | enumDeclaration
-//     ;
-
-// constDeclaration
-//     : typeType constantDeclarator (',' constantDeclarator)* ';'
-//     ;
-
-// constantDeclarator
-//     : IDENTIFIER ('[' ']')* '=' variableInitializer
-//     ;
-
-// // see matching of [] comment in methodDeclaratorRest
-// // methodBody from Java8
-// interfaceMethodDeclaration
-//     : interfaceMethodModifier* (typeTypeOrVoid | typeParameters annotation* typeTypeOrVoid)
-//       IDENTIFIER formalParameters ('[' ']')* (THROWS qualifiedNameList)? methodBody
-//     ;
-
-// // Java8
-// interfaceMethodModifier
-//     : annotation
-//     | PUBLIC
-//     | ABSTRACT
-//     | DEFAULT
-//     | STATIC
-//     | STRICTFP
-//     ;
-
-// genericInterfaceMethodDeclaration
-//     : typeParameters interfaceMethodDeclaration
-//     ;
-
-// variableDeclarators
-//     : variableDeclarator (',' variableDeclarator)*
-//     ;
-
-// variableDeclarator
-//     : variableDeclaratorId ('=' variableInitializer)?
-//     ;
-
-// variableDeclaratorId
-//     : IDENTIFIER ('[' ']')*
-//     ;
-
-// variableInitializer
-//     : arrayInitializer
-//     | expression
-//     ;
-
-// arrayInitializer
-//     : '{' (variableInitializer (',' variableInitializer)* (',')? )? '}'
-//     ;
-
-// classOrInterfaceType
-//     : IDENTIFIER typeArguments? ('.' IDENTIFIER typeArguments?)*
-//     ;
-
-// typeArgument
-//     : typeType
-//     | '?' ((EXTENDS | SUPER) typeType)?
-//     ;
-
-// formalParameter
-//     : variableModifier* typeType variableDeclaratorId
-//     ;
-
-// lastFormalParameter
-//     : variableModifier* typeType '...' variableDeclaratorId
-//     ;
-
-// qualifiedName
-//     : IDENTIFIER ('.' IDENTIFIER)*
-//     ;
-
-class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
-class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_member_variable_declaration | static_block | class_constructor_definition | class_method_declaration)* ~ "}" }
+class_declaration = { annotation? ~ access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
+class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_method_declaration | enum_declaration | class_member_variable_declaration | static_block | class_constructor_definition)* ~ "}" }
 inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
-inner_class_body = { "{" ~ (class_member_variable_declaration | class_constructor_definition | static_block | class_method_declaration)* ~ "}" }
+inner_class_body = { "{" ~ (class_method_declaration | enum_declaration | class_member_variable_declaration | class_constructor_definition | static_block)* ~ "}" }
 inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
 // // basically methods without return type 
 class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ parameter_list ~ block }
@@ -240,6 +26,15 @@ interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" 
 
 type_list = { basic_type ~ ("," ~ basic_type)* }
 
+// triggers
+trigger_declaration = { TRIGGER ~ identifier ~ ON ~ identifier ~ trigger_event_list ~ block }
+trigger_event_list = { "(" ~ trigger_event ~ ("," ~ trigger_event)* ~ ")" }
+trigger_event = { (BEFORE ~ dml_action) | (AFTER ~ dml_action) }
+
+// enums
+enum_declaration = { annotation? ~ access_modifier? ~ ENUM ~ identifier ~ enum_body  }
+enum_body = { "{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
+
 // annotations
 
 annotation = { "@" ~ identifier ~ annotation_pair_list? }
@@ -259,6 +54,7 @@ class_member_variable_declaration = {
     ~ basic_type 
     ~ identifier 
     ~ declaration_rhs? 
+    ~ ";"
 }
 
 // static blocks
@@ -289,8 +85,8 @@ statement = {
     | throw_stmt
     | break_stmt
     | continue_stmt
-    | local_variable_declaration
     | stmt_expr ~ ";"
+    | local_variable_declaration
 }
 
 // if statements
@@ -332,7 +128,7 @@ try_catch_stmt = { TRY ~ block ~ catch_clause+ ~ (FINALLY ~ block)? }
 catch_clause = { CATCH ~ "(" ~ basic_type ~ identifier ~ ")" ~ block }
 
 // return statements
-return_stmt = { RETURN ~ expression ~ ";" }
+return_stmt = { RETURN ~ expression? ~ ";" }
 // throw statements
 throw_stmt = { THROW ~ expression ~ ";"  }
 
@@ -342,6 +138,10 @@ break_stmt = { BREAK ~ ";" }
 // continue statements
 continue_stmt = { CONTINUE ~ ";"  }
 
+// dml statements
+dml_stmt = { dml_action ~ (new_instance_expr | identifier) ~ ";" }
+dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
+
 local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
 declaration_rhs = _{ "=" ~ expression }
 
@@ -349,8 +149,8 @@ declaration_rhs = _{ "=" ~ expression }
 // statements themselves. for example, "i++" is an expression until you add a
 // semicolon, making "i++;" a statement.
 stmt_expr = { 
-    property_access
-    | assignment_expr 
+    assignment_expr 
+    | property_access
     | prefix_expr 
     | postfix_expr 
     | method_call 
@@ -359,12 +159,13 @@ stmt_expr = {
 
 // expressions 
 
-expression = { infix_expr | assignment_expr | ternary_expr | expr_inner }
+expression = { infix_expr | ternary_expr | assignment_expr | expr_inner }
 
 // these are supposed to be "terminal" expressions, to avoid left-recursion 
 expr_inner = {
     braced_expr
     | property_access
+    | list_access
     | new_instance_expr
     | method_call
     | unary_expr
@@ -372,33 +173,33 @@ expr_inner = {
     | postfix_expr
     | instanceof_expr
     | cast_expression
-    | list_access
     | primary
 }
 
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
-ternary_expr = { expr_inner ~ "?" ~ expr_inner ~ ":" ~ expr_inner }
-infix_expr = { expr_inner ~ (binary_operator ~ expr_inner)+ }
-assignment_expr = { expr_inner ~ assignment_operator ~ expr_inner }
+ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ expression ~ ":" ~ expression }
+infix_expr = { expression ~ (binary_operator ~ expression)+ }
+assignment_expr = { expr_inner ~ assignment_operator ~ expression }
 unary_expr = { unary_operator  ~ expression }
 prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
 postfix_expr = { affixable ~ (INC_OP | DEC_OP) }
 affixable = { property_access | list_access | identifier }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
-// correct but Salesforce throws a compile-time error rather than a syntax error
+// correct but Salesforce throws a compile-time error rather than a parsing error
 instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
 // TODO make method calls distinct from property access
-property_access = { (list_access | access_partial) ~ "." ~ expression }
+property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | identifier) }
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
 cast_operator = _{ "(" ~ basic_type ~ ")" }
 
 access_partial = {
-    new_instance_expr
+    cast_expression
+    | new_instance_expr
     | SUPER ~ super_suffix
     | method_call
     | THIS
@@ -409,18 +210,6 @@ accessible = {
     literal
     | identifier
 }
-
-// Primary: 
-//     Literal
-//     ParExpression
-//     this [Arguments]
-//     super SuperSuffix
-//     new Creator
-//     NonWildcardTypeArguments (ExplicitGenericInvocationSuffix | this Arguments)
-//     Identifier { . Identifier } [IdentifierSuffix]
-//     BasicType {[]} . class
-//     void . class
-
 
 // this name comes to us courtesy of java
 primary = {
@@ -439,13 +228,14 @@ method_call = {
     | SUPER ~ arguments?
 }
 
-new_instance_expr = {NEW ~ (map_literal_init | array_literal_init | new_class)}
+new_instance_expr = { NEW ~ (map_literal_init | collection_literal_init | array_literal_init | new_class) }
 
 map_literal_init = { ^"MAP" ~ two_type_arguments ~ (map_literal_values | arguments) }
 map_literal_values = { "{" ~ mapping_pair ~ ("," ~ mapping_pair)* ~ "}" }
 mapping_pair = { expression ~ "=>" ~ expression }
 
-array_literal_init = { collection_type ~ one_type_argument ~ (new_array_literal | arguments) }
+array_literal_init = { basic_type ~ new_array_literal }
+collection_literal_init = { collection_type ~ one_type_argument ~ (new_array_literal | arguments) }
 collection_type = { ^"LIST" | ^"SET" }
 new_array_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
 
@@ -456,7 +246,8 @@ argument_list = _{ expression ~ ("," ~ expression)* }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 
-basic_type = { class_or_interface_type | primitive_type }
+basic_type = { (class_or_interface_type | primitive_type) ~ array_brackets? }
+array_brackets = @{ "[]" }
 
 class_or_interface_type = { identifier ~ type_arguments? ~ ("." ~ identifier)? }
 
@@ -498,22 +289,9 @@ literal = {
     | null_literal
 }
 
-// NOTE: based on manual testing, apex does not support hex, octal, or binary
-// literals. if they are needed, they could be implemented like this, thanks
-// to the huia programming language:
-// integer_hexadecimal         = @{ (ASCII_DIGIT | 'a'..'f' | 'A'..'F') ~ (ASCII_DIGIT | 'a'..'f' | 'A'..'F' | "_")* }
-// integer_hexadecimal_sigil   = _{ "0x" ~ integer_hexadecimal }
-// integer_octal               = @{ ('0'..'7') ~ ('0'..'7' | "_" )* }
-// integer_octal_sigil         = _{ "0o" ~ integer_octal }
-// integer_binary              = @{ ('0'..'1') ~ ('0'..'1' | "_")* }
-// integer_binary_sigil        = _{ "0b" ~ integer_binary }
-
 long_literal = @{ integer_literal ~ ^"L" }
 integer_literal = @{ "0" | "-"? ~ ASCII_NONZERO_DIGIT ~ (ASCII_DIGIT | "_")* }
 float_literal = @{ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT* | "." ~ ASCII_DIGIT* }
-
-// TODO: hex float literal?
-// from antlr: HEX_FLOAT_LITERAL:  '0' [xX] (HexDigits '.'? | HexDigits? '.' HexDigits) [pP] [+-]? Digits [fFdD]?;
 
 bool_literal = { TRUE | FALSE }
 
@@ -523,12 +301,9 @@ char = { !("\'" | "\\") ~ ANY | escape_sequence }
 
 null_literal = { ^"null" }
 
+// TODO how do I write this such that it doesn't match apex keywords?
+// "voids" should be a valid identifier, while "void" shouldn't be
 identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
-
-// NOTE: strangely, apex doesn't support exponential literals
-// exponent_part = {
-//     ^"e" ~ ("+" | "-")? ~ ASCII_DIGIT
-// }
 
 escape_sequence = {
     "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
