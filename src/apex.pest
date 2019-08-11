@@ -145,6 +145,11 @@ dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
 local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
 declaration_rhs = _{ "=" ~ expression }
 
+
+// TODO write grammar for soql and sosl, this is incomplete
+// queries are expressions, not statements
+query_expression = { "[" ~ (SELECT | FIND) ~ (!"]" ~ ANY)* ~ "]" }
+
 // statement expressions. these are expressions that can stand alone as
 // statements themselves. for example, "i++" is an expression until you add a
 // semicolon, making "i++;" a statement.
@@ -165,6 +170,7 @@ expression = { infix_expr | ternary_expr | assignment_expr | expr_inner }
 expr_inner = {
     braced_expr
     | property_access
+    | query_expression
     | list_access
     | new_instance_expr
     | method_call
@@ -200,14 +206,10 @@ cast_operator = _{ "(" ~ basic_type ~ ")" }
 access_partial = {
     cast_expression
     | new_instance_expr
+    | query_expression
     | SUPER ~ super_suffix
     | method_call
     | THIS
-    | identifier
-}
-
-accessible = {
-    literal
     | identifier
 }
 
@@ -279,6 +281,17 @@ primitive_type = {
     | STRING
     | TIME
 }
+
+// soql keywords - not inclusive at the moment
+FROM = { ^"FROM" }
+HAVING = { ^"HAVING" }
+LIMIT = { ^"LIMIT" }
+OFFSET = { ^"OFFSET" }
+SELECT = { ^"SELECT" }
+WHERE = { ^"WHERE" }
+
+// sosl keywords - not inclusive at the moment
+FIND = { ^"FIND" }
 
 literal = {
     float_literal
