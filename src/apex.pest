@@ -216,6 +216,30 @@
 //     : IDENTIFIER ('.' IDENTIFIER)*
 //     ;
 
+class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
+class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_member_variable_declaration | static_block | class_constructor_definition | class_method_declaration)* ~ "}" }
+inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
+inner_class_body = { "{" ~ (class_member_variable_declaration | class_constructor_definition | static_block | class_method_declaration)* ~ "}" }
+inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
+// // basically methods without return type 
+class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ parameter_list ~ block }
+class_member_accessors = { "{" ~ get_accessor? ~ set_accessor? ~ "}" }
+get_accessor = { access_modifier? ~ GET ~ (block | ";") }
+set_accessor = { access_modifier? ~ SET ~ (block | ";") }
+
+sharing_modifier = {
+    WITHOUT_SHARING
+    | WITH_SHARING
+    | INHERITED_SHARING
+}
+
+// interface declaration
+interface_declaration = { access_modifier? ~ INTERFACE ~ identifier ~ (EXTENDS ~ type_list)? ~ interface_body }
+interface_body = { "{" ~ interface_method_declaration* ~ "}" }
+interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" }
+
+type_list = { basic_type ~ ("," ~ basic_type)* }
+
 // annotations
 
 annotation = { "@" ~ identifier ~ annotation_pair_list? }
@@ -229,7 +253,7 @@ annotation_pair = { identifier ~ "=" ~ literal }
 
 class_member_variable_declaration = { 
     annotation? 
-    ~ member_access_modifier? 
+    ~ access_modifier? 
     ~ (STATIC | TRANSIENT)? 
     ~ FINAL? 
     ~ basic_type 
@@ -243,12 +267,11 @@ static_block = { STATIC ~ block }
 
 // methods
 
-member_access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
+access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
 
 parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 parameter = { basic_type ~ identifier }
-class_method_declaration = { annotation? ~ member_access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ basic_type ~ identifier ~ parameter_list ~ block }
-interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" }
+class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ basic_type ~ identifier ~ parameter_list ~ block }
 
 block = { "{" ~ statement* ~ "}" }
 inline_block = { statement }
