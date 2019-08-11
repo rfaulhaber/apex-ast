@@ -179,7 +179,7 @@ expr_inner = {
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
 ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ expression ~ ":" ~ expression }
-infix_expr = { expression ~ (binary_operator ~ expression)+ }
+infix_expr = { expr_inner ~ (binary_operator ~ expression)+ }
 assignment_expr = { expr_inner ~ assignment_operator ~ expression }
 unary_expr = { unary_operator  ~ expression }
 prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
