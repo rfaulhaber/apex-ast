@@ -2,6 +2,7 @@
 use crate::ast::annotation::Annotation;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
+use crate::ast::ty::*;
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 
@@ -29,7 +30,7 @@ fn parse_annotation(p: Pair<Rule>) -> Annotation {
 		let first_id = parse_identifier(first_pair.next().unwrap());
 		let first_lit = parse_literal(first_pair.next().unwrap());
 
-		 keypairs.push((first_id, first_lit));
+		keypairs.push((first_id, first_lit));
 
 		for pairs in inner {
 			let mut pair = pairs.into_inner();
@@ -94,9 +95,148 @@ fn parse_literal(p: Pair<Rule>) -> Literal {
 	}
 }
 
+// Rule::basic_type
+fn parse_ty(p: Pair<Rule>) -> Ty {
+	let mut inner = p.into_inner();
+
+	let t = inner.next().unwrap();
+
+	match t.as_rule() {
+		Rule::class_or_interface_type => {
+			let mut coi_inner = t.into_inner();
+
+			let name = parse_identifier(coi_inner.next().unwrap());
+
+			match coi_inner.next() {
+				Some(ref pair) if pair.as_rule() == Rule::identifier => {
+					let subclass = parse_identifier(pair.clone());
+
+					let next = coi_inner.next();
+
+					if next.is_none() {
+						Ty {
+							kind: TyKind::ClassOrInterface(ClassOrInterface {
+								name,
+								subclass: Some(subclass),
+								type_arguments: None,
+								is_array: inner.next().is_some(),
+							}),
+						}
+					} else {
+						let ty_args = next.unwrap().into_inner().next().unwrap();
+
+						match ty_args.as_rule() {
+							Rule::two_type_arguments => {
+								let mut type_inner = ty_args.into_inner();
+								let first = parse_ty(type_inner.next().unwrap());
+								let second = parse_ty(type_inner.next().unwrap());
+
+								Ty {
+									kind: TyKind::ClassOrInterface(ClassOrInterface {
+										name,
+										subclass: Some(subclass),
+										type_arguments: Some((
+											Box::new(first),
+											Some(Box::new(second)),
+										)),
+										is_array: inner.next().is_some(),
+									}),
+								}
+							}
+							Rule::one_type_argument => {
+								let mut type_inner = ty_args.into_inner();
+								let first = parse_ty(type_inner.next().unwrap());
+								Ty {
+									kind: TyKind::ClassOrInterface(ClassOrInterface {
+										name,
+										subclass: Some(subclass),
+										type_arguments: Some((Box::new(first), None)),
+										is_array: inner.next().is_some(),
+									}),
+								}
+							}
+							_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
+						}
+					}
+				}
+				Some(ref pair) if pair.as_rule() == Rule::type_arguments => {
+					let ty_args = pair.clone().into_inner().next().unwrap();
+
+					match ty_args.as_rule() {
+						Rule::two_type_arguments => {
+							let mut type_inner = ty_args.into_inner();
+							let first = parse_ty(type_inner.next().unwrap());
+							let second = parse_ty(type_inner.next().unwrap());
+
+							Ty {
+								kind: TyKind::ClassOrInterface(ClassOrInterface {
+									name,
+									subclass: None,
+									type_arguments: Some((Box::new(first), Some(Box::new(second)))),
+									is_array: inner.next().is_some(),
+								}),
+							}
+						}
+						Rule::one_type_argument => {
+							let mut type_inner = ty_args.into_inner();
+							let first = parse_ty(type_inner.next().unwrap());
+							Ty {
+								kind: TyKind::ClassOrInterface(ClassOrInterface {
+									name,
+									subclass: None,
+									type_arguments: Some((Box::new(first), None)),
+									is_array: inner.next().is_some(),
+								}),
+							}
+						}
+						_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
+					}
+				}
+				Some(_) => unreachable!("unexpected variant"),
+				None => Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						name,
+						subclass: None,
+						type_arguments: None,
+						is_array: inner.next().is_some(),
+					}),
+				},
+			}
+		}
+		Rule::primitive_type => {
+			let prim_inner = t.into_inner().next().unwrap();
+
+			let kind = match prim_inner.as_rule() {
+				Rule::BLOB => PrimitiveKind::Blob,
+				Rule::BOOLEAN => PrimitiveKind::Boolean,
+				Rule::DATE => PrimitiveKind::Date,
+				Rule::DATETIME => PrimitiveKind::Datetime,
+				Rule::DECIMAL => PrimitiveKind::Decimal,
+				Rule::DOUBLE => PrimitiveKind::Double,
+				Rule::ID => PrimitiveKind::ID,
+				Rule::INTEGER => PrimitiveKind::Integer,
+				Rule::LONG => PrimitiveKind::Long,
+				Rule::OBJECT => PrimitiveKind::Object,
+				Rule::STRING => PrimitiveKind::String,
+				Rule::TIME => PrimitiveKind::Time,
+				_ => unreachable!("unexpected primitve kind: {:?}", prim_inner.as_rule()),
+			};
+
+			Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind,
+					is_array: inner.next().is_some(),
+				}),
+			}
+		}
+		_ => unreachable!("expected basic_type or sub-rule, found {:?}", t.as_rule()),
+	}
+}
+
 #[cfg(test)]
 mod test {
 	use super::*;
+
 	fn test_parse<F, E>(rule: Rule, input: &str, parse: F, expected: E)
 	where
 		F: FnOnce(Pair<Rule>) -> E,
@@ -188,5 +328,223 @@ mod test {
 				name: String::from("x"),
 			},
 		);
+	}
+
+	#[test]
+	fn ty_primitive_parses() {
+		test_parse(
+			Rule::basic_type,
+			"Integer",
+			parse_ty,
+			Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_primitive_array_parses() {
+		test_parse(
+			Rule::basic_type,
+			"Integer[]",
+			parse_ty,
+			Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: true,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_class_parses() {
+		test_parse(
+			Rule::basic_type,
+			"Foo",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: None,
+					type_arguments: None,
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_class_array_parses() {
+		test_parse(
+			Rule::basic_type,
+			"Foo[]",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: None,
+					type_arguments: None,
+					is_array: true,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_subclass_parses() {
+		test_parse(
+			Rule::basic_type,
+			"Foo.Bar",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: Some(Identifier::from("Bar")),
+					type_arguments: None,
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_basic_generic_parses() {
+		let subtype = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier::from("Bar"),
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+			}),
+		};
+
+		test_parse(
+			Rule::basic_type,
+			"Foo<Bar>",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: None,
+					type_arguments: Some((Box::new(subtype), None)),
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_generic_subtype_parses() {
+		let subtype = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier::from("Bar"),
+				subclass: Some(Identifier::from("Baz")),
+				type_arguments: None,
+				is_array: false,
+			}),
+		};
+
+		test_parse(
+			Rule::basic_type,
+			"Foo<Bar.Baz>",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: None,
+					type_arguments: Some((Box::new(subtype), None)),
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_generic_subtype_array_parses() {
+		let subtype = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier::from("Bar"),
+				subclass: Some(Identifier::from("Baz")),
+				type_arguments: None,
+				is_array: false,
+			}),
+		};
+
+		test_parse(
+			Rule::basic_type,
+			"Foo<Bar.Baz>[]",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: None,
+					type_arguments: Some((Box::new(subtype), None)),
+					is_array: true,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_subtype_generic_parses() {
+		let gen_type = Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier::from("Baz"),
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+			}),
+		};
+
+		let type_args = (Box::new(gen_type), None);
+
+		test_parse(
+			Rule::basic_type,
+			"Foo.Bar<Baz>",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					subclass: Some(Identifier::from("Bar")),
+					type_arguments: Some(type_args),
+					is_array: false,
+				}),
+			},
+		)
+	}
+
+	#[test]
+	fn ty_two_type_args_parses() {
+		let id_type = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::ID,
+				is_array: false,
+			}),
+		};
+
+		let string_type = Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::String,
+				is_array: false,
+			}),
+		};
+
+		test_parse(
+			Rule::basic_type,
+			"Map<Id, String>",
+			parse_ty,
+			Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Map"),
+					subclass: None,
+					type_arguments: Some((Box::new(id_type), Some(Box::new(string_type)))),
+					is_array: false,
+				}),
+			},
+		)
 	}
 }

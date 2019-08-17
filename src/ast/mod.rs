@@ -12,7 +12,7 @@ pub mod ops;
 // pub mod sosl;
 // pub mod stmt;
 // pub mod trigger;
-// pub mod ty; // "type" is reserved
+pub mod ty; // "type" is reserved
 
 // TODO implement some kind of visitor pattern
 // https://github.com/rust-unofficial/patterns/blob/master/patterns/visitor.md

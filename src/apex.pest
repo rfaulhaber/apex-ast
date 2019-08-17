@@ -248,21 +248,18 @@ argument_list = _{ expression ~ ("," ~ expression)* }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 
-basic_type = { (class_or_interface_type | primitive_type) ~ array_brackets? }
+basic_type = { (primitive_type | class_or_interface_type) ~ array_brackets? }
 array_brackets = @{ "[]" }
 
-class_or_interface_type = { identifier ~ type_arguments? ~ ("." ~ identifier)? }
+class_or_interface_type = { identifier ~ ("." ~ identifier)? ~ type_arguments? }
 
 // apex only has typed types of up to two types.
 // Map<String, String> => two types
 // List<String> => one type
 type_arguments = { two_type_arguments | one_type_argument }
 
-two_type_arguments = { "<" ~ typed_type ~ "," ~ typed_type ~ ">" }
-one_type_argument = { "<" ~ typed_type ~ ">" }
-
-// blame the java grammar for this name, not me!
-typed_type = { (class_or_interface_type | primitive_type) ~ ("[" ~ "]")? }
+two_type_arguments = { "<" ~ basic_type ~ "," ~ basic_type ~ ">" }
+one_type_argument = { "<" ~ basic_type ~ ">" }
 
 qualified_name = { identifier ~ ("." ~ identifier)* }
 

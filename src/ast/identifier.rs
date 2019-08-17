@@ -1,6 +1,3 @@
-use crate::parser::Rule;
-use pest::iterators::Pair;
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Identifier {
 	// TODO change this to &'id str to save memory
