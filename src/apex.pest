@@ -142,7 +142,7 @@ continue_stmt = { CONTINUE ~ ";"  }
 dml_stmt = { dml_action ~ (new_instance_expr | identifier) ~ ";" }
 dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
 
-local_variable_declaration = { FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
+local_variable_declaration = { annotation? ~ FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
 declaration_rhs = _{ "=" ~ expression }
 
 
