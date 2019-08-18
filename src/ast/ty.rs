@@ -35,10 +35,26 @@ pub struct ClassOrInterface {
 	pub is_array: bool,
 }
 
+impl Into<Ty> for ClassOrInterface {
+	fn into(self) -> Ty {
+		Ty {
+			kind: TyKind::ClassOrInterface(self),
+		}
+	}
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Primitive {
 	pub kind: PrimitiveKind,
 	pub is_array: bool,
+}
+
+impl Into<Ty> for Primitive {
+	fn into(self) -> Ty {
+		Ty {
+			kind: TyKind::Primitive(self)
+		}
+	}
 }
 
 #[derive(Debug, PartialEq, Clone)]

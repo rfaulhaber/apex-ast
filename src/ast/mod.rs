@@ -1,7 +1,7 @@
 pub mod annotation;
 // pub mod class;
 // pub mod entry;
-// pub mod expr;
+pub mod expr;
 pub mod identifier;
 // pub mod interface;
 pub mod literal;

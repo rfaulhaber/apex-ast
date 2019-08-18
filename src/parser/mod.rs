@@ -1,11 +1,11 @@
 /// Parsing functions for the Apex AST.
 /// Functions generally follow the pattern of `parse_*`, e.g. `parse_ty`.
-pub mod fns;
+pub mod parse;
 
 #[cfg(test)]
 mod tests;
 
-use pest::iterators::Pair;
+// lexically, this is dead code, but Pest needs this imported like so
 #[allow(unused_imports)]
 use pest::Parser;
 

@@ -197,7 +197,7 @@ affixable = { property_access | list_access | identifier }
 instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
 
 // TODO make method calls distinct from property access
-property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | identifier) }
+property_access = { (list_access | access_partial) ~ "." ~ !CLASS ~ (property_access | list_access | method_call | identifier) }
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
@@ -241,6 +241,7 @@ collection_literal_init = { collection_type ~ one_type_argument ~ (new_array_lit
 collection_type = { ^"LIST" | ^"SET" }
 new_array_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
 
+// TODO support "new Account(Name = 'foo')"
 new_class = { basic_type ~ arguments }
 
 arguments = { "(" ~ argument_list? ~ ")" } 
@@ -251,7 +252,7 @@ type_expr = { basic_type ~ "." ~ CLASS }
 basic_type = { (primitive_type | class_or_interface_type) ~ array_brackets? }
 array_brackets = @{ "[]" }
 
-class_or_interface_type = { identifier ~ ("." ~ identifier)? ~ type_arguments? }
+class_or_interface_type = { identifier ~ ("." ~ !CLASS ~ identifier)? ~ type_arguments? }
 
 // apex only has typed types of up to two types.
 // Map<String, String> => two types
@@ -372,8 +373,6 @@ binary_operator = _{
 unary_operator = {
     LOGIC_NOT
     | BIT_NOT
-    | ADD
-    | SUB
 }
 
 INC_OP = { "++" }

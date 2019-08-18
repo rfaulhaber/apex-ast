@@ -1,8 +1,19 @@
 use super::*;
 use crate::ast::annotation::Annotation;
+use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
+use crate::ast::ops::*;
 use crate::ast::ty::*;
+use pest::iterators::Pair;
+
+// NOTE: should this entire module be an object or generic function?
+
+macro_rules! descend_pair {
+	($pair:ident) => {
+		$pair.into_inner().next().unwrap()
+	};
+}
 
 pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
 	let mut inner = p.into_inner();
@@ -38,6 +49,146 @@ pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
 			name,
 			keypairs: Some(keypairs),
 		}
+	}
+}
+
+// Rule::expression or any sub-rule
+pub fn parse_expr(p: Pair<Rule>) -> Expr {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::infix_expr => parse_infix_expr(inner),
+		Rule::ternary_expr => parse_ternary_expr(inner),
+		Rule::assignment_expr => parse_assignment_expr(inner),
+		Rule::expr_inner => parse_expr_inner(inner),
+		_ => unreachable!("unexpected rule: {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_infix_expr(p: Pair<Rule>) -> Expr {
+	unimplemented!();
+}
+
+fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
+	unimplemented!();
+}
+
+fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
+	unimplemented!();
+}
+
+fn parse_expr_inner(p: Pair<Rule>) -> Expr {
+	let inner = descend_pair!(p);
+
+	match inner.as_rule() {
+		Rule::braced_expr => Expr {
+			kind: ExprKind::Braced(Box::new(parse_expr(descend_pair!(inner)))),
+		},
+		Rule::property_access => unimplemented!(),
+		Rule::query_expression => unimplemented!(),
+		Rule::list_access => unimplemented!(),
+		Rule::new_instance_expr => unimplemented!(),
+		Rule::method_call => {
+			let mut method_inner = inner.into_inner();
+
+			let id = parse_identifier(method_inner.next().unwrap());
+			let args = parse_arguments(method_inner.next().unwrap());
+
+			ExprKind::Call(id, args).into()
+		}
+		Rule::unary_expr => {
+			let mut unary_inner = inner.into_inner();
+
+			let op = UnOp::from(unary_inner.next().unwrap().as_str());
+			let expr = parse_expr(unary_inner.next().unwrap());
+
+			ExprKind::Unary(op, Box::new(expr)).into()
+		}
+		Rule::prefix_expr => {
+			let mut prefix_inner = inner.into_inner();
+
+			let op = IncDecOp::from(prefix_inner.next().unwrap().as_str());
+			let affixable = prefix_inner.next().unwrap().into_inner().next().unwrap();
+
+			let affixable_expr = match affixable.as_rule() {
+				Rule::property_access => parse_property_access(affixable),
+				Rule::list_access => parse_list_access(affixable),
+				Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+				_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
+			};
+
+			ExprKind::Prefix(op, Box::new(affixable_expr)).into()
+		}
+		Rule::postfix_expr => {
+			let mut postfix_inner = inner.into_inner();
+
+			let affixable = postfix_inner.next().unwrap().into_inner().next().unwrap();
+			let op = IncDecOp::from(postfix_inner.next().unwrap().as_str());
+
+			let affixable_expr = match affixable.as_rule() {
+				Rule::property_access => parse_property_access(affixable),
+				Rule::list_access => parse_list_access(affixable),
+				Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+				_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
+			};
+
+			ExprKind::Postfix(Box::new(affixable_expr), op).into()
+		}
+		Rule::instanceof_expr => {
+			let mut inst_pairs = inner.into_inner();
+
+			let id = parse_identifier(inst_pairs.next().unwrap());
+			inst_pairs.next(); // discard INSTANCEOF token
+			let ty = parse_ty(inst_pairs.next().unwrap());
+
+			ExprKind::Instanceof(id, ty).into()
+		}
+		Rule::cast_expression => {
+			let mut cast_inner = inner.into_inner();
+
+			let ty = parse_ty(cast_inner.next().unwrap());
+			let expr = parse_expr(cast_inner.next().unwrap());
+
+			ExprKind::Cast(ty, Box::new(expr)).into()
+		}
+		Rule::primary => {
+			let primary = inner.into_inner().next().unwrap();
+
+			match primary.as_rule() {
+				Rule::type_expr => ExprKind::Type(parse_ty(descend_pair!(primary))).into(),
+				Rule::literal => ExprKind::Literal(parse_literal(primary)).into(),
+				Rule::identifier => ExprKind::Identifier(parse_identifier(primary)).into(),
+				_ => unimplemented!(
+					"rule {:?} either unimplemented or unexpected",
+					primary.as_rule()
+				),
+			}
+		}
+		_ => unreachable!(
+			"unexpected expr_inner rule encountered: {:?}",
+			inner.as_rule()
+		),
+	}
+}
+
+fn parse_property_access(p: Pair<Rule>) -> Expr {
+	unimplemented!("property access not implemented yet");
+}
+
+fn parse_list_access(p: Pair<Rule>) -> Expr {
+	unimplemented!("list access not implemented yet");
+}
+
+// for Rule::arguments
+fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
+	let args_inner = p.into_inner();
+
+	let pairs: Vec<Expr> = args_inner.map(parse_expr).collect();
+
+	if pairs.is_empty() {
+		None
+	} else {
+		Some(pairs)
 	}
 }
 
@@ -90,6 +241,7 @@ pub fn parse_literal(p: Pair<Rule>) -> Literal {
 }
 
 // Rule::basic_type
+// TODO clean up
 pub fn parse_ty(p: Pair<Rule>) -> Ty {
 	let mut inner = p.into_inner();
 

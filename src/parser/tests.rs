@@ -1,9 +1,12 @@
-use super::fns::*;
+use super::parse::*;
 use super::*;
 use crate::ast::annotation::Annotation;
+use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
+use crate::ast::ops::*;
 use crate::ast::ty::*;
+use pest::iterators::Pair;
 
 fn test_parse<F, E>(rule: Rule, input: &str, parse: F, expected: E)
 where
@@ -312,6 +315,179 @@ fn ty_two_type_args_parses() {
 				type_arguments: Some((Box::new(id_type), Some(Box::new(string_type)))),
 				is_array: false,
 			}),
+		},
+	)
+}
+
+#[test]
+fn expr_literal_parses() {
+	test_parse(
+		Rule::expression,
+		"2",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(2),
+			}),
+		},
+	)
+}
+
+#[test]
+fn expr_identifier_parses() {
+	test_parse(
+		Rule::expression,
+		"foo",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Identifier(Identifier::from("foo")),
+		},
+	)
+}
+
+#[test]
+fn expr_type_expr_parses() {
+	test_parse(
+		Rule::expression,
+		"Foo.class",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Type(Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: Identifier::from("Foo"),
+					is_array: false,
+					subclass: None,
+					type_arguments: None,
+				}),
+			}),
+		},
+	)
+}
+
+#[test]
+fn instanceof_expr_parses() {
+	let id = Identifier::from("foo");
+	let ty: Ty = ClassOrInterface {
+		name: Identifier::from("Foo"),
+		subclass: None,
+		type_arguments: None,
+		is_array: false,
+	}
+	.into();
+
+	test_parse(
+		Rule::expression,
+		"foo instanceof Foo",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Instanceof(id, ty),
+		},
+	)
+}
+
+#[test]
+fn cast_expr_parses() {
+	let ty: Ty = Primitive {
+		kind: PrimitiveKind::String,
+		is_array: false,
+	}
+	.into();
+
+	let expr: Expr = ExprKind::Identifier(Identifier::from("foo")).into();
+
+	test_parse(
+		Rule::expression,
+		"(String) foo",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Cast(ty, Box::new(expr)),
+		},
+	)
+}
+
+#[test]
+fn prefix_expr_parses() {
+	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+
+	test_parse(
+		Rule::expression,
+		"++i",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Prefix(IncDecOp::Inc, Box::new(inner)),
+		},
+	)
+}
+
+#[test]
+fn postfix_expr_parses() {
+	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+
+	test_parse(
+		Rule::expression,
+		"i++",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
+		},
+	)
+}
+
+#[test]
+fn unary_expr_parses() {
+	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+
+	test_parse(
+		Rule::expression,
+		"!i",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Unary(UnOp::Not, Box::new(inner)),
+		},
+	)
+}
+
+#[test]
+fn method_call_no_args_parses() {
+	test_parse(
+		Rule::expression,
+		"foo()",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Call(Identifier::from("foo"), None),
+		},
+	)
+}
+
+#[test]
+fn method_call_one_arg_parses() {
+	test_parse(
+		Rule::expression,
+		"foo(bar)",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Call(
+				Identifier::from("foo"),
+				Some(vec![ExprKind::Identifier(Identifier::from("bar")).into()]),
+			),
+		},
+	)
+}
+
+#[test]
+fn method_call_two_args_parses() {
+	test_parse(
+		Rule::expression,
+		"foo(bar, \'baz\')",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Call(
+				Identifier::from("foo"),
+				Some(vec![
+					ExprKind::Identifier(Identifier::from("bar")).into(),
+					ExprKind::Literal(Literal::from("\'baz\'")).into(),
+				]),
+			),
 		},
 	)
 }

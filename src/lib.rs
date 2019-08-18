@@ -8,5 +8,6 @@ pub mod ast;
 /// Module containing parsing utilities for transforming Pest objects into
 /// Apex AST objects.
 pub mod parser;
+pub mod print;
 
 // TODO implement pretty printer

@@ -106,26 +106,26 @@ impl UnOp {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum PostfixOp {
+pub enum IncDecOp {
 	Inc,
 	Dec,
 }
 
-impl From<&str> for PostfixOp {
-	fn from(s: &str) -> PostfixOp {
+impl From<&str> for IncDecOp {
+	fn from(s: &str) -> IncDecOp {
 		match s {
-			"++" => PostfixOp::Inc,
-			"--" => PostfixOp::Dec,
+			"++" => IncDecOp::Inc,
+			"--" => IncDecOp::Dec,
 			_ => panic!("invalid string: {}", s),
 		}
 	}
 }
 
-impl PostfixOp {
+impl IncDecOp {
 	pub fn as_str(&self) -> &str {
 		match self {
-			PostfixOp::Inc => "++",
-			PostfixOp::Dec => "--",
+			IncDecOp::Inc => "++",
+			IncDecOp::Dec => "--",
 		}
 	}
 }
