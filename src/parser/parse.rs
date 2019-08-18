@@ -197,10 +197,6 @@ fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
 	}
 }
 
-fn parse_access_partial(p: Pair<Rule>) -> Expr {
-	unimplemented!();
-}
-
 fn parse_cast_expr(p: Pair<Rule>) -> Expr {
 	let mut cast_inner = p.into_inner();
 
