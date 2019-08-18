@@ -663,3 +663,18 @@ fn new_inst_class_sobject_argsparses() {
 		},
 	);
 }
+
+#[test]
+fn list_access_parses() {
+	let accessible = Expr::from(Identifier::from("foo"));
+	let access_expr = Expr::from(Literal::from(2));
+
+	test_parse(
+		Rule::expression,
+		"foo[2]",
+		parse_expr,
+		Expr {
+			kind: ExprKind::ListAccess(Box::new(accessible), Box::new(access_expr)),
+		},
+	);
+}

@@ -86,173 +86,9 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 		},
 		Rule::property_access => unimplemented!(),
 		Rule::query_expression => unimplemented!(),
-		Rule::list_access => unimplemented!(),
-		Rule::new_instance_expr => {
-			let mut new_inst_inner = inner.into_inner();
-
-			new_inst_inner.next(); // discard "NEW"
-
-			let subrule = new_inst_inner.next().unwrap();
-
-			match subrule.as_rule() {
-				Rule::map_literal_init => {
-					let mut map_inner = subrule.into_inner();
-
-					let map_name = Identifier::from(map_inner.next().unwrap().as_str());
-
-					let mut two_types = map_inner.next().unwrap().into_inner();
-
-					let first_type = parse_ty(two_types.next().unwrap());
-					let second_type = parse_ty(two_types.next().unwrap());
-
-					let ty = Ty {
-						kind: TyKind::ClassOrInterface(ClassOrInterface {
-							name: map_name,
-							subclass: None,
-							type_arguments: type_args!(first_type, second_type),
-							is_array: false,
-						}),
-					};
-
-					let args = map_inner.next().unwrap();
-
-					match args.as_rule() {
-						Rule::map_literal_values => {
-							let pairs: Vec<(Expr, Expr)> = args
-								.into_inner()
-								.map(|p| {
-									let mut pair_inner = p.into_inner();
-
-									let left = parse_expr(pair_inner.next().unwrap());
-									let right = parse_expr(pair_inner.next().unwrap());
-
-									(left, right)
-								})
-								.collect();
-
-							Expr {
-								kind: ExprKind::New(ty, Some(NewType::Map(pairs))),
-							}
-						}
-						Rule::arguments => {
-							let args: Vec<Expr> = args.into_inner().map(parse_expr).collect();
-
-							ExprKind::New(
-								ty,
-								Some(NewType::Class(ClassArgs::Basic(if args.is_empty() {
-									None
-								} else {
-									Some(args)
-								}))),
-							)
-							.into()
-						}
-						_ => unreachable!("unexpected rule encountered: {:?}", args.as_rule()),
-					}
-				}
-				Rule::collection_literal_init => {
-					let mut lit_inner = subrule.into_inner();
-
-					let collection_name = Identifier::from(lit_inner.next().unwrap().as_str());
-					let gen_type = parse_ty(lit_inner.next().unwrap().into_inner().next().unwrap());
-
-					let args = lit_inner.next().unwrap();
-
-					let ty = Ty {
-						kind: TyKind::ClassOrInterface(ClassOrInterface {
-							name: collection_name,
-							subclass: None,
-							type_arguments: Some((Box::new(gen_type), None)),
-							is_array: false,
-						}),
-					};
-
-					match args.as_rule() {
-						Rule::new_collection_literal => {
-							let exprs: Vec<Expr> = args.into_inner().map(parse_expr).collect();
-
-							ExprKind::New(ty, Some(NewType::Collection(exprs))).into()
-						}
-						Rule::arguments => {
-							let args: Vec<Expr> = args.into_inner().map(parse_expr).collect();
-
-							ExprKind::New(
-								ty,
-								Some(NewType::Class(ClassArgs::Basic(if args.is_empty() {
-									None
-								} else {
-									Some(args)
-								}))),
-							)
-							.into()
-						}
-						_ => unreachable!("encountered unexpected rule: {:?}", args.as_rule()),
-					}
-				}
-				Rule::array_literal_init => {
-					let mut lit_inner = subrule.into_inner();
-
-					let ty = parse_ty(lit_inner.next().unwrap());
-
-					let exprs: Vec<Expr> = lit_inner
-						.next()
-						.unwrap()
-						.into_inner()
-						.map(parse_expr)
-						.collect();
-
-					ExprKind::New(ty, Some(NewType::Array(exprs))).into()
-				}
-				Rule::new_class => {
-					let mut class_inner = subrule.into_inner();
-
-					let ty = parse_ty(class_inner.next().unwrap());
-
-					let args = class_inner.next().unwrap();
-
-					match args.as_rule() {
-						Rule::sobject_arguments => {
-							let args: Vec<(Identifier, Expr)> = args
-								.into_inner()
-								.map(|p| {
-									let mut sobject_pair = p.into_inner();
-
-									let id = parse_identifier(sobject_pair.next().unwrap());
-									let expr = parse_expr(sobject_pair.next().unwrap());
-
-									(id, expr)
-								})
-								.collect();
-
-							ExprKind::New(ty, Some(NewType::Class(ClassArgs::SObject(args)))).into()
-						}
-						Rule::arguments => {
-							let args: Vec<Expr> = args.into_inner().map(parse_expr).collect();
-
-							ExprKind::New(
-								ty,
-								Some(NewType::Class(ClassArgs::Basic(if args.is_empty() {
-									None
-								} else {
-									Some(args)
-								}))),
-							)
-							.into()
-						}
-						_ => unreachable!("unexpected rule found: {:?}", args.as_rule()),
-					}
-				}
-				_ => unreachable!("expected new instance subrule, got {:?}", subrule.as_rule()),
-			}
-		}
-		Rule::method_call => {
-			let mut method_inner = inner.into_inner();
-
-			let id = parse_identifier(method_inner.next().unwrap());
-			let args = parse_arguments(method_inner.next().unwrap());
-
-			ExprKind::Call(id, args).into()
-		}
+		Rule::list_access => parse_list_access(inner),
+		Rule::new_instance_expr => parse_new_instance_expr(inner),
+		Rule::method_call => parse_method_call(inner),
 		Rule::unary_expr => {
 			let mut unary_inner = inner.into_inner();
 
@@ -300,14 +136,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 
 			ExprKind::Instanceof(id, ty).into()
 		}
-		Rule::cast_expression => {
-			let mut cast_inner = inner.into_inner();
-
-			let ty = parse_ty(cast_inner.next().unwrap());
-			let expr = parse_expr(cast_inner.next().unwrap());
-
-			ExprKind::Cast(ty, Box::new(expr)).into()
-		}
+		Rule::cast_expression => parse_cast_expr(inner),
 		Rule::primary => {
 			let primary = inner.into_inner().next().unwrap();
 
@@ -333,7 +162,26 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_list_access(p: Pair<Rule>) -> Expr {
-	unimplemented!("list access not implemented yet");
+	let mut list_inner = p.into_inner();
+
+	let accessible_pair = list_inner.next().unwrap().into_inner().next().unwrap();
+
+	let accessible = match accessible_pair.as_rule() {
+		Rule::cast_expression => parse_cast_expr(accessible_pair),
+		Rule::new_instance_expr => parse_new_instance_expr(accessible_pair),
+		Rule::method_call => parse_method_call(accessible_pair),
+		Rule::identifier => Expr::from(parse_identifier(accessible_pair)),
+		_ => unreachable!(
+			"unimplemented or unexpected rule: {:?}",
+			accessible_pair.as_rule()
+		),
+	};
+
+	let access_expr = parse_expr(list_inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::ListAccess(Box::new(accessible), Box::new(access_expr)),
+	}
 }
 
 // for Rule::arguments
@@ -347,6 +195,160 @@ fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
 	} else {
 		Some(pairs)
 	}
+}
+
+fn parse_access_partial(p: Pair<Rule>) -> Expr {
+	unimplemented!();
+}
+
+fn parse_cast_expr(p: Pair<Rule>) -> Expr {
+	let mut cast_inner = p.into_inner();
+
+	let ty = parse_ty(cast_inner.next().unwrap());
+	let expr = parse_expr(cast_inner.next().unwrap());
+
+	ExprKind::Cast(ty, Box::new(expr)).into()
+}
+
+fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
+	let mut new_inst_inner = p.into_inner();
+
+	new_inst_inner.next(); // discard "NEW"
+
+	let subrule = new_inst_inner.next().unwrap();
+
+	match subrule.as_rule() {
+		Rule::map_literal_init => {
+			let mut map_inner = subrule.into_inner();
+
+			let map_name = Identifier::from(map_inner.next().unwrap().as_str());
+
+			let mut two_types = map_inner.next().unwrap().into_inner();
+
+			let first_type = parse_ty(two_types.next().unwrap());
+			let second_type = parse_ty(two_types.next().unwrap());
+
+			let ty = Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: map_name,
+					subclass: None,
+					type_arguments: type_args!(first_type, second_type),
+					is_array: false,
+				}),
+			};
+
+			let args = map_inner.next().unwrap();
+
+			match args.as_rule() {
+				Rule::map_literal_values => {
+					let pairs: Vec<(Expr, Expr)> = args
+						.into_inner()
+						.map(|p| {
+							let mut pair_inner = p.into_inner();
+
+							let left = parse_expr(pair_inner.next().unwrap());
+							let right = parse_expr(pair_inner.next().unwrap());
+
+							(left, right)
+						})
+						.collect();
+
+					Expr {
+						kind: ExprKind::New(ty, Some(NewType::Map(pairs))),
+					}
+				}
+				Rule::arguments => {
+					let args = parse_arguments(args);
+					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+				}
+				_ => unreachable!("unexpected rule encountered: {:?}", args.as_rule()),
+			}
+		}
+		Rule::collection_literal_init => {
+			let mut lit_inner = subrule.into_inner();
+
+			let collection_name = Identifier::from(lit_inner.next().unwrap().as_str());
+			let gen_type = parse_ty(lit_inner.next().unwrap().into_inner().next().unwrap());
+
+			let args = lit_inner.next().unwrap();
+
+			let ty = Ty {
+				kind: TyKind::ClassOrInterface(ClassOrInterface {
+					name: collection_name,
+					subclass: None,
+					type_arguments: Some((Box::new(gen_type), None)),
+					is_array: false,
+				}),
+			};
+
+			match args.as_rule() {
+				Rule::new_collection_literal => {
+					let exprs: Vec<Expr> = args.into_inner().map(parse_expr).collect();
+
+					ExprKind::New(ty, Some(NewType::Collection(exprs))).into()
+				}
+				Rule::arguments => {
+					let args = parse_arguments(args);
+					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+				}
+				_ => unreachable!("encountered unexpected rule: {:?}", args.as_rule()),
+			}
+		}
+		Rule::array_literal_init => {
+			let mut lit_inner = subrule.into_inner();
+
+			let ty = parse_ty(lit_inner.next().unwrap());
+
+			let exprs: Vec<Expr> = lit_inner
+				.next()
+				.unwrap()
+				.into_inner()
+				.map(parse_expr)
+				.collect();
+
+			ExprKind::New(ty, Some(NewType::Array(exprs))).into()
+		}
+		Rule::new_class => {
+			let mut class_inner = subrule.into_inner();
+
+			let ty = parse_ty(class_inner.next().unwrap());
+
+			let args = class_inner.next().unwrap();
+
+			match args.as_rule() {
+				Rule::sobject_arguments => {
+					let args: Vec<(Identifier, Expr)> = args
+						.into_inner()
+						.map(|p| {
+							let mut sobject_pair = p.into_inner();
+
+							let id = parse_identifier(sobject_pair.next().unwrap());
+							let expr = parse_expr(sobject_pair.next().unwrap());
+
+							(id, expr)
+						})
+						.collect();
+
+					ExprKind::New(ty, Some(NewType::Class(ClassArgs::SObject(args)))).into()
+				}
+				Rule::arguments => {
+					let args = parse_arguments(args);
+					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+				}
+				_ => unreachable!("unexpected rule found: {:?}", args.as_rule()),
+			}
+		}
+		_ => unreachable!("expected new instance subrule, got {:?}", subrule.as_rule()),
+	}
+}
+
+fn parse_method_call(p: Pair<Rule>) -> Expr {
+	let mut method_inner = p.into_inner();
+
+	let id = parse_identifier(method_inner.next().unwrap());
+	let args = parse_arguments(method_inner.next().unwrap());
+
+	ExprKind::Call(id, args).into()
 }
 
 // when Rule::identifier is encountered
