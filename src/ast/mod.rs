@@ -12,6 +12,7 @@ pub mod ops;
 // pub mod sosl;
 // pub mod stmt;
 // pub mod trigger;
+#[macro_use]
 pub mod ty; // "type" is reserved
 
 // TODO implement some kind of visitor pattern

@@ -185,7 +185,8 @@ expr_inner = {
 
 braced_expr = { !cast_operator ~ "(" ~ expression ~ ")" }
 ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ expression ~ ":" ~ expression }
-infix_expr = { expr_inner ~ (binary_operator ~ expression)+ }
+// infix_expr is right-recursive, so 1 + 2 + 3 is actually 1 + (2 + 3)
+infix_expr = { expr_inner ~ binary_operator ~ expression }
 assignment_expr = { expr_inner ~ assignment_operator ~ expression }
 unary_expr = { unary_operator  ~ expression }
 prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
@@ -232,20 +233,25 @@ method_call = {
 
 new_instance_expr = { NEW ~ (map_literal_init | collection_literal_init | array_literal_init | new_class) }
 
-map_literal_init = { ^"MAP" ~ two_type_arguments ~ (map_literal_values | arguments) }
+map_literal_init = { map_type ~ two_type_arguments ~ (map_literal_values | arguments) }
+map_type = { ^"MAP" }
 map_literal_values = { "{" ~ mapping_pair ~ ("," ~ mapping_pair)* ~ "}" }
 mapping_pair = { expression ~ "=>" ~ expression }
 
 array_literal_init = { basic_type ~ new_array_literal }
-collection_literal_init = { collection_type ~ one_type_argument ~ (new_array_literal | arguments) }
+new_array_literal = { "[" ~ expression ~ ("," ~ expression)* ~ "]" }
+collection_literal_init = { collection_type ~ one_type_argument ~ (new_collection_literal | arguments) }
 collection_type = { ^"LIST" | ^"SET" }
-new_array_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
+new_collection_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
 
-// TODO support "new Account(Name = 'foo')"
-new_class = { basic_type ~ arguments }
+new_class = { basic_type ~ (sobject_arguments | arguments) }
 
 arguments = { "(" ~ argument_list? ~ ")" } 
 argument_list = _{ expression ~ ("," ~ expression)* }
+
+sobject_arguments = { "(" ~ sobject_argument_list ~ ")" }
+sobject_argument_list = _{ sobject_argument_pair ~ ("," ~ sobject_argument_pair)* }
+sobject_argument_pair = { identifier ~ "=" ~ expression }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 

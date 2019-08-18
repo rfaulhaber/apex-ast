@@ -10,3 +10,4 @@ pest_derive = "^2.1.0"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
+criterion = "0.2.11"

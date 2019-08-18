@@ -15,8 +15,8 @@ pub enum ExprKind {
 	Assignment(Box<Expr>, AssignOp, Box<Expr>),
 	Braced(Box<Expr>),
 	PropertyAccess(Box<Expr>, Box<Expr>),
-	// TODO
-	// Query,
+	// for now, queries, once identified, are stored as a string
+	Query(String),
 	/// List access, such as `foo[2]` or `list.get(0)[1]`.
 	ListAccess(Box<Expr>, Box<Expr>),
 	New(Ty, Option<NewType>),
@@ -37,10 +37,34 @@ impl Into<Expr> for ExprKind {
 	}
 }
 
+impl From<Literal> for Expr {
+	fn from(l: Literal) -> Expr {
+		Expr {
+			kind: ExprKind::Literal(l),
+		}
+	}
+}
+
+impl From<Identifier> for Expr {
+	fn from(i: Identifier) -> Expr {
+		Expr {
+			kind: ExprKind::Identifier(i),
+		}
+	}
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum NewType {
 	Map(Vec<(Expr, Expr)>),
 	Collection(Vec<Expr>),
 	Array(Vec<Expr>),
-	Class(Vec<Expr>),
+	Class(ClassArgs),
+}
+
+// this is necessary because we need a generic way of supporting both
+// `new Foo(bar)` and `new Account(Name = 'foo')`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClassArgs {
+	Basic(Option<Vec<Expr>>),
+	SObject(Vec<(Identifier, Expr)>),
 }

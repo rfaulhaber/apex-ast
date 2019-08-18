@@ -3,6 +3,7 @@ extern crate pest;
 extern crate pest_derive;
 
 /// Module containing data structures for AST.
+#[macro_use]
 pub mod ast;
 
 /// Module containing parsing utilities for transforming Pest objects into

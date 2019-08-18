@@ -1,5 +1,14 @@
 use super::identifier::Identifier;
 
+macro_rules! type_args {
+	($first:expr) => {
+		Some((Box::new($first), None))
+	};
+	($first:expr, $second:expr) => {
+		Some((Box::new($first), Some(Box::new($second))))
+	};
+}
+
 pub type TyRef = Box<Ty>;
 
 /// An Apex type.
@@ -52,7 +61,7 @@ pub struct Primitive {
 impl Into<Ty> for Primitive {
 	fn into(self) -> Ty {
 		Ty {
-			kind: TyKind::Primitive(self)
+			kind: TyKind::Primitive(self),
 		}
 	}
 }
@@ -71,4 +80,29 @@ pub enum PrimitiveKind {
 	Object,
 	String,
 	Time,
+}
+
+impl From<PrimitiveKind> for Ty {
+	fn from(pk: PrimitiveKind) -> Ty {
+		Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: pk,
+				is_array: false,
+			}),
+		}
+	}
+}
+
+// mostly used for testing, shorthand way of definig easy classes on the fly
+impl From<Identifier> for Ty {
+	fn from(i: Identifier) -> Ty {
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: i,
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+			}),
+		}
+	}
 }

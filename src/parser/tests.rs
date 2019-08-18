@@ -8,6 +8,8 @@ use crate::ast::ops::*;
 use crate::ast::ty::*;
 use pest::iterators::Pair;
 
+use pretty_assertions::assert_eq;
+
 fn test_parse<F, E>(rule: Rule, input: &str, parse: F, expected: E)
 where
 	F: FnOnce(Pair<Rule>) -> E,
@@ -490,4 +492,174 @@ fn method_call_two_args_parses() {
 			),
 		},
 	)
+}
+
+#[test]
+fn new_inst_array_literal_parses() {
+	let ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+	};
+
+	let literal_exprs = vec![
+		Expr::from(Literal::from(1)),
+		Expr::from(Literal::from(2)),
+		Expr::from(Literal::from(3)),
+	];
+
+	test_parse(
+		Rule::expression,
+		"new Integer[1, 2, 3]",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Array(literal_exprs))),
+		},
+	)
+}
+
+#[test]
+fn new_inst_collection_literal_parses() {
+	let int_ty = Ty::from(PrimitiveKind::Integer);
+
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier::from("List"),
+			subclass: None,
+			type_arguments: Some((Box::new(int_ty), None)),
+			is_array: false,
+		}),
+	};
+
+	let literal_exprs = vec![
+		Expr::from(Literal::from(1)),
+		Expr::from(Literal::from(2)),
+		Expr::from(Literal::from(3)),
+	];
+
+	test_parse(
+		Rule::expression,
+		"new List<Integer>{1, 2, 3}",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Collection(literal_exprs))),
+		},
+	)
+}
+
+#[test]
+fn new_inst_collection_literal_with_args_parses() {
+	let int_ty = Ty::from(PrimitiveKind::Integer);
+
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier::from("List"),
+			subclass: None,
+			type_arguments: Some((Box::new(int_ty), None)),
+			is_array: false,
+		}),
+	};
+
+	let args = Some(vec![Expr::from(Identifier::from("list"))]);
+
+	test_parse(
+		Rule::expression,
+		"new List<Integer>(list)",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))),
+		},
+	)
+}
+
+#[test]
+fn new_inst_map_literal_parses() {
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier::from("Map"),
+			subclass: None,
+			type_arguments: type_args!(
+				Ty::from(PrimitiveKind::Integer),
+				Ty::from(PrimitiveKind::String)
+			),
+			is_array: false,
+		}),
+	};
+
+	let mapping = vec![
+		(
+			Expr::from(Literal::from(1)),
+			Expr::from(Literal::from("'one'")),
+		),
+		(
+			Expr::from(Literal::from(2)),
+			Expr::from(Literal::from("'two'")),
+		),
+	];
+
+	test_parse(
+		Rule::expression,
+		"new Map<Integer, String>{1 => 'one', 2 => 'two'}",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Map(mapping))),
+		},
+	)
+}
+
+#[test]
+fn new_inst_map_args_parses() {
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier::from("Map"),
+			subclass: None,
+			type_arguments: type_args!(
+				Ty::from(PrimitiveKind::Integer),
+				Ty::from(PrimitiveKind::String)
+			),
+			is_array: false,
+		}),
+	};
+
+	let class_args = vec![Expr::from(Identifier::from("foo"))];
+
+	test_parse(
+		Rule::expression,
+		"new Map<Integer, String>(foo)",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(Some(class_args))))),
+		},
+	)
+}
+
+#[test]
+fn new_inst_class_parses() {
+	let ty = Ty::from(Identifier::from("Foo"));
+
+	test_parse(
+		Rule::expression,
+		"new Foo()",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(None)))),
+		},
+	);
+}
+
+#[test]
+fn new_inst_class_sobject_argsparses() {
+	let ty = Ty::from(Identifier::from("Account"));
+
+	let args = vec![(Identifier::from("Name"), Expr::from(Literal::from("'foo'")))];
+
+	test_parse(
+		Rule::expression,
+		"new Account(Name = 'foo')",
+		parse_expr,
+		Expr {
+			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::SObject(args)))),
+		},
+	);
 }
