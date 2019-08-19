@@ -2,6 +2,8 @@
 /// Functions generally follow the pattern of `parse_*`, e.g. `parse_ty`.
 pub mod parse;
 
+// mod bench;
+
 #[cfg(test)]
 mod tests;
 
