@@ -10,7 +10,7 @@ use pest::iterators::Pair;
 // NOTE: should this entire module be an object or generic function?
 
 macro_rules! descend_pair {
-	($pair:ident) => {
+	($pair:expr) => {
 		$pair.into_inner().next().unwrap()
 	};
 }
@@ -84,7 +84,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 		Rule::braced_expr => Expr {
 			kind: ExprKind::Braced(Box::new(parse_expr(descend_pair!(inner)))),
 		},
-		Rule::property_access => unimplemented!(),
+		Rule::property_access => parse_property_access(inner),
 		Rule::query_expression => unimplemented!(),
 		Rule::list_access => parse_list_access(inner),
 		Rule::new_instance_expr => parse_new_instance_expr(inner),
@@ -158,7 +158,37 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_property_access(p: Pair<Rule>) -> Expr {
-	unimplemented!("property access not implemented yet");
+	let mut prop_inner = p.into_inner();
+
+	let first_pair = prop_inner.next().unwrap();
+
+	let accessible = match first_pair.as_rule() {
+		Rule::list_access => parse_list_access(first_pair),
+		Rule::cast_expression => parse_cast_expr(first_pair),
+		Rule::new_instance_expr => parse_new_instance_expr(first_pair),
+		Rule::query_expression => parse_query_expression(first_pair),
+		Rule::method_call => parse_method_call(first_pair),
+		Rule::identifier => Expr::from(parse_identifier(first_pair)),
+		_ => unreachable!("unexpected rule found: {:?}", first_pair.as_rule()),
+	};
+
+	let second_pair = prop_inner.next().unwrap();
+
+	let selector = match second_pair.as_rule() {
+		Rule::property_access => parse_property_access(second_pair),
+		Rule::list_access => parse_list_access(second_pair),
+		Rule::method_call => parse_method_call(second_pair),
+		Rule::identifier => Expr::from(parse_identifier(second_pair)),
+		_ => unreachable!("unexpected rule found: {:?}", second_pair.as_rule()),
+	};
+
+	Expr {
+		kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector)),
+	}
+}
+
+fn parse_query_expression(p: Pair<Rule>) -> Expr {
+	unimplemented!("query expression parsing not implemented yet");
 }
 
 fn parse_list_access(p: Pair<Rule>) -> Expr {

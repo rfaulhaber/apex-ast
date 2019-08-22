@@ -678,3 +678,20 @@ fn list_access_parses() {
 		},
 	);
 }
+
+#[test]
+fn property_access_parses() {
+	let accessible = Expr::from(Identifier::from("foo"));
+	let selector = Expr {
+		kind: ExprKind::Call(Identifier::from("bar"), None),
+	};
+
+	test_parse(
+		Rule::expression,
+		"foo.bar()",
+		parse_expr,
+		Expr {
+			kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector))
+		},
+	);
+}

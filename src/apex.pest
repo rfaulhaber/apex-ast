@@ -204,7 +204,7 @@ list_access = { access_partial ~ "[" ~ expression ~ "]" }
 cast_expression = { cast_operator ~ expression }
 cast_operator = _{ "(" ~ basic_type ~ ")" }
 
-access_partial = {
+access_partial = _{
     cast_expression
     | new_instance_expr
     | query_expression
