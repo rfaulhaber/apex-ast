@@ -70,7 +70,22 @@ fn parse_infix_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	let test_pair = inner.next().unwrap();
+
+	let test = match test_pair.as_rule() {
+		Rule::infix_expr => parse_infix_expr(test_pair),
+		Rule::expr_inner => parse_expr_inner(test_pair),
+		_ => unreachable!("unexpected rule encountered: {:?}", test_pair.as_rule())
+	};
+
+	let pos = parse_expr(inner.next().unwrap());
+	let neg = parse_expr(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg))
+	}
 }
 
 fn parse_assignment_expr(p: Pair<Rule>) -> Expr {

@@ -723,3 +723,19 @@ fn assignment_parses() {
 		},
 	);
 }
+
+#[test]
+fn ternary_parses() {
+	let test = Expr::from(Identifier::from("isTrue"));
+	let pos = Expr::from(Literal::from(true));
+	let neg = Expr::from(Literal::from(false));
+
+	test_parse(
+		Rule::expression,
+		"isTrue ? true : false",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg))
+		},
+	);
+}
