@@ -719,7 +719,7 @@ fn assignment_parses() {
 		"foo = 22",
 		parse_expr,
 		Expr {
-			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs))
+			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs)),
 		},
 	);
 }
@@ -735,7 +735,48 @@ fn ternary_parses() {
 		"isTrue ? true : false",
 		parse_expr,
 		Expr {
-			kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg))
+			kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg)),
+		},
+	);
+}
+
+#[test]
+fn simple_infix_expr_parses() {
+	let lhs = ExprKind::Call(Identifier::from("foo"), None).into();
+	let op = BinOp::Eq;
+	let rhs = Expr::from(Literal {
+		kind: LiteralKind::Null,
+	});
+
+	test_parse(
+		Rule::expression,
+		"foo() == null",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs)),
+		},
+	);
+}
+
+#[test]
+fn nested_infix_expr_parses() {
+	let lhs = ExprKind::Call(Identifier::from("foo"), None).into();
+	let op = BinOp::Eq;
+
+	let rhs = Expr {
+		kind: ExprKind::Infix(
+			Box::new(Expr::from(Literal::from(2))),
+			BinOp::Add,
+			Box::new(Expr::from(Identifier::from("bar"))),
+		),
+	};
+
+	test_parse(
+		Rule::expression,
+		"foo() == 2 + bar",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs)),
 		},
 	);
 }

@@ -31,7 +31,7 @@ impl From<&str> for BinOp {
 			">=" => BinOp::Ge,
 			"<" => BinOp::Lt,
 			"<=" => BinOp::Le,
-			"=" => BinOp::Eq,
+			"==" => BinOp::Eq,
 			"!=" => BinOp::NotEq,
 			"&&" => BinOp::And,
 			"||" => BinOp::Or,

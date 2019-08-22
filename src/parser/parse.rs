@@ -66,7 +66,15 @@ pub fn parse_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_infix_expr(p: Pair<Rule>) -> Expr {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	let lhs = parse_expr_inner(inner.next().unwrap());
+	let op = BinOp::from(inner.next().unwrap().as_str());
+	let rhs = parse_expr(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs))
+	}
 }
 
 fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
