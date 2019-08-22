@@ -74,7 +74,15 @@ fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	let lhs = parse_expr_inner(inner.next().unwrap());
+	let assign_op = AssignOp::from(inner.next().unwrap().as_str());
+	let rhs = parse_expr(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Assignment(Box::new(lhs), assign_op, Box::new(rhs))
+	}
 }
 
 fn parse_expr_inner(p: Pair<Rule>) -> Expr {

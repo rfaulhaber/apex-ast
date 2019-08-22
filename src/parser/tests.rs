@@ -708,3 +708,18 @@ fn simple_query_parses() {
 		},
 	);
 }
+
+#[test]
+fn assignment_parses() {
+	let lhs = Expr::from(Identifier::from("foo"));
+	let rhs = Expr::from(Literal::from(22));
+
+	test_parse(
+		Rule::expression,
+		"foo = 22",
+		parse_expr,
+		Expr {
+			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs))
+		},
+	);
+}
