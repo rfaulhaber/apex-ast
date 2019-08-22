@@ -86,7 +86,7 @@ statement = {
     | break_stmt
     | continue_stmt
     | stmt_expr ~ ";"
-    | local_variable_declaration
+    | local_variable_declaration ~ ";"
 }
 
 // if statements
@@ -142,7 +142,7 @@ continue_stmt = { CONTINUE ~ ";"  }
 dml_stmt = { dml_action ~ (new_instance_expr | identifier) ~ ";" }
 dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
 
-local_variable_declaration = { annotation? ~ FINAL? ~ basic_type ~ identifier ~ declaration_rhs? ~ ";" }
+local_variable_declaration = { annotation? ~ FINAL? ~ basic_type ~ identifier ~ declaration_rhs? }
 declaration_rhs = _{ "=" ~ expression }
 
 
@@ -155,7 +155,8 @@ query_body = @{ (!"]" ~ ANY)* }
 // statements themselves. for example, "i++" is an expression until you add a
 // semicolon, making "i++;" a statement.
 stmt_expr = { 
-    assignment_expr 
+    local_variable_declaration
+    | assignment_expr 
     | property_access
     | prefix_expr 
     | postfix_expr 

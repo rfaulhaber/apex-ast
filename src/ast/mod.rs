@@ -10,7 +10,7 @@ pub mod literal;
 pub mod ops;
 // pub mod soql;
 // pub mod sosl;
-// pub mod stmt;
+pub mod stmt;
 // pub mod trigger;
 #[macro_use]
 pub mod ty; // "type" is reserved
