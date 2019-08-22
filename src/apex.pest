@@ -148,7 +148,8 @@ declaration_rhs = _{ "=" ~ expression }
 
 // TODO write grammar for soql and sosl, this is incomplete
 // queries are expressions, not statements
-query_expression = { "[" ~ (SELECT | FIND) ~ (!"]" ~ ANY)* ~ "]" }
+query_expression = { "[" ~ (SELECT | FIND) ~ query_body ~ "]" }
+query_body = @{ (!"]" ~ ANY)* }
 
 // statement expressions. these are expressions that can stand alone as
 // statements themselves. for example, "i++" is an expression until you add a

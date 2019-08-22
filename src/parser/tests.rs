@@ -691,7 +691,20 @@ fn property_access_parses() {
 		"foo.bar()",
 		parse_expr,
 		Expr {
-			kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector))
+			kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector)),
+		},
+	);
+}
+
+#[test]
+fn simple_query_parses() {
+	let query_str = "[ SELECT Foo FROM Bar ]";
+	test_parse(
+		Rule::expression,
+		query_str,
+		parse_expr,
+		Expr {
+			kind: ExprKind::Query(QueryKind::Soql, String::from("SELECT Foo FROM Bar")),
 		},
 	);
 }

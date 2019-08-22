@@ -85,7 +85,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			kind: ExprKind::Braced(Box::new(parse_expr(descend_pair!(inner)))),
 		},
 		Rule::property_access => parse_property_access(inner),
-		Rule::query_expression => unimplemented!(),
+		Rule::query_expression => parse_query_expression(inner),
 		Rule::list_access => parse_list_access(inner),
 		Rule::new_instance_expr => parse_new_instance_expr(inner),
 		Rule::method_call => parse_method_call(inner),
@@ -188,7 +188,19 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_query_expression(p: Pair<Rule>) -> Expr {
-	unimplemented!("query expression parsing not implemented yet");
+	let mut query_inner = p.into_inner();
+
+	let query_body = String::from(query_inner.as_str().trim());
+
+	let query_type = match query_inner.next().unwrap().as_rule() {
+		Rule::SELECT => QueryKind::Soql,
+		Rule::FIND => QueryKind::Sosl,
+		_ => unreachable!("unexpected query variant"),
+	};
+
+	Expr {
+		kind: ExprKind::Query(query_type, query_body),
+	}
 }
 
 fn parse_list_access(p: Pair<Rule>) -> Expr {
