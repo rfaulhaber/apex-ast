@@ -194,7 +194,7 @@ fn parse_query_expression(p: Pair<Rule>) -> Expr {
 fn parse_list_access(p: Pair<Rule>) -> Expr {
 	let mut list_inner = p.into_inner();
 
-	let accessible_pair = list_inner.next().unwrap().into_inner().next().unwrap();
+	let accessible_pair = list_inner.next().unwrap();
 
 	let accessible = match accessible_pair.as_rule() {
 		Rule::cast_expression => parse_cast_expr(accessible_pair),
