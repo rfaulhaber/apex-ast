@@ -4,6 +4,7 @@ use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
 use crate::ast::ops::*;
+use crate::ast::stmt::*;
 use crate::ast::ty::*;
 use pest::iterators::Pair;
 
@@ -13,6 +14,74 @@ macro_rules! descend_pair {
 	($pair:expr) => {
 		$pair.into_inner().next().unwrap()
 	};
+}
+
+pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::for_stmt => parse_for_stmt(inner),
+		Rule::do_while_stmt => parse_do_while_stmt(inner),
+		Rule::while_stmt => parse_while_stmt(inner),
+		Rule::if_stmt => parse_if_stmt(inner),
+		Rule::switch_stmt => parse_switch_stmt(inner),
+		Rule::try_catch_stmt => parse_try_catch_stmt(inner),
+		Rule::return_stmt => parse_return_stmt(inner),
+		Rule::throw_stmt => parse_throw_stmt(inner),
+		Rule::break_stmt => parse_break_stmt(inner),
+		Rule::continue_stmt => parse_continue_stmt(inner),
+		Rule::stmt_expr => parse_stmt_expr(inner),
+		Rule::local_variable_declaration => parse_local_variable_declaration(inner),
+		_ => unreachable!("unexpected rule, {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
+}
+
+fn parse_local_variable_declaration(p: Pair<Rule>) -> Stmt {
+	unimplemented!();
 }
 
 pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
