@@ -22,14 +22,76 @@ where
 	assert_eq!(expected, result);
 }
 
-// #[test]
-// fn try_catch_simple_parses() {
-// 	let test_str = r#"try {
-// 		insert foo;
-// 	} catch (Exception e) {
-// 		return bar;
-// 	}"#;
-// }
+#[test]
+fn try_catch_catch_finally_parses() {
+	let test_str = r#"try {
+		insert foo;
+	} catch (Exception e) {
+		return bar;
+	} catch (DmlException de) {
+		return baz;
+	} finally {
+		return quux;
+	}"#;
+
+	let try_block = vec![StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into()];
+
+	let catch_clause = (
+		Ty::from(Identifier::from("Exception")),
+		Identifier::from("e"),
+		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
+			"bar",
+		))))
+		.into()]),
+	);
+
+	let opt_catch = Some(vec![(
+		Ty::from(Identifier::from("DmlException")),
+		Identifier::from("de"),
+		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
+			"baz",
+		))))
+		.into()]),
+	)]);
+
+	let finally = Some(Block::from(vec![StmtKind::Return(Some(Expr::from(
+		Identifier::from("quux"),
+	)))
+	.into()]));
+
+	let expected = StmtKind::TryCatch(
+		Block::from(try_block).to_boxed(),
+		catch_clause,
+		opt_catch,
+		finally,
+	);
+
+	test_parse(Rule::statement, test_str, parse_stmt, expected.into());
+}
+
+#[test]
+fn try_catch_simple_parses() {
+	let test_str = r#"try {
+		insert foo;
+	} catch (Exception e) {
+		return bar;
+	}"#;
+
+	let try_block = vec![StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into()];
+
+	let catch_clause = (
+		Ty::from(Identifier::from("Exception")),
+		Identifier::from("e"),
+		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
+			"bar",
+		))))
+		.into()]),
+	);
+
+	let expected = StmtKind::TryCatch(Block::from(try_block).to_boxed(), catch_clause, None, None);
+
+	test_parse(Rule::statement, test_str, parse_stmt, expected.into());
+}
 
 #[test]
 fn dml_stmt_parses() {

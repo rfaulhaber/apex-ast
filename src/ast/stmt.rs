@@ -58,6 +58,24 @@ pub enum Block {
 	Inline(Box<Stmt>),
 }
 
+impl From<Vec<Stmt>> for Block {
+	fn from(v: Vec<Stmt>) -> Block {
+		Block::Body(v)
+	}
+}
+
+impl From<Stmt> for Block {
+	fn from(s: Stmt) -> Block {
+		Block::Inline(Box::new(s))
+	}
+}
+
+impl Block {
+	pub fn to_boxed(&self) -> Box<Self> {
+		Box::new(self.clone())
+	}
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ForStmt {
 	Basic(Vec<StmtExpr>, Vec<Expr>, StmtExpr, BlockRef),
