@@ -5,6 +5,7 @@ use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
 use crate::ast::ops::*;
+use crate::ast::stmt::*;
 use crate::ast::ty::*;
 use pest::iterators::Pair;
 
@@ -19,6 +20,82 @@ where
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
+}
+
+// #[test]
+// fn try_catch_simple_parses() {
+// 	let test_str = r#"try {
+// 		insert foo;
+// 	} catch (Exception e) {
+// 		return bar;
+// 	}"#;
+// }
+
+#[test]
+fn dml_stmt_parses() {
+	test_parse(
+		Rule::statement,
+		"insert foo;",
+		parse_stmt,
+		StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into(),
+	);
+}
+
+#[test]
+fn throw_stmt_parses() {
+	test_parse(
+		Rule::statement,
+		"throw new TestException();",
+		parse_stmt,
+		StmtKind::Throw(
+			ExprKind::New(
+				Ty::from(Identifier::from("TestException")),
+				NewType::Class(ClassArgs::Basic(None)),
+			)
+			.into(),
+		)
+		.into(),
+	);
+}
+
+#[test]
+fn return_stmt_some_parses() {
+	test_parse(
+		Rule::statement,
+		"return foo;",
+		parse_stmt,
+		StmtKind::Return(Some(Expr::from(Identifier::from("foo")))).into(),
+	);
+}
+
+#[test]
+fn return_stmt_none_parses() {
+	test_parse(
+		Rule::statement,
+		"return;",
+		parse_stmt,
+		StmtKind::Return(None).into(),
+	);
+}
+
+#[test]
+fn break_stmt_parses() {
+	test_parse(
+		Rule::statement,
+		"break;",
+		parse_stmt,
+		StmtKind::Break.into(),
+	);
+}
+
+#[test]
+fn continue_stmt_parses() {
+	test_parse(
+		Rule::statement,
+		"continue;",
+		parse_stmt,
+		StmtKind::Continue.into(),
+	);
 }
 
 #[test]
@@ -514,7 +591,7 @@ fn new_inst_array_literal_parses() {
 		"new Integer[1, 2, 3]",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Array(literal_exprs))),
+			kind: ExprKind::New(ty, NewType::Array(literal_exprs)),
 		},
 	)
 }
@@ -543,7 +620,7 @@ fn new_inst_collection_literal_parses() {
 		"new List<Integer>{1, 2, 3}",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Collection(literal_exprs))),
+			kind: ExprKind::New(ty, NewType::Collection(literal_exprs)),
 		},
 	)
 }
@@ -568,7 +645,7 @@ fn new_inst_collection_literal_with_args_parses() {
 		"new List<Integer>(list)",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))),
+			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
 		},
 	)
 }
@@ -603,7 +680,7 @@ fn new_inst_map_literal_parses() {
 		"new Map<Integer, String>{1 => 'one', 2 => 'two'}",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Map(mapping))),
+			kind: ExprKind::New(ty, NewType::Map(mapping)),
 		},
 	)
 }
@@ -629,7 +706,7 @@ fn new_inst_map_args_parses() {
 		"new Map<Integer, String>(foo)",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(Some(class_args))))),
+			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Some(class_args)))),
 		},
 	)
 }
@@ -643,7 +720,7 @@ fn new_inst_class_parses() {
 		"new Foo()",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(None)))),
+			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(None))),
 		},
 	);
 }
@@ -659,7 +736,7 @@ fn new_inst_class_sobject_argsparses() {
 		"new Account(Name = 'foo')",
 		parse_expr,
 		Expr {
-			kind: ExprKind::New(ty, Some(NewType::Class(ClassArgs::SObject(args)))),
+			kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
 		},
 	);
 }

@@ -1,14 +1,20 @@
+use super::annotation::*;
 use super::expr::*;
 use super::identifier::*;
 use super::ty::*;
-use super::annotation::*;
 use super::*;
 
 pub type BlockRef = Box<Block>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Stmt {
-	kind: StmtKind,
+	pub kind: StmtKind,
+}
+
+impl Stmt {
+	pub fn to_boxed(self) -> Box<Stmt> {
+		Box::new(self)
+	}
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,12 +37,19 @@ pub enum StmtKind {
 		Option<Vec<(Ty, Identifier, Block)>>,
 		Option<Block>,
 	),
-	Return(Expr),
+	Return(Option<Expr>),
+	Dml(DmlOp, Expr),
 	Throw(Expr),
 	Break,
 	Continue,
 	StmtExpr(StmtExpr),
-	Local(Local)
+	Local(Local),
+}
+
+impl Into<Stmt> for StmtKind {
+	fn into(self) -> Stmt {
+		Stmt { kind: self }
+	}
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -52,9 +65,6 @@ pub enum ForStmt {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DoWhile;
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum StmtExpr {
 	Expr(Expr),
 	Local(Local),
@@ -67,4 +77,28 @@ pub struct Local {
 	pub ty: Ty,
 	pub id: Identifier,
 	pub rhs: Option<Expr>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DmlOp {
+	Insert,
+	Update,
+	Upsert,
+	Delete,
+	Undelete,
+	Merge,
+}
+
+impl DmlOp {
+	pub fn from_str(s: &str) -> DmlOp {
+		match s.to_lowercase().as_str() {
+			"insert" => DmlOp::Insert,
+			"update" => DmlOp::Update,
+			"upsert" => DmlOp::Upsert,
+			"delete" => DmlOp::Delete,
+			"undelete" => DmlOp::Undelete,
+			"merge" => DmlOp::Merge,
+			_ => panic!("unexpected dml keyword: {}", s),
+		}
+	}
 }

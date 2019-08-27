@@ -19,7 +19,7 @@ pub enum ExprKind {
 	Query(QueryKind, String),
 	/// List access, such as `foo[2]` or `list.get(0)[1]`.
 	ListAccess(Box<Expr>, Box<Expr>),
-	New(Ty, Option<NewType>),
+	New(Ty, NewType),
 	Call(Identifier, Option<Vec<Expr>>),
 	Unary(UnOp, Box<Expr>),
 	Prefix(IncDecOp, Box<Expr>),

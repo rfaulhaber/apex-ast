@@ -27,6 +27,7 @@ pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 		Rule::switch_stmt => parse_switch_stmt(inner),
 		Rule::try_catch_stmt => parse_try_catch_stmt(inner),
 		Rule::return_stmt => parse_return_stmt(inner),
+		Rule::dml_stmt => parse_dml_stmt(inner),
 		Rule::throw_stmt => parse_throw_stmt(inner),
 		Rule::break_stmt => parse_break_stmt(inner),
 		Rule::continue_stmt => parse_continue_stmt(inner),
@@ -57,23 +58,148 @@ fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "try"
+
+	let try_block = parse_block(inner.next().unwrap());
+	let catch_block = parse_catch_clause(inner.next().unwrap());
+
+	let mut catches = Vec::new();
+	let mut finally: Option<Block> = None;
+
+	for pair in inner {
+		match pair.as_rule() {
+			Rule::catch_clause => catches.push(parse_catch_clause(pair)),
+			// this is the finally block we've been looking for
+			Rule::block => {
+				finally = Some(parse_block(pair))
+			},
+			Rule::FINALLY => continue,
+			_ => unreachable!("unexected rule: {:?}", pair.as_rule())
+		}
+	}
+
+	Stmt {
+		kind: StmtKind::TryCatch(
+			Box::new(try_block),
+			catch_block,
+			if catches.is_empty() { None } else { Some(catches) },
+			finally
+		)
+	}
+}
+
+fn parse_catch_clause(p: Pair<Rule>) -> (Ty, Identifier, Block) {
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "catch"
+
+	let ty = parse_ty(inner.next().unwrap());
+	let id = parse_identifier(inner.next().unwrap());
+	let block = parse_block(inner.next().unwrap());
+
+	(ty, id, block)
+}
+
+fn parse_any_block(p: Pair<Rule>) -> Block {
+	match p.as_rule() {
+		Rule::block => parse_block(p),
+		Rule::inline_block => parse_inline_block(p),
+		_ => unreachable!(
+			"expected either block or inline block, got: {:?}",
+			p.as_rule()
+		),
+	}
+}
+
+fn parse_block(p: Pair<Rule>) -> Block {
+	let mut inner = p.into_inner();
+
+	let stmts = inner.map(parse_stmt).collect();
+
+	Block::Body(stmts)
+}
+
+fn parse_inline_block(p: Pair<Rule>) -> Block {
+	let mut inner = p.into_inner();
+
+	let stmt = parse_stmt(inner.next().unwrap());
+
+	Block::Inline(stmt.to_boxed())
 }
 
 fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard token
+
+	let expr = match inner.next() {
+		Some(pair) => Some(parse_expr(pair)),
+		None => None,
+	};
+
+	Stmt {
+		kind: StmtKind::Return(expr),
+	}
+}
+
+fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
+	let mut inner = p.into_inner();
+
+	let dml_action = match inner.next().unwrap().into_inner().next().unwrap().as_rule() {
+		Rule::INSERT  => DmlOp::Insert,
+		Rule::UPDATE  => DmlOp::Update,
+		Rule::UPSERT  => DmlOp::Upsert,
+		Rule::DELETE => DmlOp::Delete,
+		Rule::UNDELETE  => DmlOp::Undelete,
+		Rule::MERGE => DmlOp::Merge,
+		_ => unreachable!("unexpected rule found")
+	};
+
+	let next_pair = inner.next().unwrap();
+
+	let expr = match next_pair.as_rule() {
+		Rule::identifier => Expr::from(parse_identifier(next_pair)),
+		Rule::new_instance_expr => parse_new_instance_expr(next_pair),
+		_ => unreachable!("unexpected rule: {:?}", next_pair.as_rule())
+	};
+
+	Stmt {
+		kind: StmtKind::Dml(dml_action, expr)
+	}
 }
 
 fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "try" for now
+
+	let expr = parse_expr(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::Throw(expr),
+	}
 }
 
 fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+	// TODO store span, token
+	inner.next();
+
+	Stmt {
+		kind: StmtKind::Break,
+	}
 }
 
 fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+	// TODO store span, token
+	inner.next();
+
+	Stmt {
+		kind: StmtKind::Continue,
+	}
 }
 
 fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
@@ -142,7 +268,7 @@ fn parse_infix_expr(p: Pair<Rule>) -> Expr {
 	let rhs = parse_expr(inner.next().unwrap());
 
 	Expr {
-		kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs))
+		kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs)),
 	}
 }
 
@@ -154,14 +280,14 @@ fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
 	let test = match test_pair.as_rule() {
 		Rule::infix_expr => parse_infix_expr(test_pair),
 		Rule::expr_inner => parse_expr_inner(test_pair),
-		_ => unreachable!("unexpected rule encountered: {:?}", test_pair.as_rule())
+		_ => unreachable!("unexpected rule encountered: {:?}", test_pair.as_rule()),
 	};
 
 	let pos = parse_expr(inner.next().unwrap());
 	let neg = parse_expr(inner.next().unwrap());
 
 	Expr {
-		kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg))
+		kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg)),
 	}
 }
 
@@ -173,7 +299,7 @@ fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
 	let rhs = parse_expr(inner.next().unwrap());
 
 	Expr {
-		kind: ExprKind::Assignment(Box::new(lhs), assign_op, Box::new(rhs))
+		kind: ExprKind::Assignment(Box::new(lhs), assign_op, Box::new(rhs)),
 	}
 }
 
@@ -392,12 +518,12 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 						.collect();
 
 					Expr {
-						kind: ExprKind::New(ty, Some(NewType::Map(pairs))),
+						kind: ExprKind::New(ty, NewType::Map(pairs)),
 					}
 				}
 				Rule::arguments => {
 					let args = parse_arguments(args);
-					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
 				}
 				_ => unreachable!("unexpected rule encountered: {:?}", args.as_rule()),
 			}
@@ -423,11 +549,11 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 				Rule::new_collection_literal => {
 					let exprs: Vec<Expr> = args.into_inner().map(parse_expr).collect();
 
-					ExprKind::New(ty, Some(NewType::Collection(exprs))).into()
+					ExprKind::New(ty, NewType::Collection(exprs)).into()
 				}
 				Rule::arguments => {
 					let args = parse_arguments(args);
-					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
 				}
 				_ => unreachable!("encountered unexpected rule: {:?}", args.as_rule()),
 			}
@@ -444,7 +570,7 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 				.map(parse_expr)
 				.collect();
 
-			ExprKind::New(ty, Some(NewType::Array(exprs))).into()
+			ExprKind::New(ty, NewType::Array(exprs)).into()
 		}
 		Rule::new_class => {
 			let mut class_inner = subrule.into_inner();
@@ -467,11 +593,11 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 						})
 						.collect();
 
-					ExprKind::New(ty, Some(NewType::Class(ClassArgs::SObject(args)))).into()
+					ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))).into()
 				}
 				Rule::arguments => {
 					let args = parse_arguments(args);
-					ExprKind::New(ty, Some(NewType::Class(ClassArgs::Basic(args)))).into()
+					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
 				}
 				_ => unreachable!("unexpected rule found: {:?}", args.as_rule()),
 			}

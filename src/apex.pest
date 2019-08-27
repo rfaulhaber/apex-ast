@@ -82,6 +82,7 @@ statement = {
     | switch_stmt
     | try_catch_stmt
     | return_stmt
+	| dml_stmt
     | throw_stmt
     | break_stmt
     | continue_stmt
@@ -129,7 +130,10 @@ catch_clause = { CATCH ~ "(" ~ basic_type ~ identifier ~ ")" ~ block }
 
 // return statements
 return_stmt = { RETURN ~ expression? ~ ";" }
+
 // throw statements
+// TODO technically shouldn't this only throw identifer, new inst, or null? 
+// see: https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.18
 throw_stmt = { THROW ~ expression ~ ";"  }
 
 // break statements
@@ -140,7 +144,7 @@ continue_stmt = { CONTINUE ~ ";"  }
 
 // dml statements
 dml_stmt = { dml_action ~ (new_instance_expr | identifier) ~ ";" }
-dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE }
+dml_action = { INSERT | UPDATE | UPSERT | DELETE | UNDELETE | MERGE }
 
 local_variable_declaration = { annotation? ~ FINAL? ~ basic_type ~ identifier ~ declaration_rhs? }
 declaration_rhs = _{ "=" ~ expression }
@@ -491,6 +495,7 @@ INHERITED_SHARING = { ^"inherited sharing" }
 INSERT = { ^"insert" }
 INSTANCEOF = { ^"instanceof" }
 INTERFACE = { ^"interface" }
+MERGE = { ^"merge" }
 NEW = { ^"new" }
 NULL = { ^"null" }
 ON = { ^"on" }
