@@ -26,13 +26,16 @@ pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 		Rule::if_stmt => parse_if_stmt(inner),
 		Rule::switch_stmt => parse_switch_stmt(inner),
 		Rule::try_catch_stmt => parse_try_catch_stmt(inner),
+		Rule::block => Stmt {
+			kind: StmtKind::Block(parse_block(inner)),
+		},
 		Rule::return_stmt => parse_return_stmt(inner),
 		Rule::dml_stmt => parse_dml_stmt(inner),
 		Rule::throw_stmt => parse_throw_stmt(inner),
 		Rule::break_stmt => parse_break_stmt(inner),
 		Rule::continue_stmt => parse_continue_stmt(inner),
 		Rule::stmt_expr => parse_stmt_expr(inner),
-		Rule::local_variable_declaration => parse_local_variable_declaration(inner),
+		// Rule::local_variable_declaration => parse_local_variable_declaration(inner),
 		_ => unreachable!("unexpected rule, {:?}", inner.as_rule()),
 	}
 }
@@ -50,6 +53,11 @@ fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
+	let mut inner = p.into_inner();
+
+	let test_expr = parse_expr(inner.next().unwrap().into_inner().next().unwrap());
+	let block = parse_any_block(inner.next().unwrap());
+
 	unimplemented!();
 }
 
@@ -72,11 +80,9 @@ fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
 		match pair.as_rule() {
 			Rule::catch_clause => catches.push(parse_catch_clause(pair)),
 			// this is the finally block we've been looking for
-			Rule::block => {
-				finally = Some(parse_block(pair))
-			},
-			Rule::FINALLY => continue,
-			_ => unreachable!("unexected rule: {:?}", pair.as_rule())
+			Rule::block => finally = Some(parse_block(pair)),
+			Rule::FINALLY => continue, // just discard the token!
+			_ => unreachable!("unexected rule: {:?}", pair.as_rule()),
 		}
 	}
 
@@ -84,9 +90,13 @@ fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
 		kind: StmtKind::TryCatch(
 			Box::new(try_block),
 			catch_block,
-			if catches.is_empty() { None } else { Some(catches) },
-			finally
-		)
+			if catches.is_empty() {
+				None
+			} else {
+				Some(catches)
+			},
+			finally,
+		),
 	}
 }
 
@@ -114,7 +124,7 @@ fn parse_any_block(p: Pair<Rule>) -> Block {
 }
 
 fn parse_block(p: Pair<Rule>) -> Block {
-	let mut inner = p.into_inner();
+	let inner = p.into_inner();
 
 	let stmts = inner.map(parse_stmt).collect();
 
@@ -148,13 +158,13 @@ fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 	let mut inner = p.into_inner();
 
 	let dml_action = match inner.next().unwrap().into_inner().next().unwrap().as_rule() {
-		Rule::INSERT  => DmlOp::Insert,
-		Rule::UPDATE  => DmlOp::Update,
-		Rule::UPSERT  => DmlOp::Upsert,
+		Rule::INSERT => DmlOp::Insert,
+		Rule::UPDATE => DmlOp::Update,
+		Rule::UPSERT => DmlOp::Upsert,
 		Rule::DELETE => DmlOp::Delete,
-		Rule::UNDELETE  => DmlOp::Undelete,
+		Rule::UNDELETE => DmlOp::Undelete,
 		Rule::MERGE => DmlOp::Merge,
-		_ => unreachable!("unexpected rule found")
+		_ => unreachable!("unexpected rule found"),
 	};
 
 	let next_pair = inner.next().unwrap();
@@ -162,11 +172,11 @@ fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 	let expr = match next_pair.as_rule() {
 		Rule::identifier => Expr::from(parse_identifier(next_pair)),
 		Rule::new_instance_expr => parse_new_instance_expr(next_pair),
-		_ => unreachable!("unexpected rule: {:?}", next_pair.as_rule())
+		_ => unreachable!("unexpected rule: {:?}", next_pair.as_rule()),
 	};
 
 	Stmt {
-		kind: StmtKind::Dml(dml_action, expr)
+		kind: StmtKind::Dml(dml_action, expr),
 	}
 }
 
@@ -203,11 +213,59 @@ fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let stmt_expr_pair = p.into_inner().next().unwrap();
+
+	match stmt_expr_pair.as_rule() {
+		Rule::local_variable_declaration => {
+			Stmt::from(parse_local_variable_declaration(stmt_expr_pair))
+		}
+		Rule::assignment_expr => Stmt::from(StmtExpr::from(parse_assignment_expr(stmt_expr_pair))),
+		Rule::property_access => Stmt::from(StmtExpr::from(parse_property_access(stmt_expr_pair))),
+		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => {
+			Stmt::from(StmtExpr::from(parse_expr_inner(stmt_expr_pair)))
+		}
+		Rule::new_instance_expr => Stmt::from(StmtExpr::from(parse_expr(stmt_expr_pair))),
+		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
+	}
 }
 
-fn parse_local_variable_declaration(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
+	let mut inner = p.into_inner();
+	let mut next = inner.next().unwrap();
+
+	let annotation = if next.as_rule() == Rule::annotation {
+		let a = parse_annotation(next);
+		next = inner.next().unwrap();
+		Some(a)
+	} else {
+		None
+	};
+
+	let is_final = if next.as_rule() == Rule::FINAL {
+		next = inner.next().unwrap();
+		true
+	} else {
+		false
+	};
+
+	let ty = parse_ty(next);
+	let id = parse_identifier(inner.next().unwrap());
+
+	let rhs_pair = inner.next();
+
+	let rhs = if rhs_pair.is_some() {
+		Some(parse_expr(rhs_pair.unwrap()))
+	} else {
+		None
+	};
+
+	StmtExpr::Local(Local {
+		annotation,
+		is_final,
+		ty,
+		id,
+		rhs,
+	})
 }
 
 pub fn parse_annotation(p: Pair<Rule>) -> Annotation {

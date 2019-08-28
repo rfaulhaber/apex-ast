@@ -3,9 +3,9 @@
 apex_file = { SOI ~ (class_declaration | interface_declaration | trigger_declaration) ~ EOI }
 
 class_declaration = { annotation? ~ access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ class_body }
-class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_method_declaration | enum_declaration | class_member_variable_declaration | static_block | class_constructor_definition)* ~ "}" }
+class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | class_method_declaration | enum_declaration | class_member_variable_declaration | static_block | instance_block | class_constructor_definition)* ~ "}" }
 inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
-inner_class_body = { "{" ~ (class_method_declaration | enum_declaration | class_member_variable_declaration | class_constructor_definition | static_block)* ~ "}" }
+inner_class_body = { "{" ~ (class_method_declaration | enum_declaration | class_member_variable_declaration | class_constructor_definition | static_block | instance_block)* ~ "}" }
 inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
 // // basically methods without return type 
 class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ parameter_list ~ block }
@@ -58,8 +58,10 @@ class_member_variable_declaration = {
 }
 
 // static blocks
-
 static_block = { STATIC ~ block }
+
+// instance block
+instance_block = { block }
 
 // methods
 
@@ -81,13 +83,14 @@ statement = {
     | if_stmt
     | switch_stmt
     | try_catch_stmt
+	| block
     | return_stmt
 	| dml_stmt
     | throw_stmt
     | break_stmt
     | continue_stmt
     | stmt_expr ~ ";"
-    | local_variable_declaration ~ ";"
+    // | local_variable_declaration ~ ";"
 }
 
 // if statements

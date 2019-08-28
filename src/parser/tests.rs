@@ -23,6 +23,42 @@ where
 }
 
 #[test]
+fn stmt_expr_expr_parses() {
+	let lhs = Expr::from(Identifier::from("foo"));
+	let rhs = Expr::from(Literal::from(22));
+
+	test_parse(
+		Rule::statement,
+		"foo = 22;",
+		parse_stmt,
+		Stmt::from(StmtExpr::from(Expr {
+			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs)),
+		})),
+	);
+}
+
+#[test]
+fn stmt_expr_local_parses() {
+	let test_str = "Integer foo = 22;";
+
+	let ty = Ty::from(PrimitiveKind::Integer);
+	let id = Identifier::from("foo");
+	let rhs = Expr::from(Literal::from(22));
+
+	let expected = Stmt {
+		kind: StmtKind::StmtExpr(StmtExpr::Local(Local {
+			annotation: None,
+			is_final: false,
+			ty,
+			id,
+			rhs: Some(rhs),
+		})),
+	};
+
+	test_parse(Rule::statement, test_str, parse_stmt, expected);
+}
+
+#[test]
 fn try_catch_catch_finally_parses() {
 	let test_str = r#"try {
 		insert foo;

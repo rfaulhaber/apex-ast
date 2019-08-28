@@ -17,6 +17,14 @@ impl Stmt {
 	}
 }
 
+impl From<Local> for Stmt {
+	fn from(l: Local) -> Stmt {
+		Stmt {
+			kind: StmtKind::StmtExpr(StmtExpr::Local(l)),
+		}
+	}
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum StmtKind {
 	For(ForStmt),
@@ -37,6 +45,7 @@ pub enum StmtKind {
 		Option<Vec<(Ty, Identifier, Block)>>,
 		Option<Block>,
 	),
+	Block(Block),
 	Return(Option<Expr>),
 	Dml(DmlOp, Expr),
 	Throw(Expr),
@@ -86,6 +95,26 @@ pub enum ForStmt {
 pub enum StmtExpr {
 	Expr(Expr),
 	Local(Local),
+}
+
+impl From<Expr> for StmtExpr {
+	fn from(e: Expr) -> StmtExpr {
+		StmtExpr::Expr(e)
+	}
+}
+
+impl From<Local> for StmtExpr {
+	fn from(l: Local) -> StmtExpr {
+		StmtExpr::Local(l)
+	}
+}
+
+impl From<StmtExpr> for Stmt {
+	fn from(se: StmtExpr) -> Stmt {
+		Stmt {
+			kind: StmtKind::StmtExpr(se),
+		}
+	}
 }
 
 #[derive(Debug, Clone, PartialEq)]
