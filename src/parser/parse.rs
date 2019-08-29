@@ -55,10 +55,51 @@ fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
 fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
 	let mut inner = p.into_inner();
 
+	inner.next(); // discard "if"
+
 	let test_expr = parse_expr(inner.next().unwrap().into_inner().next().unwrap());
+	let block = Box::new(parse_any_block(inner.next().unwrap()));
+
+	let mut else_ifs = Vec::new();
+	let mut else_block = None;
+
+	for pair in inner {
+		match pair.as_rule() {
+			Rule::else_if_block => else_ifs.push(parse_else_if_stmt(pair)),
+			Rule::else_block => {
+				let mut else_inner = pair.into_inner();
+				else_inner.next(); // discard "else"
+				else_block = Some(Box::new(parse_any_block(else_inner.next().unwrap())));
+			}
+			_ => unreachable!("parsing if got this rule: {:?}", pair.as_rule()),
+		}
+	}
+
+	let kind = StmtKind::If(
+		test_expr,
+		block,
+		if else_ifs.is_empty() {
+			None
+		} else {
+			Some(else_ifs)
+		},
+		else_block,
+	);
+
+	Stmt { kind }
+}
+
+fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
+	let mut inner = p.into_inner();
+
+	// discard "else" and "if"
+	inner.next();
+	inner.next();
+
+	let expr = parse_expr(inner.next().unwrap().into_inner().next().unwrap());
 	let block = parse_any_block(inner.next().unwrap());
 
-	unimplemented!();
+	(expr, Box::new(block))
 }
 
 fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {

@@ -23,6 +23,99 @@ where
 }
 
 #[test]
+fn if_else_if_else_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	} else if (bar) {
+		return baz;
+	} else {
+		return quux;
+	}"#;
+
+	let expected_kind = StmtKind::If(
+		Expr::from(Identifier::from("foo")),
+		Box::new(Block::from(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
+		}])),
+		Some(vec![(
+			Expr::from(Identifier::from("bar")),
+			Box::new(Block::from(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr::from(Identifier::from("baz")))),
+			}])),
+		)]),
+		Some(Box::new(Block::from(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr::from(Identifier::from("quux")))),
+		}]))),
+	);
+
+	test_parse(
+		Rule::statement,
+		input,
+		parse_stmt,
+		Stmt {
+			kind: expected_kind,
+		},
+	);
+}
+
+#[test]
+fn if_else_if_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	} else if (bar) {
+		return baz;
+	}"#;
+
+	let expected_kind = StmtKind::If(
+		Expr::from(Identifier::from("foo")),
+		Box::new(Block::from(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
+		}])),
+		Some(vec![(
+			Expr::from(Identifier::from("bar")),
+			Box::new(Block::from(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr::from(Identifier::from("baz")))),
+			}])),
+		)]),
+		None,
+	);
+
+	test_parse(
+		Rule::statement,
+		input,
+		parse_stmt,
+		Stmt {
+			kind: expected_kind,
+		},
+	);
+}
+
+#[test]
+fn basic_if_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	}"#;
+
+	let expected_kind = StmtKind::If(
+		Expr::from(Identifier::from("foo")),
+		Box::new(Block::from(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
+		}])),
+		None,
+		None,
+	);
+
+	test_parse(
+		Rule::statement,
+		input,
+		parse_stmt,
+		Stmt {
+			kind: expected_kind,
+		},
+	);
+}
+
+#[test]
 fn stmt_expr_expr_parses() {
 	let lhs = Expr::from(Identifier::from("foo"));
 	let rhs = Expr::from(Literal::from(22));

@@ -72,7 +72,7 @@ parameter = { basic_type ~ identifier }
 class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ basic_type ~ identifier ~ parameter_list ~ block }
 
 block = { "{" ~ statement* ~ "}" }
-inline_block = { statement }
+inline_block = { !block ~ statement }
 
 // statements
 
