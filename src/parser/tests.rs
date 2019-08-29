@@ -23,6 +23,44 @@ where
 }
 
 #[test]
+fn do_while_parses() {
+	test_parse(
+		Rule::statement,
+		r#"do {
+			return x;
+		} while (true);"#,
+		parse_stmt,
+		Stmt {
+			kind: StmtKind::DoWhile(
+				Box::new(Block::from(vec![Stmt {
+					kind: StmtKind::Return(Some(Expr::from(Identifier::from("x")))),
+				}])),
+				Expr::from(Literal::from(true)),
+			),
+		},
+	);
+}
+
+#[test]
+fn while_parses() {
+	test_parse(
+		Rule::statement,
+		r#"while (true) {
+		return x; 
+	}"#,
+		parse_stmt,
+		Stmt {
+			kind: StmtKind::While(
+				Expr::from(Literal::from(true)),
+				Box::new(Block::from(vec![Stmt {
+					kind: StmtKind::Return(Some(Expr::from(Identifier::from("x")))),
+				}])),
+			),
+		},
+	)
+}
+
+#[test]
 fn if_else_if_else_parses() {
 	let input = r#"if (foo) {
 		return bar;

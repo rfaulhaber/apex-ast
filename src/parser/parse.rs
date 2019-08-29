@@ -45,11 +45,32 @@ fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "do"
+
+	let block = parse_any_block(inner.next().unwrap());
+
+	inner.next(); // discard "while"
+
+	let expr = parse_expr(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::DoWhile(Box::new(block), expr)
+	}
 }
 
 fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "while"
+
+	let expr = parse_expr(inner.next().unwrap());
+	let block = parse_any_block(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::While(expr, Box::new(block)),
+	}
 }
 
 fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
