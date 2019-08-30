@@ -51,11 +51,45 @@ fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_for_basic(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+
+	inner.next(); // skip "for" token
+
+	let mut next = inner.next().unwrap();
+
+	let init = if next.as_rule() == Rule::for_init {
+		let ret = Some(parse_for_init(next));
+		next = inner.next().unwrap();
+		ret
+	} else {
+		None
+	};
+
+	let expr = if next.as_rule() == Rule::expression {
+		let ret = Some(parse_expr(next));
+		next = inner.next().unwrap();
+		ret
+	} else {
+		None
+	};
+
+	let update = if next.as_rule() == Rule::stmt_expr {
+		let ret = Some(parse_stmt_expr_literal(next));
+		next = inner.next().unwrap();
+		ret
+	} else {
+		None
+	};
+
+	let block = parse_any_block(next);
+
+	Stmt {
+		kind: StmtKind::For(ForStmt::Basic(init, expr, update, Box::new(block))),
+	}
 }
 
-fn parse_for_init(p: Pair<Rule>) -> Vec<Stmt> {
-	unimplemented!();
+fn parse_for_init(p: Pair<Rule>) -> Vec<StmtExpr> {
+	p.into_inner().map(parse_stmt_expr_literal).collect()
 }
 
 fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
@@ -312,10 +346,26 @@ fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
 		}
 		Rule::assignment_expr => Stmt::from(StmtExpr::from(parse_assignment_expr(stmt_expr_pair))),
 		Rule::property_access => Stmt::from(StmtExpr::from(parse_property_access(stmt_expr_pair))),
-		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => {
-			Stmt::from(StmtExpr::from(parse_expr_inner(stmt_expr_pair)))
-		}
+		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => Stmt::from(StmtExpr::from(
+			parse_expr_inner(stmt_expr_pair.into_inner().next().unwrap()),
+		)),
 		Rule::new_instance_expr => Stmt::from(StmtExpr::from(parse_expr(stmt_expr_pair))),
+		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
+	}
+}
+
+// same function as above but adapted for usage in for loops
+fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
+	let stmt_expr_pair = p.into_inner().next().unwrap();
+
+	match stmt_expr_pair.as_rule() {
+		Rule::local_variable_declaration => parse_local_variable_declaration(stmt_expr_pair),
+		Rule::assignment_expr => StmtExpr::from(parse_assignment_expr(stmt_expr_pair)),
+		Rule::property_access => StmtExpr::from(parse_property_access(stmt_expr_pair)),
+		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => {
+			StmtExpr::Expr(parse_expr_inner(stmt_expr_pair))
+		}
+		Rule::new_instance_expr => StmtExpr::from(parse_expr(stmt_expr_pair)),
 		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
 	}
 }
@@ -526,8 +576,9 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			}
 		}
 		_ => unreachable!(
-			"unexpected expr_inner rule encountered: {:?}",
-			inner.as_rule()
+			"unexpected expr_inner rule encountered: {:?}, inner: {:?}",
+			inner.as_rule(),
+			inner
 		),
 	}
 }

@@ -23,6 +23,46 @@ where
 }
 
 #[test]
+fn for_basic_simple_parses() {
+	let input = "for (Integer i = 0; i < 10; i++) sum += i;";
+
+	let expected = Stmt {
+		kind: StmtKind::For(ForStmt::Basic(
+			Some(vec![StmtExpr::Local(Local {
+				annotation: None,
+				is_final: false,
+				ty: Ty::from(PrimitiveKind::Integer),
+				id: Identifier::from("i"),
+				rhs: Some(Expr {
+					kind: ExprKind::Literal(Literal::from(0)),
+				}),
+			})]),
+			Some(Expr {
+				kind: ExprKind::Infix(
+					Box::new(Expr::from(Identifier::from("i"))),
+					BinOp::Le,
+					Box::new(Expr::from(Literal::from(10))),
+				),
+			}),
+			Some(StmtExpr::Expr(Expr {
+				kind: ExprKind::Postfix(Box::new(Expr::from(Identifier::from("i"))), IncDecOp::Inc),
+			})),
+			Box::new(Block::Inline(Box::new(Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr::from(Identifier::from("sum"))),
+						AssignOp::Add,
+						Box::new(Expr::from(Identifier::from("i"))),
+					),
+				})),
+			}))),
+		)),
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
 fn for_enhanced_parses() {
 	let input = "for (Integer i : numbers) sum += i;";
 

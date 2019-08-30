@@ -87,7 +87,12 @@ impl Block {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ForStmt {
-	Basic(Vec<StmtExpr>, Vec<Expr>, StmtExpr, BlockRef),
+	Basic(
+		Option<Vec<StmtExpr>>,
+		Option<Expr>,
+		Option<StmtExpr>,
+		BlockRef,
+	),
 	Enhanced(Ty, Identifier, Expr, BlockRef),
 }
 
