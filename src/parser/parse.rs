@@ -41,7 +41,36 @@ pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::for_basic => parse_for_basic(inner),
+		Rule::for_enhanced => parse_for_enhanced(inner),
+		_ => unreachable!("unexpected rule: {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_for_basic(p: Pair<Rule>) -> Stmt {
 	unimplemented!();
+}
+
+fn parse_for_init(p: Pair<Rule>) -> Vec<Stmt> {
+	unimplemented!();
+}
+
+fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "for"
+
+	let ty = parse_ty(inner.next().unwrap());
+	let id = parse_identifier(inner.next().unwrap());
+	let expr = parse_expr(inner.next().unwrap());
+	let block = parse_any_block(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::For(ForStmt::Enhanced(ty, id, expr, Box::new(block))),
+	}
 }
 
 fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
@@ -56,7 +85,7 @@ fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
 	let expr = parse_expr(inner.next().unwrap());
 
 	Stmt {
-		kind: StmtKind::DoWhile(Box::new(block), expr)
+		kind: StmtKind::DoWhile(Box::new(block), expr),
 	}
 }
 

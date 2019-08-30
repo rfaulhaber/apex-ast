@@ -23,6 +23,30 @@ where
 }
 
 #[test]
+fn for_enhanced_parses() {
+	let input = "for (Integer i : numbers) sum += i;";
+
+	let expected = Stmt {
+		kind: StmtKind::For(ForStmt::Enhanced(
+			Ty::from(PrimitiveKind::Integer),
+			Identifier::from("i"),
+			Expr::from(Identifier::from("numbers")),
+			Box::new(Block::Inline(Box::new(Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr::from(Identifier::from("sum"))),
+						AssignOp::Add,
+						Box::new(Expr::from(Identifier::from("i"))),
+					),
+				})),
+			}))),
+		)),
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
 fn do_while_parses() {
 	test_parse(
 		Rule::statement,
