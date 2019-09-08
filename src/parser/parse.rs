@@ -29,7 +29,6 @@ pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 		Rule::break_stmt => parse_break_stmt(inner),
 		Rule::continue_stmt => parse_continue_stmt(inner),
 		Rule::stmt_expr => parse_stmt_expr(inner),
-		// Rule::local_variable_declaration => parse_local_variable_declaration(inner),
 		_ => unreachable!("unexpected rule, {:?}", inner.as_rule()),
 	}
 }
@@ -181,7 +180,86 @@ fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
 }
 
 fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
-	unimplemented!();
+	let mut inner = p.into_inner();
+	inner.next(); // discared "switch"
+	inner.next(); // discard "on"
+
+	let test_expr = parse_expr(inner.next().unwrap());
+
+	let next = inner.next();
+
+	if next.is_some() {
+		let when_case_pairs: Vec<Pair<Rule>> = inner
+			.clone()
+			.filter(|p| p.as_rule() == Rule::when_case)
+			.collect();
+		let when_else_pairs: Vec<Pair<Rule>> = inner
+			.clone()
+			.filter(|p| p.as_rule() == Rule::when_else)
+			.collect();
+
+		let when_case: Option<Vec<WhenCase>> = if when_case_pairs.is_empty() {
+			None
+		} else {
+			Some(
+				when_case_pairs
+					.iter()
+					.map(|p| parse_when_case(p.clone()))
+					.collect(),
+			)
+		};
+
+		let when_else: Option<Block> = if when_else_pairs.is_empty() {
+			None
+		} else {
+			let mut else_inner = when_case_pairs.first().unwrap().clone().into_inner();
+			else_inner.next(); // discard "when"
+			else_inner.next(); // discard "else"
+			Some(parse_block(else_inner.next().unwrap()))
+		};
+
+		Stmt {
+			kind: StmtKind::Switch(test_expr, when_case, when_else),
+		}
+	} else {
+		Stmt {
+			kind: StmtKind::Switch(test_expr, None, None),
+		}
+	}
+}
+
+fn parse_when_case(p: Pair<Rule>) -> WhenCase {
+	let mut inner = p.into_inner();
+
+	inner.next(); // discard "when"
+
+	let next = inner.next().unwrap().into_inner().next().unwrap();
+
+	let when_conds = match next.as_rule() {
+		Rule::when_type => {
+			let mut next_inner = next.into_inner();
+
+			let ty = parse_ty(next_inner.next().unwrap());
+			let id = parse_identifier(next_inner.next().unwrap());
+			WhenCondition::Type(ty, id)
+		}
+		Rule::when_value_list => {
+			let vals_inner = next.into_inner();
+
+			let vals = vals_inner
+				.map(|p| match p.as_rule() {
+					Rule::identifier => WhenValue::from(parse_identifier(p)),
+					Rule::literal => WhenValue::from(parse_literal(p)),
+					_ => unreachable!("encountered unexpected rule: {:?}", p.as_rule()),
+				})
+				.collect();
+
+			WhenCondition::Value(vals)
+		}
+		_ => unreachable!("encountered unexpected rule: {:?}", next.as_rule()),
+	};
+
+	(when_conds, parse_block(inner.next().unwrap()))
 }
 
 fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {

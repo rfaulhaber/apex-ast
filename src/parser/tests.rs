@@ -23,6 +23,88 @@ where
 }
 
 #[test]
+fn switch_basic_parses() {
+	let input = r#"switch on i {}"#;
+
+	let expr = Expr::from(Identifier::from("i"));
+
+	let expected = Stmt {
+		kind: StmtKind::Switch(expr, None, None),
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
+fn switch_values_parses() {
+	let input = r#"switch on i {
+   when 2, 3, 4 {
+       return 1;
+   }
+   when 5, 6 {
+       return 2;
+   }
+   when 7 {
+       return 3;
+   }
+   when else {
+       return 4;
+   }
+}"#;
+
+	let test_expr = Expr::from(Identifier::from("i"));
+
+	let first_when_values = WhenCondition::Value(vec![
+		WhenValue::Literal(Literal::from(2)),
+		WhenValue::Literal(Literal::from(3)),
+		WhenValue::Literal(Literal::from(4)),
+	]);
+
+	let first_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(1)))),
+	}]);
+
+	let second_when_values = WhenCondition::Value(vec![
+		WhenValue::Literal(Literal::from(5)),
+		WhenValue::Literal(Literal::from(6)),
+	]);
+
+	let second_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(2)))),
+	}]);
+
+	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal::from(7))]);
+
+	let third_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(3)))),
+	}]);
+
+	let else_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(4)))),
+	}]);
+
+	test_parse(
+		Rule::statement,
+		input,
+		parse_stmt,
+		Stmt {
+			kind: StmtKind::Switch(
+				test_expr,
+				Some(vec![
+					(first_when_values, first_block),
+					(second_when_values, second_block),
+					(third_when_values, third_block),
+				]),
+				Some(else_block),
+			),
+		},
+	)
+}
+
+#[test]
+fn switch_types_parses() {}
+
+#[test]
 fn for_basic_simple_parses() {
 	let input = "for (Integer i = 0; i < 10; i++) sum += i;";
 

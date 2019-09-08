@@ -104,7 +104,8 @@ switch_stmt = { SWITCH ~ ON ~ expression ~ "{" ~ when_case* ~ when_else? ~ "}" }
 when_case = { WHEN ~ when_condition ~ block }
 when_condition = { when_type | when_value_list }
 when_type = { basic_type ~ identifier }
-when_value_list = { literal ~ ("," ~ literal)* | identifier ~ ("," ~ identifier)* }
+// a hack to get around the fact that "else" could be interpreted as an identifier
+when_value_list = { literal ~ ("," ~ literal)* | !ELSE ~ identifier ~ ("," ~ identifier)* }
 when_else = { WHEN ~ ELSE ~ block }
 
 // for statements

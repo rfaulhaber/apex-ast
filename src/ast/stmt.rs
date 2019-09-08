@@ -2,6 +2,7 @@ use super::annotation::*;
 use super::expr::*;
 use super::identifier::*;
 use super::ty::*;
+use super::literal::*;
 use super::*;
 
 pub type BlockRef = Box<Block>;
@@ -37,7 +38,8 @@ pub enum StmtKind {
 		Option<Vec<(Expr, BlockRef)>>,
 		Option<BlockRef>,
 	),
-	Switch(Expr, Vec<(Expr, Block)>, Block),
+	// test expr, when cases and their blocks, when else block
+	Switch(Expr, Option<Vec<WhenCase>>, Option<Block>),
 	// TODO make a type?
 	TryCatch(
 		BlockRef,
@@ -53,6 +55,32 @@ pub enum StmtKind {
 	Continue,
 	StmtExpr(StmtExpr),
 	Local(Local),
+}
+
+pub type WhenCase = (WhenCondition, Block);
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WhenCondition {
+	Type(Ty, Identifier),
+	Value(Vec<WhenValue>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WhenValue {
+	Literal(Literal),
+	Identifier(Identifier)
+}
+
+impl From<Literal> for WhenValue {
+	fn from(l: Literal) -> WhenValue {
+		WhenValue::Literal(l)
+	}
+}
+
+impl From<Identifier> for WhenValue {
+	fn from(i: Identifier) -> WhenValue {
+		WhenValue::Identifier(i)
+	}
 }
 
 impl Into<Stmt> for StmtKind {
