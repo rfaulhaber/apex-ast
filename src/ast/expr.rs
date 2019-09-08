@@ -31,9 +31,9 @@ pub enum ExprKind {
 	Identifier(Identifier),
 }
 
-impl Into<Expr> for ExprKind {
-	fn into(self) -> Expr {
-		Expr { kind: self }
+impl From<ExprKind> for Expr {
+	fn from(kind: ExprKind) -> Expr {
+		Expr { kind }
 	}
 }
 

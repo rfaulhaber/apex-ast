@@ -10,12 +10,6 @@ use pest::iterators::Pair;
 
 // NOTE: should this entire module be an object or generic function?
 
-macro_rules! descend_pair {
-	($pair:expr) => {
-		$pair.into_inner().next().unwrap()
-	};
-}
-
 pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 	let inner = p.into_inner().next().unwrap();
 
@@ -338,23 +332,9 @@ fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
-	let stmt_expr_pair = p.into_inner().next().unwrap();
-
-	match stmt_expr_pair.as_rule() {
-		Rule::local_variable_declaration => {
-			Stmt::from(parse_local_variable_declaration(stmt_expr_pair))
-		}
-		Rule::assignment_expr => Stmt::from(StmtExpr::from(parse_assignment_expr(stmt_expr_pair))),
-		Rule::property_access => Stmt::from(StmtExpr::from(parse_property_access(stmt_expr_pair))),
-		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => Stmt::from(StmtExpr::from(
-			parse_expr_inner(stmt_expr_pair.into_inner().next().unwrap()),
-		)),
-		Rule::new_instance_expr => Stmt::from(StmtExpr::from(parse_expr(stmt_expr_pair))),
-		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
-	}
+	Stmt::from(parse_stmt_expr_literal(p))
 }
 
-// same function as above but adapted for usage in for loops
 fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
 	let stmt_expr_pair = p.into_inner().next().unwrap();
 
@@ -362,10 +342,10 @@ fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
 		Rule::local_variable_declaration => parse_local_variable_declaration(stmt_expr_pair),
 		Rule::assignment_expr => StmtExpr::from(parse_assignment_expr(stmt_expr_pair)),
 		Rule::property_access => StmtExpr::from(parse_property_access(stmt_expr_pair)),
-		Rule::prefix_expr | Rule::postfix_expr | Rule::method_call => {
-			StmtExpr::Expr(parse_expr_inner(stmt_expr_pair))
-		}
-		Rule::new_instance_expr => StmtExpr::from(parse_expr(stmt_expr_pair)),
+		Rule::prefix_expr => StmtExpr::from(parse_prefix_expr(stmt_expr_pair)),
+		Rule::postfix_expr => StmtExpr::from(parse_postfix_expr(stmt_expr_pair)),
+		Rule::method_call => StmtExpr::from(parse_expr_inner(stmt_expr_pair)),
+		Rule::new_instance_expr => (StmtExpr::from(parse_expr(stmt_expr_pair))),
 		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
 	}
 }
@@ -503,11 +483,11 @@ fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_expr_inner(p: Pair<Rule>) -> Expr {
-	let inner = descend_pair!(p);
+	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
 		Rule::braced_expr => Expr {
-			kind: ExprKind::Braced(Box::new(parse_expr(descend_pair!(inner)))),
+			kind: ExprKind::Braced(Box::new(parse_expr(inner.into_inner().next().unwrap()))),
 		},
 		Rule::property_access => parse_property_access(inner),
 		Rule::query_expression => parse_query_expression(inner),
@@ -522,36 +502,8 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 
 			ExprKind::Unary(op, Box::new(expr)).into()
 		}
-		Rule::prefix_expr => {
-			let mut prefix_inner = inner.into_inner();
-
-			let op = IncDecOp::from(prefix_inner.next().unwrap().as_str());
-			let affixable = prefix_inner.next().unwrap().into_inner().next().unwrap();
-
-			let affixable_expr = match affixable.as_rule() {
-				Rule::property_access => parse_property_access(affixable),
-				Rule::list_access => parse_list_access(affixable),
-				Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
-				_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
-			};
-
-			ExprKind::Prefix(op, Box::new(affixable_expr)).into()
-		}
-		Rule::postfix_expr => {
-			let mut postfix_inner = inner.into_inner();
-
-			let affixable = postfix_inner.next().unwrap().into_inner().next().unwrap();
-			let op = IncDecOp::from(postfix_inner.next().unwrap().as_str());
-
-			let affixable_expr = match affixable.as_rule() {
-				Rule::property_access => parse_property_access(affixable),
-				Rule::list_access => parse_list_access(affixable),
-				Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
-				_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
-			};
-
-			ExprKind::Postfix(Box::new(affixable_expr), op).into()
-		}
+		Rule::prefix_expr => parse_prefix_expr(inner),
+		Rule::postfix_expr => parse_postfix_expr(inner),
 		Rule::instanceof_expr => {
 			let mut inst_pairs = inner.into_inner();
 
@@ -566,7 +518,9 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			let primary = inner.into_inner().next().unwrap();
 
 			match primary.as_rule() {
-				Rule::type_expr => ExprKind::Type(parse_ty(descend_pair!(primary))).into(),
+				Rule::type_expr => {
+					ExprKind::Type(parse_ty(primary.into_inner().next().unwrap())).into()
+				}
 				Rule::literal => ExprKind::Literal(parse_literal(primary)).into(),
 				Rule::identifier => ExprKind::Identifier(parse_identifier(primary)).into(),
 				_ => unimplemented!(
@@ -581,6 +535,38 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			inner
 		),
 	}
+}
+
+fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
+	let mut prefix_inner = p.into_inner();
+
+	let op = IncDecOp::from(prefix_inner.next().unwrap().as_str());
+	let affixable = prefix_inner.next().unwrap().into_inner().next().unwrap();
+
+	let affixable_expr = match affixable.as_rule() {
+		Rule::property_access => parse_property_access(affixable),
+		Rule::list_access => parse_list_access(affixable),
+		Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+		_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
+	};
+
+	Expr::from(ExprKind::Prefix(op, Box::new(affixable_expr)))
+}
+
+fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
+	let mut postfix_inner = p.into_inner();
+
+	let affixable = postfix_inner.next().unwrap().into_inner().next().unwrap();
+	let op = IncDecOp::from(postfix_inner.next().unwrap().as_str());
+
+	let affixable_expr = match affixable.as_rule() {
+		Rule::property_access => parse_property_access(affixable),
+		Rule::list_access => parse_list_access(affixable),
+		Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+		_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
+	};
+
+	Expr::from(ExprKind::Postfix(Box::new(affixable_expr), op))
 }
 
 fn parse_property_access(p: Pair<Rule>) -> Expr {

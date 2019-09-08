@@ -40,7 +40,7 @@ fn for_basic_simple_parses() {
 			Some(Expr {
 				kind: ExprKind::Infix(
 					Box::new(Expr::from(Identifier::from("i"))),
-					BinOp::Le,
+					BinOp::Lt,
 					Box::new(Expr::from(Literal::from(10))),
 				),
 			}),
@@ -215,6 +215,20 @@ fn basic_if_parses() {
 			kind: expected_kind,
 		},
 	);
+}
+
+#[test]
+fn stmt_expr_postfix_parses() {
+	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+
+	test_parse(
+		Rule::statement,
+		"i++;",
+		parse_stmt,
+		Stmt::from(StmtExpr::from(Expr {
+			kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
+		})),
+	)
 }
 
 #[test]

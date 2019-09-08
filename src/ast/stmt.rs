@@ -79,6 +79,14 @@ impl From<Stmt> for Block {
 	}
 }
 
+impl From<Expr> for Stmt {
+	fn from(e: Expr) -> Stmt {
+		Stmt {
+			kind: StmtKind::StmtExpr(StmtExpr::Expr(e)),
+		}
+	}
+}
+
 impl Block {
 	pub fn to_boxed(&self) -> Box<Self> {
 		Box::new(self.clone())
