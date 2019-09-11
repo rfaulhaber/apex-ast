@@ -69,7 +69,7 @@ access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
 
 parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 parameter = { basic_type ~ identifier }
-class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ basic_type ~ identifier ~ parameter_list ~ block }
+class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ TESTMETHOD? ~ basic_type ~ identifier ~ parameter_list ~ block }
 
 block = { "{" ~ statement* ~ "}" }
 inline_block = { !block ~ statement }
@@ -265,6 +265,7 @@ sobject_argument_pair = { identifier ~ "=" ~ expression }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 
+// TODO add "| VOID"
 basic_type = { (primitive_type | class_or_interface_type) ~ array_brackets? }
 array_brackets = @{ "[]" }
 
@@ -512,6 +513,7 @@ SET = { ^"set" }
 STATIC = { ^"static" }
 SUPER = { ^"super" }
 SWITCH = { ^"switch" }
+TESTMETHOD = { ^"testMethod" }
 THIS = { ^"this" }
 THROW = { ^"throw" }
 TRANSIENT = { ^"transient" }

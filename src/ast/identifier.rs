@@ -19,8 +19,20 @@ impl PartialEq<&str> for Identifier {
 	}
 }
 
+impl PartialEq<str> for Identifier {
+	fn eq(&self, other: &str) -> bool {
+		*self.name.as_str() == *other
+	}
+}
+
 impl PartialEq<String> for Identifier {
 	fn eq(&self, other: &String) -> bool {
 		*self.name == **other
+	}
+}
+
+impl Identifier {
+	pub fn eq_case_insensitive(&self, other: &str) -> bool {
+		self.name.to_lowercase().eq(&String::from(other).to_lowercase())
 	}
 }

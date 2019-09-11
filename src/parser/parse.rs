@@ -6,9 +6,26 @@ use crate::ast::literal::*;
 use crate::ast::ops::*;
 use crate::ast::stmt::*;
 use crate::ast::ty::*;
+use crate::ast::method::*;
 use pest::iterators::Pair;
 
 // NOTE: should this entire module be an object or generic function?
+
+pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
+	let mut inner = p.into_inner();
+
+	let mut next = inner.next().unwrap();
+
+	let annotation = if next.as_rule() == Rule::annotation {
+		let ret = parse_annotation(next);
+		next = inner.next().unwrap();
+		Some(ret)
+	} else {
+		None
+	};
+
+	unimplemented!();
+}
 
 pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 	let inner = p.into_inner().next().unwrap();
@@ -943,6 +960,10 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 			let mut coi_inner = t.into_inner();
 
 			let name = parse_identifier(coi_inner.next().unwrap());
+
+			if name.eq_case_insensitive("void") {
+				return Ty::void();
+			}
 
 			match coi_inner.next() {
 				Some(ref pair) if pair.as_rule() == Rule::identifier => {

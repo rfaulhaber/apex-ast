@@ -23,6 +23,19 @@ pub enum TyKind {
 	ClassOrInterface(ClassOrInterface),
 	/// An Apex "primitive".
 	Primitive(Primitive),
+	Void,
+}
+
+impl Ty {
+	pub fn void() -> Ty {
+		Ty {
+			kind: TyKind::Void
+		}
+	}
+
+	pub fn is_void(&self) -> bool {
+		self.kind == TyKind::Void
+	}
 }
 
 /// A class or interface.
@@ -44,10 +57,10 @@ pub struct ClassOrInterface {
 	pub is_array: bool,
 }
 
-impl Into<Ty> for ClassOrInterface {
-	fn into(self) -> Ty {
+impl From<ClassOrInterface> for Ty {
+	fn from(coi: ClassOrInterface) -> Ty {
 		Ty {
-			kind: TyKind::ClassOrInterface(self),
+			kind: TyKind::ClassOrInterface(coi),
 		}
 	}
 }
@@ -58,10 +71,10 @@ pub struct Primitive {
 	pub is_array: bool,
 }
 
-impl Into<Ty> for Primitive {
-	fn into(self) -> Ty {
+impl From<Primitive> for Ty {
+	fn from(p: Primitive) -> Ty {
 		Ty {
-			kind: TyKind::Primitive(self),
+			kind: TyKind::Primitive(p),
 		}
 	}
 }

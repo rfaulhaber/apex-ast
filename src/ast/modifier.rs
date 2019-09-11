@@ -17,4 +17,6 @@ pub enum SharingModifier {
 pub enum ImplModifier {
 	Virtual,
 	Override,
+	Static,
+	Abstract,
 }

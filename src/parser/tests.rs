@@ -645,6 +645,16 @@ fn ty_primitive_parses() {
 }
 
 #[test]
+fn ty_void_parses() {
+	test_parse(Rule::basic_type, "void", parse_ty, Ty::void())
+}
+
+#[test]
+fn ty_void_case_insensitive_parses() {
+	test_parse(Rule::basic_type, "VOID", parse_ty, Ty::void())
+}
+
+#[test]
 fn ty_primitive_array_parses() {
 	test_parse(
 		Rule::basic_type,
