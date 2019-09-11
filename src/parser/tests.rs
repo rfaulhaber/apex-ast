@@ -102,7 +102,67 @@ fn switch_values_parses() {
 }
 
 #[test]
-fn switch_types_parses() {}
+fn switch_types_parses() {
+	let input = r#"switch on sobject {
+   when Account a {
+       return 1;
+   }
+   when Contact c {
+       return 2;
+   }
+   when null {
+       return 3;
+   }
+   when else {
+       return 4;
+   }
+}"#;
+
+	let test_expr = Expr::from(Identifier::from("sobject"));
+
+	let first_when_values =
+		WhenCondition::Type(Ty::from(Identifier::from("Account")), Identifier::from("a"));
+
+	let first_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(1)))),
+	}]);
+
+	let second_when_values =
+		WhenCondition::Type(Ty::from(Identifier::from("Contact")), Identifier::from("c"));
+
+	let second_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(2)))),
+	}]);
+
+	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal {
+		kind: LiteralKind::Null,
+	})]);
+
+	let third_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(3)))),
+	}]);
+
+	let else_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr::from(Literal::from(4)))),
+	}]);
+
+	test_parse(
+		Rule::statement,
+		input,
+		parse_stmt,
+		Stmt {
+			kind: StmtKind::Switch(
+				test_expr,
+				Some(vec![
+					(first_when_values, first_block),
+					(second_when_values, second_block),
+					(third_when_values, third_block),
+				]),
+				Some(else_block),
+			),
+		},
+	)
+}
 
 #[test]
 fn for_basic_simple_parses() {

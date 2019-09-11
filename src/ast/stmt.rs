@@ -1,8 +1,8 @@
 use super::annotation::*;
 use super::expr::*;
 use super::identifier::*;
-use super::ty::*;
 use super::literal::*;
+use super::ty::*;
 use super::*;
 
 pub type BlockRef = Box<Block>;
@@ -68,7 +68,7 @@ pub enum WhenCondition {
 #[derive(Debug, Clone, PartialEq)]
 pub enum WhenValue {
 	Literal(Literal),
-	Identifier(Identifier)
+	Identifier(Identifier),
 }
 
 impl From<Literal> for WhenValue {

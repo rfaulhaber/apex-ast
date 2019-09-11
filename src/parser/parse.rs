@@ -186,13 +186,16 @@ fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 
 	let test_expr = parse_expr(inner.next().unwrap());
 
+	let inner_clone = inner.clone();
+
 	let next = inner.next();
 
 	if next.is_some() {
-		let when_case_pairs: Vec<Pair<Rule>> = inner
+		let when_case_pairs: Vec<Pair<Rule>> = inner_clone
 			.clone()
 			.filter(|p| p.as_rule() == Rule::when_case)
 			.collect();
+
 		let when_else_pairs: Vec<Pair<Rule>> = inner
 			.clone()
 			.filter(|p| p.as_rule() == Rule::when_else)
@@ -212,7 +215,8 @@ fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 		let when_else: Option<Block> = if when_else_pairs.is_empty() {
 			None
 		} else {
-			let mut else_inner = when_case_pairs.first().unwrap().clone().into_inner();
+			// there will only ever be one!
+			let mut else_inner = when_else_pairs.first().unwrap().clone().into_inner();
 			else_inner.next(); // discard "when"
 			else_inner.next(); // discard "else"
 			Some(parse_block(else_inner.next().unwrap()))
