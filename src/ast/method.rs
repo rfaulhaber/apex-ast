@@ -10,12 +10,22 @@ pub struct ClassMethod {
 	pub access_mod: Option<AccessModifier>,
 	pub impl_mod: Option<ImplModifier>,
 	// indicates the presense of the deprecated "testMethod" keyword
-	pub is_test_method: bool,
+	pub is_testmethod: bool,
 	pub return_type: Ty,
 	pub identifier: Identifier,
-	pub params: Vec<MethodParam>, // should this be an option?
-	pub is_static: bool,
+	pub params: Vec<(Ty, Identifier)>, // should this be an option?
 	pub block: Block,
+}
+
+impl ClassMethod {
+	pub fn is_static(&self) -> bool {
+		if self.impl_mod.is_some() {
+			let modifier = self.impl_mod.clone().unwrap();
+			modifier == ImplModifier::Static
+		} else {
+			false
+		}
+	}
 }
 
 // either an interface method definition or an abstract method
@@ -23,7 +33,7 @@ pub struct ClassMethod {
 pub struct ImplementableMethod {
 	pub ty: Ty,
 	pub id: Identifier,
-	pub params: Vec<MethodParam>,
+	pub params: Vec<(Ty, Identifier)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,10 +42,4 @@ pub enum MethodKind {
 	ClassMethod(ClassMethod),
 	/// a method definition as defined by an abstract class or interface
 	ImplementableMethod(ImplementableMethod),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MethodParam {
-	pub ty: Ty,
-	pub id: Identifier,
 }

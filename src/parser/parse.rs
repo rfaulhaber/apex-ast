@@ -3,10 +3,11 @@ use crate::ast::annotation::Annotation;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
+use crate::ast::method::*;
+use crate::ast::modifier::*;
 use crate::ast::ops::*;
 use crate::ast::stmt::*;
 use crate::ast::ty::*;
-use crate::ast::method::*;
 use pest::iterators::Pair;
 
 // NOTE: should this entire module be an object or generic function?
@@ -24,7 +25,82 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 		None
 	};
 
-	unimplemented!();
+	let access_mod = if next.as_rule() == Rule::access_modifier {
+		let ret = parse_access_modifier(next);
+		next = inner.next().unwrap();
+		Some(ret)
+	} else {
+		None
+	};
+
+	let impl_mod = if next.as_rule() == Rule::impl_modifier {
+		let ret = parse_impl_modifier(next);
+		next = inner.next().unwrap();
+		Some(ret)
+	} else {
+		None
+	};
+
+	let is_testmethod = if next.as_rule() == Rule::TESTMETHOD {
+		next = inner.next().unwrap();
+		true
+	} else {
+		false
+	};
+
+	let return_type = parse_ty(next);
+	let identifier = parse_identifier(inner.next().unwrap());
+
+	let params = parse_parameter_list(inner.next().unwrap());
+
+	let block = parse_block(inner.next().unwrap());
+
+	ClassMethod {
+		annotation,
+		access_mod,
+		impl_mod,
+		is_testmethod,
+		return_type,
+		identifier,
+		params,
+		block
+	}
+}
+
+fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::GLOBAL => AccessModifier::Global,
+		Rule::PUBLIC => AccessModifier::Public,
+		Rule::PROTECTED => AccessModifier::Protected,
+		Rule::PRIVATE => AccessModifier::Private,
+		_ => unreachable!("unexpected rule encountered: {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::OVERRIDE => ImplModifier::Override,
+		Rule::STATIC => ImplModifier::Static,
+		Rule::VIRTUAL => ImplModifier::Virtual,
+		Rule::ABSTRACT => ImplModifier::Abstract,
+		_ => unreachable!("unexpected rule encountered: {:?}", inner.as_rule()),
+	}
+}
+
+fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
+	let inner = p.into_inner();
+
+	inner.map(|pair| {
+		let mut iter_inner = pair.into_inner();
+		let ty = parse_ty(iter_inner.next().unwrap());
+		let id = parse_identifier(iter_inner.next().unwrap());
+
+		(ty, id)
+	}).collect()
 }
 
 pub fn parse_stmt(p: Pair<Rule>) -> Stmt {

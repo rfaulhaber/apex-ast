@@ -66,10 +66,11 @@ instance_block = { block }
 // methods
 
 access_modifier = { GLOBAL | PUBLIC | PROTECTED | PRIVATE }
+impl_modifier = { OVERRIDE | STATIC | VIRTUAL | ABSTRACT }
 
 parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 parameter = { basic_type ~ identifier }
-class_method_declaration = { annotation? ~ access_modifier? ~ (OVERRIDE | STATIC | VIRTUAL | ABSTRACT)? ~ TESTMETHOD? ~ basic_type ~ identifier ~ parameter_list ~ block }
+class_method_declaration = { annotation? ~ access_modifier? ~ impl_modifier? ~ TESTMETHOD? ~ basic_type ~ identifier ~ parameter_list ~ block }
 
 block = { "{" ~ statement* ~ "}" }
 inline_block = { !block ~ statement }

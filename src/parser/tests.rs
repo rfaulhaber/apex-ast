@@ -4,6 +4,8 @@ use crate::ast::annotation::Annotation;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
+use crate::ast::method::*;
+use crate::ast::modifier::*;
 use crate::ast::ops::*;
 use crate::ast::stmt::*;
 use crate::ast::ty::*;
@@ -20,6 +22,55 @@ where
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
+}
+
+#[test]
+fn class_method_maximal_parses() {
+	let input = "@isTest public static testMethod Integer foo(Bar b, Baz bz) {}";
+
+	let expected = ClassMethod {
+		annotation: Some(Annotation::from("isTest")),
+		access_mod: Some(AccessModifier::Public),
+		impl_mod: Some(ImplModifier::Static),
+		is_testmethod: true,
+		return_type: Ty::from(PrimitiveKind::Integer),
+		identifier: Identifier::from("foo"),
+		params: vec![
+			(Ty::from(Identifier::from("Bar")), Identifier::from("b")),
+			(Ty::from(Identifier::from("Baz")), Identifier::from("bz")),
+		],
+		block: Block::Body(Vec::new()),
+	};
+
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
+}
+
+#[test]
+fn class_method_basic_parses() {
+	let input = "public static void foo() {}";
+
+	let expected = ClassMethod {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		impl_mod: Some(ImplModifier::Static),
+		is_testmethod: false,
+		return_type: Ty::void(),
+		identifier: Identifier::from("foo"),
+		params: Vec::new(),
+		block: Block::Body(Vec::new()),
+	};
+
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
 }
 
 #[test]
