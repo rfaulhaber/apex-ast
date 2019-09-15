@@ -1,6 +1,7 @@
 use super::parse::*;
 use super::*;
 use crate::ast::annotation::Annotation;
+use crate::ast::class::*;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
@@ -22,6 +23,135 @@ where
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
+}
+
+#[test]
+fn class_field_no_rhs_parses() {
+	let input = "public static String foo;";
+
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: Some(ClassInstanceModifier::Static),
+		is_final: false,
+		ty: Ty::from(PrimitiveKind::String),
+		id: Identifier::from("foo"),
+		getter: None,
+		setter: None,
+		rhs: None,
+	};
+
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
+
+#[test]
+fn class_field_getter_setter_basic_parses() {
+	let input = "public String name {get; set;}";
+
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: None,
+		is_final: false,
+		ty: Ty::from(PrimitiveKind::String),
+		id: Identifier::from("name"),
+		getter: Some(Property {
+			access_mod: None,
+			property_type: PropertyType::Get,
+			body: None,
+		}),
+		setter: Some(Property {
+			access_mod: None,
+			property_type: PropertyType::Set,
+			body: None,
+		}),
+		rhs: None,
+	};
+
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
+
+#[test]
+fn class_field_rhs_parses() {
+	let input = "public static Integer foo = 22;";
+
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: Some(ClassInstanceModifier::Static),
+		is_final: false,
+		ty: Ty::from(PrimitiveKind::Integer),
+		id: Identifier::from("foo"),
+		getter: None,
+		setter: None,
+		rhs: Some(Expr::from(Literal::from(22))),
+	};
+
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
+
+#[test]
+fn class_field_getter_setter_maximal_parses() {
+	let input = r#"public String name {
+		public get {
+			return 'foo';
+		} 
+		private set {
+			name = value;
+		}
+	}"#;
+
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: None,
+		is_final: false,
+		ty: Ty::from(PrimitiveKind::String),
+		id: Identifier::from("name"),
+		getter: Some(Property {
+			access_mod: Some(AccessModifier::Public),
+			property_type: PropertyType::Get,
+			body: Some(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr::from(Literal::from("\'foo\'")))),
+			}])),
+		}),
+		setter: Some(Property {
+			access_mod: Some(AccessModifier::Private),
+			property_type: PropertyType::Set,
+			body: Some(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr::from(Identifier::from("name"))),
+						AssignOp::Eq,
+						Box::new(Expr::from(Identifier::from("value"))),
+					),
+				})),
+			}])),
+		}),
+		rhs: None,
+	};
+
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
 }
 
 #[test]

@@ -1,5 +1,6 @@
 use super::*;
 use crate::ast::annotation::Annotation;
+use crate::ast::class::*;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::literal::*;
@@ -13,7 +14,7 @@ use pest::iterators::Pair;
 // NOTE: should this entire module be an object or generic function?
 
 macro_rules! parse_iter_if_rule {
-	($iter:expr,$next:expr,$rule:expr,$parse:ident) => {
+	($iter:expr,$next:ident,$rule:expr,$parse:ident) => {
 		if $next.as_rule() == $rule {
 			let ret = $parse($next);
 			$next = $iter.next().unwrap();
@@ -24,7 +25,164 @@ macro_rules! parse_iter_if_rule {
 	};
 }
 
-pub fn parse_class_
+macro_rules! next_is_rule {
+	($iter:expr, $next:expr, $rule:expr) => {
+		if $next.as_rule() == $rule {
+			$next = $iter.next().unwrap();
+			true
+		} else {
+			false
+		};
+	};
+}
+
+macro_rules! match_as_rule {
+	($pair:ident, $( $p:pat => $res:expr ),+ ) => {
+		match $pair.as_rule() {
+			$( $p => $res, )+
+			_ => unreachable!("encountered unexpected rule: {:?}", $pair.as_rule()),
+		}
+	};
+}
+
+pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
+	let mut inner = p.into_inner();
+	let mut next = inner.next().unwrap();
+
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+	let instance_mod = parse_iter_if_rule!(
+		inner,
+		next,
+		Rule::instance_modifier,
+		parse_instance_modifier
+	);
+
+	let is_final = next_is_rule!(inner, next, Rule::FINAL);
+
+	let ty = parse_ty(next);
+	let id = parse_identifier(inner.next().unwrap());
+
+	let after_id = inner.next();
+
+	if after_id.is_some() {
+		let after = after_id.unwrap();
+
+		if after.as_rule() == Rule::class_field_accessors {
+			let (first_prop, second_prop) = parse_field_accessors(after);
+
+			let getter = match second_prop.clone() {
+				Some(prop) => {
+					if prop.property_type == PropertyType::Get {
+						second_prop.clone()
+					} else {
+						Some(first_prop.clone())
+					}
+				}
+				None => Some(first_prop.clone()),
+			};
+
+			let setter = if getter.is_some() && second_prop.is_some() {
+				second_prop
+			} else {
+				Some(first_prop)
+			};
+
+			ClassField {
+				annotation,
+				access_mod,
+				instance_mod,
+				is_final,
+				ty,
+				id,
+				getter,
+				setter,
+				rhs: None,
+			}
+		} else {
+			let expr = Some(parse_expr(after));
+
+			ClassField {
+				annotation,
+				access_mod,
+				instance_mod,
+				is_final,
+				ty,
+				id,
+				getter: None,
+				setter: None,
+				rhs: expr,
+			}
+		}
+	} else {
+		ClassField {
+			annotation,
+			access_mod,
+			instance_mod,
+			is_final,
+			ty,
+			id,
+			getter: None,
+			setter: None,
+			rhs: None,
+		}
+	}
+}
+
+// called upon Rule::class_field_accessors
+fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property>) {
+	let mut inner = p.into_inner();
+
+	let first = parse_class_field_accessor(inner.next().unwrap());
+
+	let next = inner.next();
+
+	let second = if next.is_some() {
+		Some(parse_class_field_accessor(next.unwrap()))
+	} else {
+		None
+	};
+
+	(first, second)
+}
+
+fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
+	let mut inner = p.into_inner();
+	let mut next = inner.next().unwrap();
+
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+	let property_type = parse_property_type(next);
+
+	let after = inner.next();
+
+	let body = if after.is_some() {
+		Some(parse_block(after.unwrap()))
+	} else {
+		None
+	};
+
+	Property {
+		access_mod,
+		property_type,
+		body
+	}
+}
+
+fn parse_instance_modifier(p: Pair<Rule>) -> ClassInstanceModifier {
+	let inner = p.into_inner().next().unwrap();
+
+	match_as_rule!(inner, 
+		Rule::STATIC => ClassInstanceModifier::Static,
+		Rule::TRANSIENT => ClassInstanceModifier::Transient
+	)
+}
+
+fn parse_property_type(p: Pair<Rule>) -> PropertyType {
+	match_as_rule!(p, 
+		Rule::GET => PropertyType::Get,
+		Rule::SET => PropertyType::Set
+	)
+}
 
 pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	let mut inner = p.into_inner();
@@ -62,25 +220,23 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
 	let inner = p.into_inner().next().unwrap();
 
-	match inner.as_rule() {
+	match_as_rule!(inner, 
 		Rule::GLOBAL => AccessModifier::Global,
 		Rule::PUBLIC => AccessModifier::Public,
 		Rule::PROTECTED => AccessModifier::Protected,
-		Rule::PRIVATE => AccessModifier::Private,
-		_ => unreachable!("unexpected rule encountered: {:?}", inner.as_rule()),
-	}
+		Rule::PRIVATE => AccessModifier::Private
+	)
 }
 
 fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
 	let inner = p.into_inner().next().unwrap();
 
-	match inner.as_rule() {
+	match_as_rule!(inner, 
 		Rule::OVERRIDE => ImplModifier::Override,
 		Rule::STATIC => ImplModifier::Static,
 		Rule::VIRTUAL => ImplModifier::Virtual,
-		Rule::ABSTRACT => ImplModifier::Abstract,
-		_ => unreachable!("unexpected rule encountered: {:?}", inner.as_rule()),
-	}
+		Rule::ABSTRACT => ImplModifier::Abstract
+	)
 }
 
 fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
