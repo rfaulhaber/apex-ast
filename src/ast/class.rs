@@ -1,18 +1,20 @@
+use super::annotation::*;
 use super::expr::Expr;
-use super::method::ClassMethod;
-use super::modifier::{AccessModifier, SharingModifier};
+use super::identifier::*;
+use super::method::*;
+use super::modifier::*;
 use super::stmt::Block;
+use super::ty::*;
 
 pub struct Class {
+	pub annotation: Option<Annotation>,
 	pub access_modifier: AccessModifier,
 	pub sharing_modifier: Option<SharingModifier>,
 	pub impl_modifier: Option<ClassImplModifier>,
-	pub extensions: Vec<String>,
-	pub implementations: Vec<String>,
-	pub variables: Vec<ClassVariable>,
+	pub extensions: Vec<Ty>,
+	pub implementations: Vec<Ty>,
+	pub fields: Vec<ClassField>,
 	pub methods: Vec<ClassMethod>,
-	pub is_test: bool,
-	pub rest_resource: Option<RestResource>,
 }
 
 pub enum ClassImplModifier {
@@ -20,16 +22,13 @@ pub enum ClassImplModifier {
 	Virtual,
 }
 
-pub struct RestResource {
-	url_mapping: String,
-}
-
-pub struct ClassVariable {
-	pub access_mod: AccessModifier,
-	pub instance_mod: ClassInstanceModifier,
-	pub final_mod: bool,   // "final" is rust keyword
-	pub prop_type: String, // "prop" is rust keyword
-	pub name: String,
+pub struct ClassField {
+	pub annotation: Option<Annotation>,
+	pub access_mod: Option<AccessModifier>,
+	pub instance_mod: Option<ClassInstanceModifier>,
+	pub final_mod: bool, // "final" is rust keyword
+	pub ty: Ty,
+	pub id: Identifier,
 	pub getter: Option<Property>,
 	pub setter: Option<Property>,
 	pub rhs: Option<Expr>,
@@ -41,6 +40,6 @@ pub enum ClassInstanceModifier {
 }
 
 pub struct Property {
-	pub access_mod: AccessModifier,
+	pub access_mod: Option<AccessModifier>,
 	pub body: Option<Block>,
 }

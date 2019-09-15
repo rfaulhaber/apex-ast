@@ -1,5 +1,5 @@
 pub mod annotation;
-// pub mod class;
+pub mod class;
 // pub mod entry;
 pub mod expr;
 pub mod identifier;

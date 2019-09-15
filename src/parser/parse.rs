@@ -12,34 +12,28 @@ use pest::iterators::Pair;
 
 // NOTE: should this entire module be an object or generic function?
 
+macro_rules! parse_iter_if_rule {
+	($iter:expr,$next:expr,$rule:expr,$parse:ident) => {
+		if $next.as_rule() == $rule {
+			let ret = $parse($next);
+			$next = $iter.next().unwrap();
+			Some(ret)
+		} else {
+			None
+			};
+	};
+}
+
+pub fn parse_class_
+
 pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	let mut inner = p.into_inner();
 
 	let mut next = inner.next().unwrap();
 
-	let annotation = if next.as_rule() == Rule::annotation {
-		let ret = parse_annotation(next);
-		next = inner.next().unwrap();
-		Some(ret)
-	} else {
-		None
-	};
-
-	let access_mod = if next.as_rule() == Rule::access_modifier {
-		let ret = parse_access_modifier(next);
-		next = inner.next().unwrap();
-		Some(ret)
-	} else {
-		None
-	};
-
-	let impl_mod = if next.as_rule() == Rule::impl_modifier {
-		let ret = parse_impl_modifier(next);
-		next = inner.next().unwrap();
-		Some(ret)
-	} else {
-		None
-	};
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+	let impl_mod = parse_iter_if_rule!(inner, next, Rule::impl_modifier, parse_impl_modifier);
 
 	let is_testmethod = if next.as_rule() == Rule::TESTMETHOD {
 		next = inner.next().unwrap();
@@ -50,9 +44,7 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 
 	let return_type = parse_ty(next);
 	let identifier = parse_identifier(inner.next().unwrap());
-
 	let params = parse_parameter_list(inner.next().unwrap());
-
 	let block = parse_block(inner.next().unwrap());
 
 	ClassMethod {
@@ -63,7 +55,7 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 		return_type,
 		identifier,
 		params,
-		block
+		block,
 	}
 }
 
@@ -94,13 +86,15 @@ fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
 fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
 	let inner = p.into_inner();
 
-	inner.map(|pair| {
-		let mut iter_inner = pair.into_inner();
-		let ty = parse_ty(iter_inner.next().unwrap());
-		let id = parse_identifier(iter_inner.next().unwrap());
+	inner
+		.map(|pair| {
+			let mut iter_inner = pair.into_inner();
+			let ty = parse_ty(iter_inner.next().unwrap());
+			let id = parse_identifier(iter_inner.next().unwrap());
 
-		(ty, id)
-	}).collect()
+			(ty, id)
+		})
+		.collect()
 }
 
 pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
@@ -143,29 +137,9 @@ fn parse_for_basic(p: Pair<Rule>) -> Stmt {
 
 	let mut next = inner.next().unwrap();
 
-	let init = if next.as_rule() == Rule::for_init {
-		let ret = Some(parse_for_init(next));
-		next = inner.next().unwrap();
-		ret
-	} else {
-		None
-	};
-
-	let expr = if next.as_rule() == Rule::expression {
-		let ret = Some(parse_expr(next));
-		next = inner.next().unwrap();
-		ret
-	} else {
-		None
-	};
-
-	let update = if next.as_rule() == Rule::stmt_expr {
-		let ret = Some(parse_stmt_expr_literal(next));
-		next = inner.next().unwrap();
-		ret
-	} else {
-		None
-	};
+	let init = parse_iter_if_rule!(inner, next, Rule::for_init, parse_for_init);
+	let expr = parse_iter_if_rule!(inner, next, Rule::expression, parse_expr);
+	let update = parse_iter_if_rule!(inner, next, Rule::stmt_expr, parse_stmt_expr_literal);
 
 	let block = parse_any_block(next);
 
@@ -529,13 +503,7 @@ fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
-	let annotation = if next.as_rule() == Rule::annotation {
-		let a = parse_annotation(next);
-		next = inner.next().unwrap();
-		Some(a)
-	} else {
-		None
-	};
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
 
 	let is_final = if next.as_rule() == Rule::FINAL {
 		next = inner.next().unwrap();
