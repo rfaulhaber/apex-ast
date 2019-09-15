@@ -1,18 +1,20 @@
-use super::stmt::Block;
+use super::identifier::Identifier;
+use super::stmt::{Block, DmlOp};
+use super::ty::Ty;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Trigger {
-	pub name: String,
-	pub object: String,
+	pub name: Identifier,
+	pub object: Ty,
 	pub events: Vec<TriggerEvent>,
 	pub body: Block,
 }
 
-pub enum TriggerEvent {
-	BeforeInsert,
-	BeforeUpdate,
-	BeforeDelete,
-	AfterInsert,
-	AfterUpdate,
-	AfterDelete,
-	AfterUndelete,
+#[derive(Debug, Clone, PartialEq)]
+pub struct TriggerEvent(pub TriggerWhen, pub DmlOp);
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TriggerWhen {
+	Before,
+	After,
 }

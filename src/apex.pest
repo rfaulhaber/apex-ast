@@ -24,7 +24,7 @@ interface_method_declaration = { basic_type ~ identifier ~ parameter_list ~ ";" 
 type_list = { basic_type ~ ("," ~ basic_type)* }
 
 // triggers
-trigger_declaration = { TRIGGER ~ identifier ~ ON ~ identifier ~ trigger_event_list ~ block }
+trigger_declaration = { TRIGGER ~ identifier ~ ON ~ basic_type ~ trigger_event_list ~ block }
 trigger_event_list = { "(" ~ trigger_event ~ ("," ~ trigger_event)* ~ ")" }
 trigger_event = { (BEFORE ~ dml_action) | (AFTER ~ dml_action) }
 

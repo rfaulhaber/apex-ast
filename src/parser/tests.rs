@@ -8,9 +8,10 @@ use crate::ast::literal::*;
 use crate::ast::method::*;
 use crate::ast::modifier::*;
 use crate::ast::ops::*;
-use crate::ast::stmt::*;
-use crate::ast::ty::*;
 use crate::ast::r#enum::Enum;
+use crate::ast::stmt::*;
+use crate::ast::trigger::*;
+use crate::ast::ty::*;
 use pest::iterators::Pair;
 
 use pretty_assertions::assert_eq;
@@ -27,6 +28,23 @@ where
 }
 
 #[test]
+fn trigger_parses() {
+	let input = "trigger MyAccountTrigger on Account (before insert, before update) {}";
+
+	let expected = Trigger {
+		name: Identifier::from("MyAccountTrigger"),
+		object: Ty::from(Identifier::from("Account")),
+		events: vec![
+			TriggerEvent(TriggerWhen::Before, DmlOp::Insert),
+			TriggerEvent(TriggerWhen::Before, DmlOp::Update),
+		],
+		body: Block::Body(Vec::new()),
+	};
+
+	test_parse(Rule::trigger_declaration, input, parse_trigger, expected);
+}
+
+#[test]
 fn enum_parses() {
 	let input = "public enum Season {WINTER, SPRING, SUMMER, FALL}";
 
@@ -39,7 +57,7 @@ fn enum_parses() {
 			Identifier::from("SPRING"),
 			Identifier::from("SUMMER"),
 			Identifier::from("FALL"),
-		]
+		],
 	};
 
 	test_parse(Rule::enum_declaration, input, parse_enum, expected);

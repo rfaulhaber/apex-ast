@@ -9,6 +9,7 @@ use crate::ast::modifier::*;
 use crate::ast::ops::*;
 use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
+use crate::ast::trigger::*;
 use crate::ast::ty::*;
 use pest::iterators::Pair;
 
@@ -44,6 +45,58 @@ macro_rules! match_as_rule {
 			_ => unreachable!("encountered unexpected rule: {:?}", $pair.as_rule()),
 		}
 	};
+}
+
+pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
+	let mut inner = p.into_inner();
+
+	inner.next(); // skip "trigger"
+
+	let name = parse_identifier(inner.next().unwrap());
+
+	inner.next(); // skip "on"
+
+	let object = parse_ty(inner.next().unwrap());
+
+	let events: Vec<TriggerEvent> = inner
+		.next()
+		.unwrap()
+		.into_inner()
+		.map(|event_pair| {
+			let mut inner = event_pair.into_inner();
+
+			let next = inner.next().unwrap();
+
+			let when = match next.as_rule() {
+				Rule::BEFORE => TriggerWhen::Before,
+				Rule::AFTER => TriggerWhen::After,
+				_ => unreachable!("unexpected trigger rule: {:?}", next.as_rule()),
+			};
+
+			let action_pair = inner.next().unwrap().into_inner().next().unwrap();
+
+			let dml_action = match action_pair.as_rule() {
+				Rule::INSERT => DmlOp::Insert,
+				Rule::UPDATE => DmlOp::Update,
+				Rule::UPSERT => DmlOp::Upsert,
+				Rule::DELETE => DmlOp::Delete,
+				Rule::UNDELETE => DmlOp::Undelete,
+				Rule::MERGE => DmlOp::Merge,
+				_ => unreachable!("unexpected dml action: {:?}", action_pair.as_rule()),
+			};
+
+			TriggerEvent(when, dml_action)
+		})
+		.collect();
+
+	let body = parse_block(inner.next().unwrap());
+
+	Trigger {
+		name,
+		object,
+		events,
+		body,
+	}
 }
 
 pub fn parse_enum(p: Pair<Rule>) -> Enum {
