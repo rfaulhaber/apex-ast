@@ -33,6 +33,8 @@ impl PartialEq<String> for Identifier {
 
 impl Identifier {
 	pub fn eq_case_insensitive(&self, other: &str) -> bool {
-		self.name.to_lowercase().eq(&String::from(other).to_lowercase())
+		self.name
+			.to_lowercase()
+			.eq(&String::from(other).to_lowercase())
 	}
 }

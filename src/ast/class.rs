@@ -51,7 +51,7 @@ pub struct Property {
 }
 
 impl From<PropertyType> for Property {
-	fn from (pt: PropertyType) -> Property {
+	fn from(pt: PropertyType) -> Property {
 		Property {
 			access_mod: None,
 			body: None,

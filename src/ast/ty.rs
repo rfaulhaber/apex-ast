@@ -28,9 +28,7 @@ pub enum TyKind {
 
 impl Ty {
 	pub fn void() -> Ty {
-		Ty {
-			kind: TyKind::Void
-		}
+		Ty { kind: TyKind::Void }
 	}
 
 	pub fn is_void(&self) -> bool {

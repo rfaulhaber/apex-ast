@@ -14,7 +14,6 @@ pub enum LiteralKind {
 	Null,
 }
 
-
 impl Into<Literal> for LiteralKind {
 	fn into(self) -> Literal {
 		Literal { kind: self }
