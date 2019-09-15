@@ -7,6 +7,7 @@ use crate::ast::literal::*;
 use crate::ast::method::*;
 use crate::ast::modifier::*;
 use crate::ast::ops::*;
+use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
 use crate::ast::ty::*;
 use pest::iterators::Pair;
@@ -32,7 +33,7 @@ macro_rules! next_is_rule {
 			true
 		} else {
 			false
-		};
+			};
 	};
 }
 
@@ -43,6 +44,29 @@ macro_rules! match_as_rule {
 			_ => unreachable!("encountered unexpected rule: {:?}", $pair.as_rule()),
 		}
 	};
+}
+
+pub fn parse_enum(p: Pair<Rule>) -> Enum {
+	let mut inner = p.into_inner();
+	let mut next = inner.next().unwrap();
+
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+
+	let name = parse_identifier(inner.next().unwrap());
+	let ids: Vec<Identifier> = inner
+		.next()
+		.unwrap()
+		.into_inner()
+		.map(parse_identifier)
+		.collect();
+
+	Enum {
+		annotation,
+		access_mod,
+		name,
+		ids,
+	}
 }
 
 pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
@@ -164,21 +188,21 @@ fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
 	Property {
 		access_mod,
 		property_type,
-		body
+		body,
 	}
 }
 
 fn parse_instance_modifier(p: Pair<Rule>) -> ClassInstanceModifier {
 	let inner = p.into_inner().next().unwrap();
 
-	match_as_rule!(inner, 
+	match_as_rule!(inner,
 		Rule::STATIC => ClassInstanceModifier::Static,
 		Rule::TRANSIENT => ClassInstanceModifier::Transient
 	)
 }
 
 fn parse_property_type(p: Pair<Rule>) -> PropertyType {
-	match_as_rule!(p, 
+	match_as_rule!(p,
 		Rule::GET => PropertyType::Get,
 		Rule::SET => PropertyType::Set
 	)
@@ -220,7 +244,7 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
 	let inner = p.into_inner().next().unwrap();
 
-	match_as_rule!(inner, 
+	match_as_rule!(inner,
 		Rule::GLOBAL => AccessModifier::Global,
 		Rule::PUBLIC => AccessModifier::Public,
 		Rule::PROTECTED => AccessModifier::Protected,
@@ -231,7 +255,7 @@ fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
 fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
 	let inner = p.into_inner().next().unwrap();
 
-	match_as_rule!(inner, 
+	match_as_rule!(inner,
 		Rule::OVERRIDE => ImplModifier::Override,
 		Rule::STATIC => ImplModifier::Static,
 		Rule::VIRTUAL => ImplModifier::Virtual,

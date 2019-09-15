@@ -10,6 +10,7 @@ use crate::ast::modifier::*;
 use crate::ast::ops::*;
 use crate::ast::stmt::*;
 use crate::ast::ty::*;
+use crate::ast::r#enum::Enum;
 use pest::iterators::Pair;
 
 use pretty_assertions::assert_eq;
@@ -23,6 +24,25 @@ where
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
+}
+
+#[test]
+fn enum_parses() {
+	let input = "public enum Season {WINTER, SPRING, SUMMER, FALL}";
+
+	let expected = Enum {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		name: Identifier::from("Season"),
+		ids: vec![
+			Identifier::from("WINTER"),
+			Identifier::from("SPRING"),
+			Identifier::from("SUMMER"),
+			Identifier::from("FALL"),
+		]
+	};
+
+	test_parse(Rule::enum_declaration, input, parse_enum, expected);
 }
 
 #[test]

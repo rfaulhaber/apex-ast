@@ -92,7 +92,6 @@ statement = {
     | break_stmt
     | continue_stmt
     | stmt_expr ~ ";"
-    // | local_variable_declaration ~ ";"
 }
 
 // if statements

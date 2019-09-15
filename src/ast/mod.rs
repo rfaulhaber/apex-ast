@@ -1,6 +1,7 @@
 pub mod annotation;
 pub mod class;
 // pub mod entry;
+pub mod r#enum;
 pub mod expr;
 pub mod identifier;
 // pub mod interface;
