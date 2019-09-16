@@ -1,8 +1,11 @@
 use super::method::ImplementableMethod;
+use super::identifier::Identifier;
+use super::ty::Ty;
+use super::modifier::AccessModifier;
 
 pub struct Interface {
-	pub name: String,
-	pub extensions: Vec<String>,
-	pub implementations: Vec<String>,
+	pub access_mod: Option<AccessModifier>,
+	pub name: Identifier,
+	pub extensions: Vec<Ty>,
 	pub methods: Vec<ImplementableMethod>,
 }
