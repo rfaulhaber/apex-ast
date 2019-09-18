@@ -4,7 +4,7 @@ pub mod class;
 pub mod r#enum;
 pub mod expr;
 pub mod identifier;
-// pub mod interface;
+pub mod interface;
 pub mod literal;
 pub mod method;
 pub mod modifier;

@@ -3,6 +3,7 @@ use crate::ast::annotation::Annotation;
 use crate::ast::class::*;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
+use crate::ast::interface::*;
 use crate::ast::literal::*;
 use crate::ast::method::*;
 use crate::ast::modifier::*;
@@ -45,6 +46,39 @@ macro_rules! match_as_rule {
 			_ => unreachable!("encountered unexpected rule: {:?}", $pair.as_rule()),
 		}
 	};
+}
+
+pub fn parse_interface(p: Pair<Rule>) -> Interface {
+	let mut inner = p.into_inner();
+	let mut next = inner.next().unwrap();
+
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+
+	inner.next(); // skip "interface"
+
+	let name = parse_identifier(next);
+
+	let following = inner.next().unwrap();
+
+	let extensions: Vec<Ty> = if following.as_rule() == Rule::EXTENDS {
+		inner.next().unwrap().into_inner().map(parse_ty).collect()
+	} else {
+		Vec::new()
+	};
+
+	let methods = inner
+		.next()
+		.unwrap()
+		.into_inner()
+		.map(parse_implementatble_method)
+		.collect();
+
+	Interface {
+		access_mod,
+		name,
+		extensions,
+		methods,
+	}
 }
 
 pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
@@ -259,6 +293,16 @@ fn parse_property_type(p: Pair<Rule>) -> PropertyType {
 		Rule::GET => PropertyType::Get,
 		Rule::SET => PropertyType::Set
 	)
+}
+
+pub fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
+	let mut inner = p.into_inner();
+
+	let ty = parse_ty(inner.next().unwrap());
+	let id = parse_identifier(inner.next().unwrap());
+	let params = parse_parameter_list(inner.next().unwrap());
+
+	ImplementableMethod { ty, id, params }
 }
 
 pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
