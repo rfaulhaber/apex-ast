@@ -4,6 +4,7 @@ use crate::ast::annotation::Annotation;
 use crate::ast::class::*;
 use crate::ast::expr::*;
 use crate::ast::identifier::Identifier;
+use crate::ast::interface::*;
 use crate::ast::literal::*;
 use crate::ast::method::*;
 use crate::ast::modifier::*;
@@ -25,6 +26,56 @@ where
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
+}
+
+#[test]
+fn interface_with_access_mod_parses() {
+	let input = r#"public interface Writer extends Foo {
+		Integer write(String output);
+	}"#;
+
+	let expected = Interface {
+		access_mod: Some(AccessModifier::Public),
+		name: Identifier::from("Writer"),
+		extensions: vec![Ty::from(Identifier::from("Foo"))],
+		methods: vec![ImplementableMethod {
+			ty: Ty::from(PrimitiveKind::Integer),
+			id: Identifier::from("write"),
+			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
+		}],
+	};
+
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
+}
+
+#[test]
+fn interface_parses() {
+	let input = r#"interface Writer extends Foo {
+		Integer write(String output);
+	}"#;
+
+	let expected = Interface {
+		access_mod: None,
+		name: Identifier::from("Writer"),
+		extensions: vec![Ty::from(Identifier::from("Foo"))],
+		methods: vec![ImplementableMethod {
+			ty: Ty::from(PrimitiveKind::Integer),
+			id: Identifier::from("write"),
+			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
+		}],
+	};
+
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
 }
 
 #[test]

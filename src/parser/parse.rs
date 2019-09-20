@@ -54,9 +54,9 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
 
-	inner.next(); // skip "interface"
+	// inner.next(); // skip "interface"
 
-	let name = parse_identifier(next);
+	let name = parse_identifier(inner.next().unwrap());
 
 	let following = inner.next().unwrap();
 
