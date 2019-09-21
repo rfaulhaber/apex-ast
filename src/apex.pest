@@ -7,7 +7,7 @@ class_body = { "{" ~ (inner_class_declaration | inner_interface_declaration | cl
 inner_class_declaration = { access_modifier? ~ (ABSTRACT | VIRTUAL | sharing_modifier)? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
 inner_class_body = { "{" ~ (class_method_declaration | enum_declaration | class_field_declaration | class_constructor_definition | static_block | instance_block)* ~ "}" }
 inner_interface_declaration = { access_modifier? ~ VIRTUAL? ~ interface_declaration }
-// // basically methods without return type 
+// basically methods without return type 
 class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ parameter_list ~ block }
 
 sharing_modifier = {
@@ -71,7 +71,8 @@ impl_modifier = { OVERRIDE | STATIC | VIRTUAL | ABSTRACT }
 
 parameter_list = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
 parameter = { basic_type ~ identifier }
-class_method_declaration = { annotation? ~ access_modifier? ~ impl_modifier? ~ TESTMETHOD? ~ basic_type ~ identifier ~ parameter_list ~ block }
+// this can be a concrete class method or an abstract method, hence why block is optional
+class_method_declaration = { annotation? ~ access_modifier? ~ impl_modifier? ~ TESTMETHOD? ~ basic_type ~ identifier ~ parameter_list ~ (block | ";") }
 
 block = { "{" ~ statement* ~ "}" }
 inline_block = { !block ~ statement }

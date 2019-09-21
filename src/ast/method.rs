@@ -14,7 +14,7 @@ pub struct ClassMethod {
 	pub return_type: Ty,
 	pub identifier: Identifier,
 	pub params: Vec<(Ty, Identifier)>, // should this be an option?
-	pub block: Block,
+	pub block: Option<Block>,
 }
 
 impl ClassMethod {
@@ -37,7 +37,7 @@ pub struct ImplementableMethod {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MethodKind {
+pub enum Method {
 	/// an ordinary class method, with a signature and body
 	ClassMethod(ClassMethod),
 	/// a method definition as defined by an abstract class or interface

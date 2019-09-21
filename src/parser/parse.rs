@@ -54,8 +54,6 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
 
-	// inner.next(); // skip "interface"
-
 	let name = parse_identifier(inner.next().unwrap());
 
 	let following = inner.next().unwrap();
@@ -324,7 +322,14 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	let return_type = parse_ty(next);
 	let identifier = parse_identifier(inner.next().unwrap());
 	let params = parse_parameter_list(inner.next().unwrap());
-	let block = parse_block(inner.next().unwrap());
+
+	let final_pair = inner.next();
+
+	let block = if final_pair.is_some() {
+		Some(parse_block(final_pair.unwrap()))
+	} else {
+		None
+	};
 
 	ClassMethod {
 		annotation,

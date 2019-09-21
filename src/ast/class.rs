@@ -1,8 +1,10 @@
 use super::annotation::*;
 use super::expr::Expr;
 use super::identifier::*;
+use super::interface::*;
 use super::method::*;
 use super::modifier::*;
+use super::r#enum::*;
 use super::stmt::Block;
 use super::ty::*;
 
@@ -12,10 +14,22 @@ pub struct Class {
 	pub access_modifier: AccessModifier,
 	pub sharing_modifier: Option<SharingModifier>,
 	pub impl_modifier: Option<ClassImplModifier>,
+	pub name: Identifier,
 	pub extensions: Vec<Ty>,
 	pub implementations: Vec<Ty>,
-	pub fields: Vec<ClassField>,
-	pub methods: Vec<ClassMethod>,
+	pub body: Vec<ClassBodyMember>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClassBodyMember {
+	InnerClass(Box<Class>),
+	InnerInterface(Interface),
+	Field(ClassField),
+	Method(Method),
+	Enum(Enum),
+	StaticBlock(Block),
+	InstanceBlock(Block),
+	Constructor(ClassConstructor),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,4 +78,14 @@ impl From<PropertyType> for Property {
 pub enum PropertyType {
 	Get,
 	Set,
+}
+
+// constructors are basically methods without return types
+#[derive(Debug, Clone, PartialEq)]
+pub struct ClassConstructor {
+	pub annotation: Option<Annotation>,
+	pub access_mod: Option<AccessModifier>,
+	pub identifier: Identifier,
+	pub params: Vec<(Ty, Identifier)>,
+	pub block: Block,
 }

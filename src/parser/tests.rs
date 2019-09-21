@@ -29,6 +29,29 @@ where
 }
 
 #[test]
+fn abstract_class_method_parses() {
+	let input = "abstract Integer abstractMethod();";
+
+	let expected = ClassMethod {
+		annotation: None,
+		access_mod: None,
+		impl_mod: Some(ImplModifier::Abstract),
+		is_testmethod: false,
+		return_type: Ty::from(PrimitiveKind::Integer),
+		identifier: Identifier::from("abstractMethod"),
+		params: Vec::new(),
+		block: None,
+	};
+
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
+}
+
+#[test]
 fn interface_with_access_mod_parses() {
 	let input = r#"public interface Writer extends Foo {
 		Integer write(String output);
@@ -258,7 +281,7 @@ fn class_method_maximal_parses() {
 			(Ty::from(Identifier::from("Bar")), Identifier::from("b")),
 			(Ty::from(Identifier::from("Baz")), Identifier::from("bz")),
 		],
-		block: Block::Body(Vec::new()),
+		block: Some(Block::Body(Vec::new())),
 	};
 
 	test_parse(
@@ -281,7 +304,7 @@ fn class_method_basic_parses() {
 		return_type: Ty::void(),
 		identifier: Identifier::from("foo"),
 		params: Vec::new(),
-		block: Block::Body(Vec::new()),
+		block: Some(Block::Body(Vec::new())),
 	};
 
 	test_parse(

@@ -3,7 +3,6 @@ use super::expr::*;
 use super::identifier::*;
 use super::literal::*;
 use super::ty::*;
-use super::*;
 
 pub type BlockRef = Box<Block>;
 
