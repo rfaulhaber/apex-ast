@@ -48,6 +48,94 @@ macro_rules! match_as_rule {
 	};
 }
 
+pub fn parse_class(p: Pair<Rule>) -> Class {
+	let mut inner = p.into_inner();
+
+	let mut next = inner.next().unwrap();
+
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+	let sharing_or_impl_modifier = parse_iter_if_rule!(
+		inner,
+		next,
+		Rule::class_impl_or_sharing_modifier,
+		parse_class_impl_mod
+	);
+
+	inner.next(); // skip "class"
+
+	let name = parse_identifier(inner.next().unwrap());
+
+	next = inner.next().unwrap();
+
+	let implementations: Vec<Ty> = if next.as_rule() == Rule::IMPLEMENTS {
+		let ret = inner.next().unwrap().into_inner().map(parse_ty).collect();
+		next = inner.next().unwrap();
+		ret
+	} else {
+		Vec::new()
+	};
+
+	let extension = if next.as_rule() == Rule::EXTENDS {
+		Some(parse_ty(inner.next().unwrap()))
+	} else {
+		None
+	};
+
+	let body: Vec<ClassBodyMember> = inner
+		.next()
+		.unwrap()
+		.into_inner()
+		.map(parse_class_body_member)
+		.collect();
+
+	Class {
+		annotation,
+		access_mod,
+		sharing_or_impl_modifier,
+		name,
+		implementations,
+		extension,
+		body,
+	}
+}
+
+fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::ABSTRACT => ImplOrSharingMod::Abstract,
+		Rule::VIRTUAL => ImplOrSharingMod::Virtual,
+		Rule::WITH_SHARING => ImplOrSharingMod::With,
+		Rule::WITHOUT_SHARING => ImplOrSharingMod::Without,
+		Rule::INHERITED_SHARING => ImplOrSharingMod::Inherited,
+		_ => unreachable!("unexpected class impl rule: {:?}", inner.as_rule()),
+	}
+}
+
+pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
+		Rule::inner_interface_declaration => {
+			ClassBodyMember::InnerInterface(parse_interface(inner))
+		}
+		Rule::class_method_declaration => ClassBodyMember::Method(parse_class_method(inner)),
+		Rule::enum_declaration => ClassBodyMember::Enum(parse_enum(inner)),
+		Rule::class_field_declaration => ClassBodyMember::Field(parse_class_field(inner)),
+		Rule::static_block => ClassBodyMember::StaticBlock(parse_block(inner)),
+		Rule::instance_block => ClassBodyMember::InstanceBlock(parse_block(inner)),
+		Rule::class_constructor_definition => {
+			ClassBodyMember::Constructor(parse_class_constructor(inner))
+		}
+		_ => unreachable!(
+			"unexpected class body member rule encountered: {:?}",
+			inner.as_rule()
+		),
+	}
+}
+
 pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 	let mut inner = p.into_inner();
 

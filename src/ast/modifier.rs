@@ -7,13 +7,6 @@ pub enum AccessModifier {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum SharingModifier {
-	With,
-	Without,
-	Inherited,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum ImplModifier {
 	Virtual,
 	Override,

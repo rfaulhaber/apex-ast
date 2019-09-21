@@ -11,11 +11,10 @@ use super::ty::*;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Class {
 	pub annotation: Option<Annotation>,
-	pub access_modifier: AccessModifier,
-	pub sharing_modifier: Option<SharingModifier>,
-	pub impl_modifier: Option<ClassImplModifier>,
+	pub access_mod: Option<AccessModifier>,
+	pub sharing_or_impl_modifier: Option<ImplOrSharingMod>,
 	pub name: Identifier,
-	pub extensions: Vec<Ty>,
+	pub extension: Option<Ty>,
 	pub implementations: Vec<Ty>,
 	pub body: Vec<ClassBodyMember>,
 }
@@ -33,9 +32,12 @@ pub enum ClassBodyMember {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ClassImplModifier {
-	Abstract,
+pub enum ImplOrSharingMod {
 	Virtual,
+	Abstract,
+	With,
+	Without,
+	Inherited,
 }
 
 #[derive(Debug, Clone, PartialEq)]

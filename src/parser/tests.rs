@@ -29,6 +29,138 @@ where
 }
 
 #[test]
+fn class_basic_parses() {
+	// this example comes from Salesforce's documentation, with comments and empty lines removed
+	let input = r#"public class OuterClass {
+  private static final Integer MY_INT;
+  public static String sharedState;
+  public static Integer getInt() { return MY_INT; }
+  static {
+    MY_INT = 2; 
+  }
+  private final String m;
+  {
+    m = 'a';  
+  }
+  public virtual interface MyInterface { 
+    void myMethod(); 
+  }
+  interface MySecondInterface extends MyInterface { 
+    Integer method2(Integer i); 
+  }
+  public virtual class InnerClass implements MySecondInterface {
+    private final String s;
+    private final String s2;
+    {
+       this.s = 'x';
+    }
+    private final Integer i = s.length();
+    InnerClass() {
+       this('none');
+    }
+    public InnerClass(String s2) { 
+      this.s2 = s2; 
+    }
+    public virtual void myMethod() { /* does nothing */ }
+    public Integer method2(Integer i) { return this.i + s.length(); }
+  }
+  public abstract class AbstractChildClass extends InnerClass {
+    public override void myMethod() { /* do something else */ }
+    protected void method2() {}
+    abstract Integer abstractMethod();
+  }
+  public class ConcreteChildClass extends AbstractChildClass {
+    public override Integer abstractMethod() { return 5; }
+  }
+  public class AnotherChildClass extends InnerClass {
+    AnotherChildClass(String s) {
+      super(s);
+    }
+  }
+  public virtual class MyException extends Exception {
+    public Double d;
+    MyException(Double d) {
+      this.d = d;
+    }
+    protected void doIt() {}
+  }
+  public abstract class MySecondException extends Exception implements MyInterface {
+  }
+}"#;
+
+	let expected = Class {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		sharing_or_impl_modifier: None,
+		name: Identifier::from("OuterClass"),
+		extension: None,
+		implementations: Vec::new(),
+		body: vec![
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Private),
+				instance_mod: Some(ClassInstanceModifier::Static),
+				is_final: true,
+				ty: Ty::from(PrimitiveKind::Integer),
+				id: Identifier::from("MY_INT"),
+				getter: None,
+				setter: None,
+				rhs: None,
+			}),
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				instance_mod: Some(ClassInstanceModifier::Static),
+				is_final: true,
+				ty: Ty::from(PrimitiveKind::String),
+				id: Identifier::from("sharedState"),
+				getter: None,
+				setter: None,
+				rhs: None,
+			}),
+			ClassBodyMember::Method(ClassMethod {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				impl_mod: Some(ImplModifier::Static),
+				is_testmethod: false,
+				return_type: Ty::from(PrimitiveKind::Integer),
+				identifier: Identifier::from("getInt"),
+				params: Vec::new(),
+				block: Some(Block::Body(vec![Stmt {
+					kind: StmtKind::Return(Some(Expr::from(Identifier::from("MY_INT")))),
+				}])),
+			}),
+			ClassBodyMember::StaticBlock(Block::Body(vec![Stmt::from(Expr {
+				kind: ExprKind::Assignment(
+					Box::new(Expr::from(Identifier::from("MY_INT"))),
+					AssignOp::Eq,
+					Box::new(Expr::from(Literal::from(2))),
+				),
+			})])),
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Private),
+				instance_mod: None,
+				is_final: true,
+				ty: Ty::from(PrimitiveKind::String),
+				id: Identifier::from("m"),
+				getter: None,
+				setter: None,
+				rhs: None,
+			}),
+			ClassBodyMember::InstanceBlock(Block::Body(vec![Stmt::from(Expr {
+				kind: ExprKind::Assignment(
+					Box::new(Expr::from(Identifier::from("m"))),
+					AssignOp::Eq,
+					Box::new(Expr::from(Literal::from("a"))),
+				),
+			})])),
+			// TODO finish
+		],
+	};
+}
+
+#[test]
 fn class_constructor_parses() {
 	let input = "public Foo(String bar) {}";
 
