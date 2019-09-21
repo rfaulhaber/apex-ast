@@ -29,6 +29,46 @@ where
 }
 
 #[test]
+fn class_constructor_parses() {
+	let input = "public Foo(String bar) {}";
+
+	let expected = ClassConstructor {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		identifier: Identifier::from("Foo"),
+		params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("bar"))],
+		block: Block::from(Vec::new()),
+	};
+
+	test_parse(
+		Rule::class_constructor_definition,
+		input,
+		parse_class_constructor,
+		expected,
+	);
+}
+
+#[test]
+fn class_constructor_no_access_mod_parses() {
+	let input = "Foo() {}";
+
+	let expected = ClassConstructor {
+		annotation: None,
+		access_mod: None,
+		identifier: Identifier::from("Foo"),
+		params: Vec::new(),
+		block: Block::from(Vec::new()),
+	};
+
+	test_parse(
+		Rule::class_constructor_definition,
+		input,
+		parse_class_constructor,
+		expected,
+	);
+}
+
+#[test]
 fn abstract_class_method_parses() {
 	let input = "abstract Integer abstractMethod();";
 

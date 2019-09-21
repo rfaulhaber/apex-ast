@@ -48,6 +48,26 @@ macro_rules! match_as_rule {
 	};
 }
 
+pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
+	let mut inner = p.into_inner();
+
+	let mut next = inner.next().unwrap();
+
+	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
+	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+	let identifier = parse_identifier(next);
+	let params = parse_parameter_list(inner.next().unwrap());
+	let block = parse_block(inner.next().unwrap());
+
+	ClassConstructor {
+		annotation,
+		access_mod,
+		identifier,
+		params,
+		block,
+	}
+}
+
 pub fn parse_interface(p: Pair<Rule>) -> Interface {
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();

@@ -25,7 +25,7 @@ pub enum ClassBodyMember {
 	InnerClass(Box<Class>),
 	InnerInterface(Interface),
 	Field(ClassField),
-	Method(Method),
+	Method(ClassMethod),
 	Enum(Enum),
 	StaticBlock(Block),
 	InstanceBlock(Block),
