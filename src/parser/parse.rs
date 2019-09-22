@@ -118,9 +118,7 @@ pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 
 	match inner.as_rule() {
 		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
-		Rule::inner_interface_declaration => {
-			ClassBodyMember::InnerInterface(parse_interface(inner))
-		}
+		Rule::interface_declaration => ClassBodyMember::InnerInterface(parse_interface(inner)),
 		Rule::class_method_declaration => ClassBodyMember::Method(parse_class_method(inner)),
 		Rule::enum_declaration => ClassBodyMember::Enum(parse_enum(inner)),
 		Rule::class_field_declaration => ClassBodyMember::Field(parse_class_field(inner)),
@@ -161,7 +159,7 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 	let mut next = inner.next().unwrap();
 
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
-
+	let is_virtual = next_is_rule!(inner, next, Rule::VIRTUAL);
 	let name = parse_identifier(inner.next().unwrap());
 
 	let following = inner.next().unwrap();
@@ -172,15 +170,20 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 		Vec::new()
 	};
 
-	let methods = inner
-		.next()
-		.unwrap()
-		.into_inner()
-		.map(parse_implementatble_method)
-		.collect();
+	println!("inner: {:?}", inner);
+
+	let methods = if let Some(pair) = inner.next() {
+		pair.into_inner().map(parse_implementatble_method).collect()
+	} else {
+		following
+			.into_inner()
+			.map(parse_implementatble_method)
+			.collect()
+	};
 
 	Interface {
 		access_mod,
+		is_virtual,
 		name,
 		extensions,
 		methods,

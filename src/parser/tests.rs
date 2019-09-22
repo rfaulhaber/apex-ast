@@ -231,6 +231,7 @@ fn interface_with_access_mod_parses() {
 
 	let expected = Interface {
 		access_mod: Some(AccessModifier::Public),
+		is_virtual: false,
 		name: Identifier::from("Writer"),
 		extensions: vec![Ty::from(Identifier::from("Foo"))],
 		methods: vec![ImplementableMethod {
@@ -256,8 +257,35 @@ fn interface_parses() {
 
 	let expected = Interface {
 		access_mod: None,
+		is_virtual: false,
 		name: Identifier::from("Writer"),
 		extensions: vec![Ty::from(Identifier::from("Foo"))],
+		methods: vec![ImplementableMethod {
+			ty: Ty::from(PrimitiveKind::Integer),
+			id: Identifier::from("write"),
+			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
+		}],
+	};
+
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
+}
+
+#[test]
+fn virtual_interface_parses() {
+	let input = r#"public virtual interface Writer {
+		Integer write(String output);
+	}"#;
+
+	let expected = Interface {
+		access_mod: Some(AccessModifier::Public),
+		is_virtual: true,
+		name: Identifier::from("Writer"),
+		extensions: Vec::new(),
 		methods: vec![ImplementableMethod {
 			ty: Ty::from(PrimitiveKind::Integer),
 			id: Identifier::from("write"),
