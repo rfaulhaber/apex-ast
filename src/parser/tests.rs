@@ -30,6 +30,101 @@ where
 
 #[test]
 fn class_basic_parses() {
+	let input = r#"public with sharing class FileWriter implements Writer {
+		public Buffer buf;
+		public static final String name;
+
+		static {
+			name = 'WRITER';
+		}
+
+		{
+			buf = new Buffer();
+		}
+
+		public FileWriter() {}
+
+		public Integer write(String output) {}
+}"#;
+
+	let expected = Class {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		sharing_or_impl_modifier: Some(ImplOrSharingMod::With),
+		name: Identifier::from("FileWriter"),
+		extension: None,
+		implementations: vec![Ty::from(Identifier::from("Writer"))],
+		body: vec![
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				instance_mod: None,
+				is_final: false,
+				ty: Ty::from(Identifier::from("Buffer")),
+				id: Identifier::from("buf"),
+				getter: None,
+				setter: None,
+				rhs: None,
+			}),
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				instance_mod: Some(ClassInstanceModifier::Static),
+				is_final: true,
+				ty: Ty::from(PrimitiveKind::String),
+				id: Identifier::from("name"),
+				getter: None,
+				setter: None,
+				rhs: None,
+			}),
+			ClassBodyMember::StaticBlock(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::from(Expr::from(Identifier::from("name"))),
+						AssignOp::Eq,
+						Box::from(Expr::from(Literal::from("\'WRITER\'"))),
+					),
+				})),
+			}])),
+			ClassBodyMember::InstanceBlock(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::from(Expr::from(Identifier::from("buf"))),
+						AssignOp::Eq,
+						Box::from(Expr {
+							kind: ExprKind::New(
+								Ty::from(Identifier::from("Buffer")),
+								NewType::Class(ClassArgs::Basic(None)),
+							),
+						}),
+					),
+				})),
+			}])),
+			ClassBodyMember::Constructor(ClassConstructor {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				identifier: Identifier::from("FileWriter"),
+				params: Vec::new(),
+				block: Block::Body(Vec::new()),
+			}),
+			ClassBodyMember::Method(ClassMethod {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				impl_mod: None,
+				is_testmethod: false,
+				return_type: Ty::from(PrimitiveKind::Integer),
+				identifier: Identifier::from("write"),
+				params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
+				block: Some(Block::Body(Vec::new())),
+			}),
+		],
+	};
+
+	test_parse(Rule::class_declaration, input, parse_class, expected);
+}
+
+#[test]
+fn class_full_example_parses() {
 	// this example comes from Salesforce's documentation, with comments and empty lines removed
 	let input = r#"public class OuterClass {
   private static final Integer MY_INT;
@@ -155,6 +250,28 @@ fn class_basic_parses() {
 					Box::new(Expr::from(Literal::from("a"))),
 				),
 			})])),
+			ClassBodyMember::InnerInterface(Interface {
+				access_mod: Some(AccessModifier::Public),
+				is_virtual: true,
+				name: Identifier::from("MyInterface"),
+				extensions: Vec::new(),
+				methods: vec![ImplementableMethod {
+					ty: Ty::void(),
+					id: Identifier::from("myMethod"),
+					params: Vec::new(),
+				}],
+			}),
+			ClassBodyMember::InnerInterface(Interface {
+				access_mod: None,
+				is_virtual: false,
+				name: Identifier::from("MySecondInterface"),
+				extensions: vec![Ty::from(Identifier::from("MyInterface"))],
+				methods: vec![ImplementableMethod {
+					ty: Ty::void(),
+					id: Identifier::from("myMethod"),
+					params: vec![(Ty::from(PrimitiveKind::Integer), Identifier::from("i"))],
+				}],
+			}),
 			// TODO finish
 		],
 	};

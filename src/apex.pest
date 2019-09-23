@@ -51,7 +51,7 @@ class_field_declaration = {
     ~ FINAL? 
     ~ basic_type 
     ~ identifier 
-    ~ (class_field_accessors | declaration_rhs ~ ";")?
+	~ (class_field_accessors | declaration_rhs ~ ";" | ";")
 }
 
 instance_modifier = { STATIC | TRANSIENT }

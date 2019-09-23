@@ -62,7 +62,7 @@ pub fn parse_class(p: Pair<Rule>) -> Class {
 		parse_class_impl_mod
 	);
 
-	inner.next(); // skip "class"
+	// inner.next(); // skip "class"
 
 	let name = parse_identifier(inner.next().unwrap());
 
@@ -70,7 +70,7 @@ pub fn parse_class(p: Pair<Rule>) -> Class {
 
 	let implementations: Vec<Ty> = if next.as_rule() == Rule::IMPLEMENTS {
 		let ret = inner.next().unwrap().into_inner().map(parse_ty).collect();
-		next = inner.next().unwrap();
+		// next = inner.next().unwrap();
 		ret
 	} else {
 		Vec::new()
@@ -114,22 +114,27 @@ fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
 }
 
 pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
-	let inner = p.into_inner().next().unwrap();
-
-	match inner.as_rule() {
+	println!("rule: {:?}", p.as_rule());
+	match p.as_rule() {
 		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
-		Rule::interface_declaration => ClassBodyMember::InnerInterface(parse_interface(inner)),
-		Rule::class_method_declaration => ClassBodyMember::Method(parse_class_method(inner)),
-		Rule::enum_declaration => ClassBodyMember::Enum(parse_enum(inner)),
-		Rule::class_field_declaration => ClassBodyMember::Field(parse_class_field(inner)),
-		Rule::static_block => ClassBodyMember::StaticBlock(parse_block(inner)),
-		Rule::instance_block => ClassBodyMember::InstanceBlock(parse_block(inner)),
+		Rule::interface_declaration => ClassBodyMember::InnerInterface(parse_interface(p)),
+		Rule::class_method_declaration => ClassBodyMember::Method(parse_class_method(p)),
+		Rule::enum_declaration => ClassBodyMember::Enum(parse_enum(p)),
+		Rule::class_field_declaration => ClassBodyMember::Field(parse_class_field(p)),
+		Rule::static_block => {
+			let mut inner = p.into_inner();
+			inner.next(); // skip "static"
+			ClassBodyMember::StaticBlock(parse_block(inner.next().unwrap()))
+		}
+		Rule::instance_block => {
+			ClassBodyMember::InstanceBlock(parse_block(p.into_inner().next().unwrap()))
+		}
 		Rule::class_constructor_definition => {
-			ClassBodyMember::Constructor(parse_class_constructor(inner))
+			ClassBodyMember::Constructor(parse_class_constructor(p))
 		}
 		_ => unreachable!(
 			"unexpected class body member rule encountered: {:?}",
-			inner.as_rule()
+			p.as_rule()
 		),
 	}
 }
