@@ -12,6 +12,7 @@ use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
 use crate::ast::trigger::*;
 use crate::ast::ty::*;
+use crate::ast::file::*;
 use pest::iterators::Pair;
 
 // NOTE: should this entire module be an object or generic function?
@@ -47,6 +48,10 @@ macro_rules! match_as_rule {
 		}
 	};
 }
+
+// pub fn parse_file(s: &str) -> Result<File, std::error::Error> {
+// 	let parser = GrammarParser::parse(Rule::apex_file, s)?;
+// }
 
 pub fn parse_class(p: Pair<Rule>) -> Class {
 	let mut inner = p.into_inner();
