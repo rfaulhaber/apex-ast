@@ -2,6 +2,7 @@ use super::*;
 use crate::ast::annotation::Annotation;
 use crate::ast::class::*;
 use crate::ast::expr::*;
+use crate::ast::file::*;
 use crate::ast::identifier::Identifier;
 use crate::ast::interface::*;
 use crate::ast::literal::*;
@@ -12,8 +13,9 @@ use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
 use crate::ast::trigger::*;
 use crate::ast::ty::*;
-use crate::ast::file::*;
 use pest::iterators::Pair;
+use std::error::Error;
+use std::fmt;
 
 // NOTE: should this entire module be an object or generic function?
 
@@ -49,9 +51,22 @@ macro_rules! match_as_rule {
 	};
 }
 
-// pub fn parse_file(s: &str) -> Result<File, std::error::Error> {
-// 	let parser = GrammarParser::parse(Rule::apex_file, s)?;
-// }
+// TODO implement custom error
+pub fn parse_file(s: &str) -> Result<File, pest::error::Error<Rule>> {
+	let mut parsed = GrammarParser::parse(Rule::apex_file, s)?;
+
+	let root = parsed.next().unwrap();
+
+	match root.as_rule() {
+		Rule::trigger_declaration => Ok(File::Trigger(parse_trigger(root))),
+		Rule::class_declaration => Ok(File::Class(parse_class(root))),
+		Rule::interface_declaration => Ok(File::Interface(parse_interface(root))),
+		_ => unreachable!(
+			"unexpected rule encountered when parsing file: {:?}",
+			root.as_rule()
+		),
+	}
+}
 
 pub fn parse_class(p: Pair<Rule>) -> Class {
 	let mut inner = p.into_inner();
