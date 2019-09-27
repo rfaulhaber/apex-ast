@@ -1689,14 +1689,27 @@ fn property_access_parses() {
 }
 
 #[test]
-fn simple_query_parses() {
+fn soql_query_parses() {
 	let query_str = "[ SELECT Foo FROM Bar ]";
 	test_parse(
 		Rule::expression,
 		query_str,
 		parse_expr,
 		Expr {
-			kind: ExprKind::Query(QueryKind::Soql, String::from("SELECT Foo FROM Bar")),
+			kind: ExprKind::Query(Query::Soql(String::from("SELECT Foo FROM Bar"))),
+		},
+	);
+}
+
+#[test]
+fn sosl_query_parses() {
+	let query_str = "[ FIND {foo} ]";
+	test_parse(
+		Rule::expression,
+		query_str,
+		parse_expr,
+		Expr {
+			kind: ExprKind::Query(Query::Sosl(String::from("FIND {foo}"))),
 		},
 	);
 }

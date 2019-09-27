@@ -9,8 +9,6 @@ pub mod literal;
 pub mod method;
 pub mod modifier;
 pub mod ops;
-// pub mod soql;
-// pub mod sosl;
 pub mod stmt;
 pub mod trigger;
 #[macro_use]

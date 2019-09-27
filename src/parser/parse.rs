@@ -51,8 +51,38 @@ macro_rules! match_as_rule {
 	};
 }
 
+#[derive(Debug)]
+pub struct ParseError {
+	location: pest::error::InputLocation,
+	line_col: pest::error::LineColLocation,
+	source: pest::error::Error<Rule>,
+}
+
+impl fmt::Display for ParseError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		// TODO return something better
+		write!(f, "{}", self.source.description())
+	}
+}
+
+impl std::error::Error for ParseError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		Some(&self.source)
+	}
+}
+
+impl From<pest::error::Error<Rule>> for ParseError {
+	fn from(e: pest::error::Error<Rule>) -> ParseError {
+		ParseError {
+			location: e.location.clone(),
+			line_col: e.line_col.clone(),
+			source: e,
+		}
+	}
+}
+
 // TODO implement custom error
-pub fn parse_file(s: &str) -> Result<File, pest::error::Error<Rule>> {
+pub fn parse_file(s: &str) -> Result<File, ParseError> {
 	let mut parsed = GrammarParser::parse(Rule::apex_file, s)?;
 
 	let root = parsed.next().unwrap();
@@ -1051,7 +1081,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			kind: ExprKind::Braced(Box::new(parse_expr(inner.into_inner().next().unwrap()))),
 		},
 		Rule::property_access => parse_property_access(inner),
-		Rule::query_expression => parse_query_expression(inner),
+		Rule::query_expression => parse_query(inner),
 		Rule::list_access => parse_list_access(inner),
 		Rule::new_instance_expr => parse_new_instance_expr(inner),
 		Rule::method_call => parse_method_call(inner),
@@ -1139,7 +1169,7 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 		Rule::list_access => parse_list_access(first_pair),
 		Rule::cast_expression => parse_cast_expr(first_pair),
 		Rule::new_instance_expr => parse_new_instance_expr(first_pair),
-		Rule::query_expression => parse_query_expression(first_pair),
+		Rule::query_expression => parse_query(first_pair),
 		Rule::method_call => parse_method_call(first_pair),
 		Rule::identifier => Expr::from(parse_identifier(first_pair)),
 		_ => unreachable!("unexpected rule found: {:?}", first_pair.as_rule()),
@@ -1160,19 +1190,20 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 	}
 }
 
-fn parse_query_expression(p: Pair<Rule>) -> Expr {
-	let mut query_inner = p.into_inner();
+fn parse_query(p: Pair<Rule>) -> Expr {
+	let mut inner = p.into_inner();
+	let query_str = String::from(inner.as_str().trim());
 
-	let query_body = String::from(query_inner.as_str().trim());
+	let rule = inner.next().unwrap().as_rule();
 
-	let query_type = match query_inner.next().unwrap().as_rule() {
-		Rule::SELECT => QueryKind::Soql,
-		Rule::FIND => QueryKind::Sosl,
-		_ => unreachable!("unexpected query variant"),
-	};
-
-	Expr {
-		kind: ExprKind::Query(query_type, query_body),
+	match rule {
+		Rule::SELECT => Expr {
+			kind: ExprKind::Query(Query::Soql(query_str)),
+		},
+		Rule::FIND => Expr {
+			kind: ExprKind::Query(Query::Sosl(query_str)),
+		},
+		_ => unreachable!("unexpected query rule: {:?}", rule),
 	}
 }
 

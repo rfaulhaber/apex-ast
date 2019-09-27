@@ -176,8 +176,8 @@ pub enum DmlOp {
 	Merge,
 }
 
-impl DmlOp {
-	pub fn from_str(s: &str) -> DmlOp {
+impl From<&str> for DmlOp {
+	fn from(s: &str) -> DmlOp {
 		match s.to_lowercase().as_str() {
 			"insert" => DmlOp::Insert,
 			"update" => DmlOp::Update,

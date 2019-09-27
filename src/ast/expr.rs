@@ -15,10 +15,9 @@ pub enum ExprKind {
 	Assignment(Box<Expr>, AssignOp, Box<Expr>),
 	Braced(Box<Expr>),
 	PropertyAccess(Box<Expr>, Box<Expr>),
-	// for now, queries, once identified, are stored as a string
-	Query(QueryKind, String),
 	/// List access, such as `foo[2]` or `list.get(0)[1]`.
 	ListAccess(Box<Expr>, Box<Expr>),
+	Query(Query),
 	New(Ty, NewType),
 	Call(Identifier, Option<Vec<Expr>>),
 	Unary(UnOp, Box<Expr>),
@@ -70,7 +69,7 @@ pub enum ClassArgs {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum QueryKind {
-	Soql,
-	Sosl,
+pub enum Query {
+	Soql(String),
+	Sosl(String),
 }
