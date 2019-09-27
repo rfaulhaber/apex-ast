@@ -13,6 +13,4 @@ pub mod stmt;
 pub mod trigger;
 #[macro_use]
 pub mod ty; // "type" is reserved
-
-// TODO implement some kind of visitor pattern
-// https://github.com/rust-unofficial/patterns/blob/master/patterns/visitor.md
+pub mod visitor;
