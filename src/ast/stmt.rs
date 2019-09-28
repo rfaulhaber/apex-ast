@@ -82,9 +82,9 @@ impl From<Identifier> for WhenValue {
 	}
 }
 
-impl Into<Stmt> for StmtKind {
-	fn into(self) -> Stmt {
-		Stmt { kind: self }
+impl From<StmtKind> for Stmt {
+	fn from(kind: StmtKind) -> Stmt {
+		Stmt { kind }
 	}
 }
 
