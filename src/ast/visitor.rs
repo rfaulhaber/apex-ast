@@ -34,6 +34,10 @@ pub trait Visitor: Sized {
 		walk_class_method(self, method);
 	}
 
+	fn visit_property(&mut self, prop: Property) {
+		walk_property(self, prop);
+	}
+
 	fn visit_enum(&mut self, enum_def: Enum) {
 		walk_enum(self, enum_def);
 	}
@@ -54,7 +58,7 @@ pub trait Visitor: Sized {
 		walk_interface_method(self, method);
 	}
 
-	fn visit_identifier(&mut self, identifier: Identifier) {
+	fn visit_identifier(&mut self, _identifier: Identifier) {
 		// nothing to do - leaf of tree
 	}
 
@@ -74,7 +78,7 @@ pub trait Visitor: Sized {
 		walk_primitive(self, primitive);
 	}
 
-	fn visit_primitive_kind(&mut self, pk: PrimitiveKind) {}
+	fn visit_primitive_kind(&mut self, _pk: PrimitiveKind) {}
 
 	fn visit_block(&mut self, block: Block) {
 		walk_block(self, block);
@@ -100,13 +104,13 @@ pub trait Visitor: Sized {
 		walk_local(self, local);
 	}
 
-	fn visit_literal(&mut self, literal: Literal) {
+	fn visit_literal(&mut self, _literal: Literal) {
 		// nothing to do
 	}
 
-	fn visit_soql(&mut self, query_str: String) {}
+	fn visit_soql(&mut self, _query_str: String) {}
 
-	fn visit_sosl(&mut self, query_str: String) {}
+	fn visit_sosl(&mut self, _query_str: String) {}
 }
 
 // thank you rust libsyntax
@@ -272,6 +276,8 @@ pub fn walk_stmt<V: Visitor>(visitor: &mut V, stmt: Stmt) {
 							}
 						}
 					};
+
+					visitor.visit_block(block);
 				}
 			}
 
@@ -333,7 +339,7 @@ pub fn walk_stmt_expr<V: Visitor>(visitor: &mut V, stmt_expr: StmtExpr) {
 
 pub fn walk_expr<V: Visitor>(visitor: &mut V, expr: Expr) {
 	match expr.kind {
-		ExprKind::Infix(expr_ref, op, expr_rhs_ref) => {
+		ExprKind::Infix(expr_ref, _op, expr_rhs_ref) => {
 			visitor.visit_expr(*expr_ref);
 			visitor.visit_expr(*expr_rhs_ref);
 		}
@@ -342,7 +348,7 @@ pub fn walk_expr<V: Visitor>(visitor: &mut V, expr: Expr) {
 			visitor.visit_expr(*true_expr);
 			visitor.visit_expr(*false_expr);
 		}
-		ExprKind::Assignment(lhs_expr, op, rhs_expr) => {
+		ExprKind::Assignment(lhs_expr, _op, rhs_expr) => {
 			visitor.visit_expr(*lhs_expr);
 			visitor.visit_expr(*rhs_expr);
 		}
@@ -462,17 +468,71 @@ pub fn walk_class_body_member<V: Visitor>(visitor: &mut V, cbm: ClassBodyMember)
 }
 
 pub fn walk_class_field<V: Visitor>(visitor: &mut V, field: ClassField) {
-	unimplemented!();
+	if let Some(annotation) = field.annotation {
+		visitor.visit_annotation(annotation);
+	}
+
+	visitor.visit_ty(field.ty);
+	visitor.visit_identifier(field.id);
+
+	if let Some(getter) = field.getter {
+		visitor.visit_property(getter);
+	}
+
+	if let Some(setter) = field.setter {
+		visitor.visit_property(setter);
+	}
+
+	if let Some(rhs) = field.rhs {
+		visitor.visit_expr(rhs);
+	}
 }
 
 pub fn walk_class_method<V: Visitor>(visitor: &mut V, method: ClassMethod) {
-	unimplemented!();
+	if let Some(annotation) = method.annotation {
+		visitor.visit_annotation(annotation);
+	}
+
+	visitor.visit_ty(method.return_type);
+	visitor.visit_identifier(method.identifier);
+
+	for (ty, id) in method.params {
+		visitor.visit_ty(ty);
+		visitor.visit_identifier(id);
+	}
+
+	if let Some(block) = method.block {
+		visitor.visit_block(block);
+	}
 }
 
 pub fn walk_enum<V: Visitor>(visitor: &mut V, enum_def: Enum) {
-	unimplemented!();
+	if let Some(annotation) = enum_def.annotation {
+		visitor.visit_annotation(annotation);
+	}
+
+	visitor.visit_identifier(enum_def.name);
+
+	walk_list!(visitor, visit_identifier, enum_def.ids);
 }
 
 pub fn walk_class_constructor<V: Visitor>(visitor: &mut V, constructor: ClassConstructor) {
-	unimplemented!();
+	if let Some(annotation) = constructor.annotation {
+		visitor.visit_annotation(annotation);
+	}
+
+	visitor.visit_identifier(constructor.identifier);
+
+	for (ty, id) in constructor.params {
+		visitor.visit_ty(ty);
+		visitor.visit_identifier(id);
+	}
+
+	visitor.visit_block(constructor.block);
+}
+
+pub fn walk_property<V: Visitor>(visitor: &mut V, prop: Property) {
+	if let Some(body) = prop.body {
+		visitor.visit_block(body);
+	}
 }
