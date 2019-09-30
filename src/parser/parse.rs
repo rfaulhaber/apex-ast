@@ -112,16 +112,12 @@ pub fn parse_class(p: Pair<Rule>) -> Class {
 		parse_class_impl_mod
 	);
 
-	// inner.next(); // skip "class"
-
 	let name = parse_identifier(inner.next().unwrap());
 
 	next = inner.next().unwrap();
 
 	let implementations: Vec<Ty> = if next.as_rule() == Rule::IMPLEMENTS {
-		let ret = inner.next().unwrap().into_inner().map(parse_ty).collect();
-		// next = inner.next().unwrap();
-		ret
+		inner.next().unwrap().into_inner().map(parse_ty).collect()
 	} else {
 		Vec::new()
 	};
@@ -338,11 +334,7 @@ pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
 	let ty = parse_ty(next);
 	let id = parse_identifier(inner.next().unwrap());
 
-	let after_id = inner.next();
-
-	if after_id.is_some() {
-		let after = after_id.unwrap();
-
+	if let Some(after) = inner.next() {
 		if after.as_rule() == Rule::class_field_accessors {
 			let (first_prop, second_prop) = parse_field_accessors(after);
 
@@ -412,10 +404,9 @@ fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property>) {
 
 	let next = inner.next();
 
-	let second = if next.is_some() {
-		Some(parse_class_field_accessor(next.unwrap()))
-	} else {
-		None
+	let second = match next {
+		Some(pair) => Some(parse_class_field_accessor(pair)),
+		None => None,
 	};
 
 	(first, second)
@@ -430,10 +421,9 @@ fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
 
 	let after = inner.next();
 
-	let body = if after.is_some() {
-		Some(parse_block(after.unwrap()))
-	} else {
-		None
+	let body = match after {
+		Some(body) => Some(parse_block(body)),
+		None => None,
 	};
 
 	Property {
@@ -491,10 +481,9 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 
 	let final_pair = inner.next();
 
-	let block = if final_pair.is_some() {
-		Some(parse_block(final_pair.unwrap()))
-	} else {
-		None
+	let block = match final_pair {
+		Some(block) => Some(parse_block(block)),
+		None => None,
 	};
 
 	ClassMethod {
@@ -965,10 +954,9 @@ fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 
 	let rhs_pair = inner.next();
 
-	let rhs = if rhs_pair.is_some() {
-		Some(parse_expr(rhs_pair.unwrap()))
-	} else {
-		None
+	let rhs = match rhs_pair {
+		Some(pair) => Some(parse_expr(pair)),
+		None => None,
 	};
 
 	StmtExpr::Local(Local {
@@ -987,34 +975,31 @@ pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
 
 	let next = inner.next();
 
-	if next.is_none() {
-		Annotation {
-			name,
-			keypairs: None,
+	let keypairs = match next {
+		Some(pair) => {
+			let mut first_pair = pair.into_inner();
+
+			let mut keypairs: Vec<(Identifier, Literal)> = Vec::new();
+
+			let first_id = parse_identifier(first_pair.next().unwrap());
+			let first_lit = parse_literal(first_pair.next().unwrap());
+
+			keypairs.push((first_id, first_lit));
+
+			for pairs in inner {
+				let mut pair = pairs.into_inner();
+				let id = parse_identifier(pair.next().unwrap());
+				let lit = parse_literal(pair.next().unwrap());
+
+				keypairs.push((id, lit));
+			}
+
+			Some(keypairs)
 		}
-	} else {
-		let mut first_pair = next.unwrap().into_inner();
+		None => None,
+	};
 
-		let mut keypairs: Vec<(Identifier, Literal)> = Vec::new();
-
-		let first_id = parse_identifier(first_pair.next().unwrap());
-		let first_lit = parse_literal(first_pair.next().unwrap());
-
-		keypairs.push((first_id, first_lit));
-
-		for pairs in inner {
-			let mut pair = pairs.into_inner();
-			let id = parse_identifier(pair.next().unwrap());
-			let lit = parse_literal(pair.next().unwrap());
-
-			keypairs.push((id, lit));
-		}
-
-		Annotation {
-			name,
-			keypairs: Some(keypairs),
-		}
-	}
+	Annotation { name, keypairs }
 }
 
 // Rule::expression or any sub-rule
