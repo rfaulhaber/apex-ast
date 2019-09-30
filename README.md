@@ -7,6 +7,7 @@
 TODO:
 
 - [x] - Implement AST
+- [x] - Implement visitor
 - [ ] - Implement source mapping
 - [ ] - Implement serializing to JSON
 - [ ] - Implement binary
