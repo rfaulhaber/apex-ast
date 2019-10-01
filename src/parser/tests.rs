@@ -30,6 +30,15 @@ where
 }
 
 #[test]
+fn file_parses() {
+	let file = "public class Foo {}";
+
+	let result = parse_file(file);
+
+	assert!(result.is_ok());
+}
+
+#[test]
 fn class_basic_parses() {
 	let input = r#"public with sharing class FileWriter implements Writer {
 		public Buffer buf;

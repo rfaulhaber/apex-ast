@@ -130,12 +130,12 @@ pub fn parse_class(p: Pair<Rule>) -> Class {
 		None
 	};
 
-	let body: Vec<ClassBodyMember> = inner
-		.next()
-		.unwrap()
-		.into_inner()
-		.map(parse_class_body_member)
-		.collect();
+	let body: Vec<ClassBodyMember> = if let Some(body) = inner.next() {
+		body.into_inner().map(parse_class_body_member).collect()
+	} else {
+		// class bodies can be empty
+		Vec::new()
+	};
 
 	Class {
 		annotation,
