@@ -7,6 +7,7 @@ use super::modifier::*;
 use super::r#enum::*;
 use super::stmt::Block;
 use super::ty::*;
+use crate::source::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Class {
@@ -17,6 +18,7 @@ pub struct Class {
 	pub extension: Option<Ty>,
 	pub implementations: Vec<Ty>,
 	pub body: Vec<ClassBodyMember>,
+	pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -51,6 +53,7 @@ pub struct ClassField {
 	pub getter: Option<Property>,
 	pub setter: Option<Property>,
 	pub rhs: Option<Expr>,
+	pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,6 +67,7 @@ pub struct Property {
 	pub access_mod: Option<AccessModifier>,
 	pub property_type: PropertyType,
 	pub body: Option<Block>,
+	pub span: Span,
 }
 
 impl From<PropertyType> for Property {
@@ -72,6 +76,7 @@ impl From<PropertyType> for Property {
 			access_mod: None,
 			body: None,
 			property_type: pt,
+			span: Span::default(),
 		}
 	}
 }
@@ -90,4 +95,5 @@ pub struct ClassConstructor {
 	pub identifier: Identifier,
 	pub params: Vec<(Ty, Identifier)>,
 	pub block: Block,
+	pub span: Span,
 }

@@ -1,14 +1,30 @@
 use pest::Position as PestPosition;
 use pest::Span as PestSpan;
 
-#[derive(Debug, Clone, PartialEq)]
+#[cfg(not(test))]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Span {
 	pub start: usize,
 	pub end: usize,
 	pub start_pos: Position,
 	pub end_pos: Position,
+}
 
-	original_str: String,
+#[cfg(test)]
+#[derive(Debug, Clone, Default)]
+pub struct Span {
+	pub start: usize,
+	pub end: usize,
+	pub start_pos: Position,
+	pub end_pos: Position,
+}
+
+// for tests, we don't really care about spans
+#[cfg(test)]
+impl PartialEq for Span {
+	fn eq(&self, _other: &Span) -> bool {
+		true
+	}
 }
 
 impl<'s> From<PestSpan<'s>> for Span {
@@ -18,23 +34,6 @@ impl<'s> From<PestSpan<'s>> for Span {
 			end: ps.end(),
 			start_pos: Position::from(ps.start_pos()),
 			end_pos: Position::from(ps.end_pos()),
-			original_str: String::from(ps.as_str()),
-		}
-	}
-}
-
-impl Span {
-	pub fn get_string(&self) -> String {
-		self.original_str.to_owned()
-	}
-
-	pub fn dummy_span() -> Span {
-		Span {
-			start: 0,
-			end: 0,
-			start_pos: Position { line: 0, col: 0 },
-			end_pos: Position { line: 0, col: 0 },
-			original_str: String::new(),
 		}
 	}
 }
@@ -43,6 +42,12 @@ impl Span {
 pub struct Position {
 	pub line: usize,
 	pub col: usize,
+}
+
+impl Default for Position {
+	fn default() -> Position {
+		Position { line: 1, col: 1 }
+	}
 }
 
 impl<'s> From<PestPosition<'s>> for Position {

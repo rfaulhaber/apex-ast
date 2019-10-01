@@ -13,6 +13,7 @@ use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
 use crate::ast::trigger::*;
 use crate::ast::ty::*;
+use crate::source::*;
 use pest::iterators::Pair;
 
 use pretty_assertions::assert_eq;
@@ -65,6 +66,13 @@ fn class_basic_parses() {
 				getter: None,
 				setter: None,
 				rhs: None,
+				span: Span::default(),
+				// span: Span {
+				// 	start: 59,
+				// 	end: 77,
+				// 	start_pos: Position { line: 2, col: 3 },
+				// 	end_pos: Position { line: 2, col: 21 },
+				// },
 			}),
 			ClassBodyMember::Field(ClassField {
 				annotation: None,
@@ -76,6 +84,12 @@ fn class_basic_parses() {
 				getter: None,
 				setter: None,
 				rhs: None,
+				span: Span {
+					start: 80,
+					end: 112,
+					start_pos: Position { line: 3, col: 3 },
+					end_pos: Position { line: 3, col: 35 },
+				},
 			}),
 			ClassBodyMember::StaticBlock(Block::Body(vec![Stmt {
 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
@@ -106,6 +120,12 @@ fn class_basic_parses() {
 				identifier: Identifier::from("FileWriter"),
 				params: Vec::new(),
 				block: Block::Body(Vec::new()),
+				span: Span {
+					start: 184,
+					end: 206,
+					start_pos: Position { line: 13, col: 3 },
+					end_pos: Position { line: 13, col: 25 },
+				},
 			}),
 			ClassBodyMember::Method(ClassMethod {
 				annotation: None,
@@ -116,8 +136,15 @@ fn class_basic_parses() {
 				identifier: Identifier::from("write"),
 				params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
 				block: Some(Block::Body(Vec::new())),
+				// span: Span::default(),
 			}),
 		],
+		span: Span {
+			start: 0,
+			end: 250,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 16, col: 2 },
+		},
 	};
 
 	test_parse(Rule::class_declaration, input, parse_class, expected);
@@ -133,6 +160,12 @@ fn class_constructor_parses() {
 		identifier: Identifier::from("Foo"),
 		params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("bar"))],
 		block: Block::from(Vec::new()),
+		span: Span {
+			start: 0,
+			end: 25,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 26 },
+		},
 	};
 
 	test_parse(
@@ -153,6 +186,7 @@ fn class_constructor_no_access_mod_parses() {
 		identifier: Identifier::from("Foo"),
 		params: Vec::new(),
 		block: Block::from(Vec::new()),
+		span: Span::default(),
 	};
 
 	test_parse(
@@ -314,6 +348,7 @@ fn class_field_no_rhs_parses() {
 		getter: None,
 		setter: None,
 		rhs: None,
+		span: Span::default(),
 	};
 
 	test_parse(
@@ -339,13 +374,16 @@ fn class_field_getter_setter_basic_parses() {
 			access_mod: None,
 			property_type: PropertyType::Get,
 			body: None,
+			span: Span::default(),
 		}),
 		setter: Some(Property {
 			access_mod: None,
 			property_type: PropertyType::Set,
 			body: None,
+			span: Span::default(),
 		}),
 		rhs: None,
+		span: Span::default(),
 	};
 
 	test_parse(
@@ -370,6 +408,7 @@ fn class_field_rhs_parses() {
 		getter: None,
 		setter: None,
 		rhs: Some(Expr::from(Literal::from(22))),
+		span: Span::default(),
 	};
 
 	test_parse(
@@ -404,6 +443,7 @@ fn class_field_getter_setter_maximal_parses() {
 			body: Some(Block::Body(vec![Stmt {
 				kind: StmtKind::Return(Some(Expr::from(Literal::from("\'foo\'")))),
 			}])),
+			span: Span::default(),
 		}),
 		setter: Some(Property {
 			access_mod: Some(AccessModifier::Private),
@@ -417,8 +457,10 @@ fn class_field_getter_setter_maximal_parses() {
 					),
 				})),
 			}])),
+			span: Span::default(),
 		}),
 		rhs: None,
+		span: Span::default(),
 	};
 
 	test_parse(
@@ -1014,6 +1056,12 @@ fn annotation_base_parses() {
 				name: String::from("AuraEnabled"),
 			},
 			keypairs: None,
+			span: Span {
+				start: 0,
+				end: 12,
+				start_pos: Position::default(),
+				end_pos: Position { line: 1, col: 13 },
+			},
 		},
 	)
 }
@@ -1032,6 +1080,7 @@ fn annotation_with_attributes_parses() {
 				(Identifier::from("continuation"), Literal::from(true)),
 				(Identifier::from("cacheable"), Literal::from(true)),
 			]),
+			span: Span::default(),
 		},
 	)
 }

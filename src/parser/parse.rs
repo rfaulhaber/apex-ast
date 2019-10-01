@@ -13,6 +13,7 @@ use crate::ast::r#enum::Enum;
 use crate::ast::stmt::*;
 use crate::ast::trigger::*;
 use crate::ast::ty::*;
+use crate::source::Span;
 use pest::iterators::Pair;
 use std::error::Error;
 use std::fmt;
@@ -85,7 +86,7 @@ impl From<pest::error::Error<Rule>> for ParseError {
 pub fn parse_file(s: &str) -> Result<File, ParseError> {
 	let mut parsed = GrammarParser::parse(Rule::apex_file, s)?;
 
-	let root = parsed.next().unwrap();
+	let root = parsed.next().unwrap().into_inner().next().unwrap();
 
 	match root.as_rule() {
 		Rule::trigger_declaration => Ok(File::Trigger(parse_trigger(root))),
@@ -99,6 +100,7 @@ pub fn parse_file(s: &str) -> Result<File, ParseError> {
 }
 
 pub fn parse_class(p: Pair<Rule>) -> Class {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let mut next = inner.next().unwrap();
@@ -143,6 +145,7 @@ pub fn parse_class(p: Pair<Rule>) -> Class {
 		implementations,
 		extension,
 		body,
+		span,
 	}
 }
 
@@ -186,6 +189,7 @@ pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 }
 
 pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let mut next = inner.next().unwrap();
@@ -202,6 +206,7 @@ pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 		identifier,
 		params,
 		block,
+		span,
 	}
 }
 
@@ -317,6 +322,7 @@ pub fn parse_enum(p: Pair<Rule>) -> Enum {
 }
 
 pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
@@ -365,6 +371,7 @@ pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
 				getter,
 				setter,
 				rhs: None,
+				span,
 			}
 		} else {
 			let expr = Some(parse_expr(after));
@@ -379,6 +386,7 @@ pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
 				getter: None,
 				setter: None,
 				rhs: expr,
+				span,
 			}
 		}
 	} else {
@@ -392,6 +400,7 @@ pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
 			getter: None,
 			setter: None,
 			rhs: None,
+			span,
 		}
 	}
 }
@@ -413,6 +422,7 @@ fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property>) {
 }
 
 fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
@@ -430,6 +440,7 @@ fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
 		access_mod,
 		property_type,
 		body,
+		span,
 	}
 }
 
@@ -969,6 +980,7 @@ fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 }
 
 pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let name = parse_identifier(inner.next().unwrap());
@@ -999,7 +1011,11 @@ pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
 		None => None,
 	};
 
-	Annotation { name, keypairs }
+	Annotation {
+		name,
+		keypairs,
+		span,
+	}
 }
 
 // Rule::expression or any sub-rule
