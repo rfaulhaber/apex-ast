@@ -11,6 +11,5 @@ pub mod modifier;
 pub mod ops;
 pub mod stmt;
 pub mod trigger;
-#[macro_use]
 pub mod ty; // "type" is reserved
 pub mod visitor;

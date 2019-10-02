@@ -2,6 +2,7 @@ use super::identifier::Identifier;
 use super::method::ImplementableMethod;
 use super::modifier::AccessModifier;
 use super::ty::Ty;
+use crate::source::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Interface {
@@ -11,4 +12,5 @@ pub struct Interface {
 	pub name: Identifier,
 	pub extensions: Vec<Ty>,
 	pub methods: Vec<ImplementableMethod>,
+	pub span: Span,
 }

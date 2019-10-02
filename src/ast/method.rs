@@ -3,6 +3,7 @@ use super::identifier::Identifier;
 use super::modifier::{AccessModifier, ImplModifier};
 use super::stmt::Block;
 use super::ty::Ty;
+use crate::source::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ClassMethod {
@@ -15,6 +16,7 @@ pub struct ClassMethod {
 	pub identifier: Identifier,
 	pub params: Vec<(Ty, Identifier)>, // should this be an option?
 	pub block: Option<Block>,
+	pub span: Span,
 }
 
 impl ClassMethod {
@@ -34,6 +36,7 @@ pub struct ImplementableMethod {
 	pub ty: Ty,
 	pub id: Identifier,
 	pub params: Vec<(Ty, Identifier)>,
+	pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]

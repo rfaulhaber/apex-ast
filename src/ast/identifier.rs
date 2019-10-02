@@ -1,13 +1,10 @@
+use crate::source::Span;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Identifier {
 	// TODO change this to &'id str to save memory
 	pub name: String,
-}
-
-impl From<&str> for Identifier {
-	fn from(s: &str) -> Identifier {
-		Identifier { name: s.into() }
-	}
+	pub span: Span,
 }
 
 // Identifiers are basically just fancy wrappers for Strings, so we might as

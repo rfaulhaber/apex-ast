@@ -8,13 +8,3 @@ pub struct Annotation {
 	pub keypairs: Option<Vec<(Identifier, Literal)>>,
 	pub span: Span,
 }
-
-impl From<&str> for Annotation {
-	fn from(s: &str) -> Annotation {
-		Annotation {
-			name: Identifier::from(s),
-			keypairs: None,
-			span: Span::default(),
-		}
-	}
-}

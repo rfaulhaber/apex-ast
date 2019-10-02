@@ -1,13 +1,5 @@
 use super::identifier::Identifier;
-
-macro_rules! type_args {
-	($first:expr) => {
-		Some((Box::new($first), None))
-	};
-	($first:expr, $second:expr) => {
-		Some((Box::new($first), Some(Box::new($second))))
-	};
-}
+use crate::source::Span;
 
 pub type TyRef = Box<Ty>;
 
@@ -15,6 +7,7 @@ pub type TyRef = Box<Ty>;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ty {
 	pub kind: TyKind,
+	pub span: Span,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -27,10 +20,6 @@ pub enum TyKind {
 }
 
 impl Ty {
-	pub fn void() -> Ty {
-		Ty { kind: TyKind::Void }
-	}
-
 	pub fn is_void(&self) -> bool {
 		self.kind == TyKind::Void
 	}
@@ -53,28 +42,14 @@ pub struct ClassOrInterface {
 	pub subclass: Option<Identifier>,
 	pub type_arguments: Option<(TyRef, Option<TyRef>)>,
 	pub is_array: bool,
-}
-
-impl From<ClassOrInterface> for Ty {
-	fn from(coi: ClassOrInterface) -> Ty {
-		Ty {
-			kind: TyKind::ClassOrInterface(coi),
-		}
-	}
+	pub span: Span,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Primitive {
 	pub kind: PrimitiveKind,
 	pub is_array: bool,
-}
-
-impl From<Primitive> for Ty {
-	fn from(p: Primitive) -> Ty {
-		Ty {
-			kind: TyKind::Primitive(p),
-		}
-	}
+	pub span: Span,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -91,29 +66,4 @@ pub enum PrimitiveKind {
 	Object,
 	String,
 	Time,
-}
-
-impl From<PrimitiveKind> for Ty {
-	fn from(pk: PrimitiveKind) -> Ty {
-		Ty {
-			kind: TyKind::Primitive(Primitive {
-				kind: pk,
-				is_array: false,
-			}),
-		}
-	}
-}
-
-// mostly used for testing, shorthand way of definig easy classes on the fly
-impl From<Identifier> for Ty {
-	fn from(i: Identifier) -> Ty {
-		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
-				name: i,
-				subclass: None,
-				type_arguments: None,
-				is_array: false,
-			}),
-		}
-	}
 }

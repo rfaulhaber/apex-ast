@@ -211,6 +211,7 @@ pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 }
 
 pub fn parse_interface(p: Pair<Rule>) -> Interface {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
@@ -243,10 +244,12 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 		name,
 		extensions,
 		methods,
+		span,
 	}
 }
 
 pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // skip "trigger"
@@ -274,7 +277,7 @@ pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
 
 			let action_pair = inner.next().unwrap().into_inner().next().unwrap();
 
-			let dml_action = match action_pair.as_rule() {
+			let op = match action_pair.as_rule() {
 				Rule::INSERT => DmlOp::Insert,
 				Rule::UPDATE => DmlOp::Update,
 				Rule::UPSERT => DmlOp::Upsert,
@@ -284,7 +287,7 @@ pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
 				_ => unreachable!("unexpected dml action: {:?}", action_pair.as_rule()),
 			};
 
-			TriggerEvent(when, dml_action)
+			TriggerEvent { when, op }
 		})
 		.collect();
 
@@ -295,10 +298,12 @@ pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
 		object,
 		events,
 		body,
+		span,
 	}
 }
 
 pub fn parse_enum(p: Pair<Rule>) -> Enum {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
@@ -318,6 +323,7 @@ pub fn parse_enum(p: Pair<Rule>) -> Enum {
 		access_mod,
 		name,
 		ids,
+		span,
 	}
 }
 
@@ -461,16 +467,23 @@ fn parse_property_type(p: Pair<Rule>) -> PropertyType {
 }
 
 pub fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let ty = parse_ty(inner.next().unwrap());
 	let id = parse_identifier(inner.next().unwrap());
 	let params = parse_parameter_list(inner.next().unwrap());
 
-	ImplementableMethod { ty, id, params }
+	ImplementableMethod {
+		ty,
+		id,
+		params,
+		span,
+	}
 }
 
 pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let mut next = inner.next().unwrap();
@@ -506,6 +519,7 @@ pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 		identifier,
 		params,
 		block,
+		span,
 	}
 }
 
@@ -546,6 +560,7 @@ fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
 }
 
 pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
@@ -557,6 +572,7 @@ pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
 		Rule::try_catch_stmt => parse_try_catch_stmt(inner),
 		Rule::block => Stmt {
 			kind: StmtKind::Block(parse_block(inner)),
+			span,
 		},
 		Rule::return_stmt => parse_return_stmt(inner),
 		Rule::dml_stmt => parse_dml_stmt(inner),
@@ -579,6 +595,7 @@ fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
 }
 
 fn parse_for_basic(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // skip "for" token
@@ -593,6 +610,7 @@ fn parse_for_basic(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::For(ForStmt::Basic(init, expr, update, Box::new(block))),
+		span,
 	}
 }
 
@@ -601,6 +619,7 @@ fn parse_for_init(p: Pair<Rule>) -> Vec<StmtExpr> {
 }
 
 fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "for"
@@ -612,10 +631,12 @@ fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::For(ForStmt::Enhanced(ty, id, expr, Box::new(block))),
+		span,
 	}
 }
 
 fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "do"
@@ -628,10 +649,12 @@ fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::DoWhile(Box::new(block), expr),
+		span,
 	}
 }
 
 fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "while"
@@ -641,10 +664,12 @@ fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::While(expr, Box::new(block)),
+		span,
 	}
 }
 
 fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "if"
@@ -678,7 +703,7 @@ fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
 		else_block,
 	);
 
-	Stmt { kind }
+	Stmt { kind, span }
 }
 
 fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
@@ -695,6 +720,7 @@ fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
 }
 
 fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	inner.next(); // discared "switch"
 	inner.next(); // discard "on"
@@ -739,10 +765,12 @@ fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 
 		Stmt {
 			kind: StmtKind::Switch(test_expr, when_case, when_else),
+			span,
 		}
 	} else {
 		Stmt {
 			kind: StmtKind::Switch(test_expr, None, None),
+			span,
 		}
 	}
 }
@@ -767,8 +795,8 @@ fn parse_when_case(p: Pair<Rule>) -> WhenCase {
 
 			let vals = vals_inner
 				.map(|p| match p.as_rule() {
-					Rule::identifier => WhenValue::from(parse_identifier(p)),
-					Rule::literal => WhenValue::from(parse_literal(p)),
+					Rule::identifier => WhenValue::Identifier(parse_identifier(p)),
+					Rule::literal => WhenValue::Literal(parse_literal(p)),
 					_ => unreachable!("encountered unexpected rule: {:?}", p.as_rule()),
 				})
 				.collect();
@@ -782,6 +810,7 @@ fn parse_when_case(p: Pair<Rule>) -> WhenCase {
 }
 
 fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "try"
@@ -813,6 +842,7 @@ fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
 			},
 			finally,
 		),
+		span,
 	}
 }
 
@@ -852,10 +882,11 @@ fn parse_inline_block(p: Pair<Rule>) -> Block {
 
 	let stmt = parse_stmt(inner.next().unwrap());
 
-	Block::Inline(stmt.to_boxed())
+	Block::Inline(Box::new(stmt))
 }
 
 fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard token
@@ -867,10 +898,12 @@ fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::Return(expr),
+		span,
 	}
 }
 
 fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let dml_action = match inner.next().unwrap().into_inner().next().unwrap().as_rule() {
@@ -893,10 +926,12 @@ fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::Dml(dml_action, expr),
+		span,
 	}
 }
 
 fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "try" for now
@@ -905,31 +940,41 @@ fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
 
 	Stmt {
 		kind: StmtKind::Throw(expr),
+		span,
 	}
 }
 
 fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	// TODO store span, token
 	inner.next();
 
 	Stmt {
 		kind: StmtKind::Break,
+		span,
 	}
 }
 
 fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
-	// TODO store span, token
+
 	inner.next();
 
 	Stmt {
 		kind: StmtKind::Continue,
+		span,
 	}
 }
 
 fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
-	Stmt::from(parse_stmt_expr_literal(p))
+	let span = Span::from(p.as_span());
+
+	Stmt {
+		kind: StmtKind::StmtExpr(parse_stmt_expr_literal(p)),
+		span,
+	}
 }
 
 fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
@@ -937,17 +982,18 @@ fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
 
 	match stmt_expr_pair.as_rule() {
 		Rule::local_variable_declaration => parse_local_variable_declaration(stmt_expr_pair),
-		Rule::assignment_expr => StmtExpr::from(parse_assignment_expr(stmt_expr_pair)),
-		Rule::property_access => StmtExpr::from(parse_property_access(stmt_expr_pair)),
-		Rule::prefix_expr => StmtExpr::from(parse_prefix_expr(stmt_expr_pair)),
-		Rule::postfix_expr => StmtExpr::from(parse_postfix_expr(stmt_expr_pair)),
-		Rule::method_call => StmtExpr::from(parse_expr_inner(stmt_expr_pair)),
-		Rule::new_instance_expr => (StmtExpr::from(parse_expr(stmt_expr_pair))),
+		Rule::assignment_expr => StmtExpr::Expr(parse_assignment_expr(stmt_expr_pair)),
+		Rule::property_access => StmtExpr::Expr(parse_property_access(stmt_expr_pair)),
+		Rule::prefix_expr => StmtExpr::Expr(parse_prefix_expr(stmt_expr_pair)),
+		Rule::postfix_expr => StmtExpr::Expr(parse_postfix_expr(stmt_expr_pair)),
+		Rule::method_call => StmtExpr::Expr(parse_expr_inner(stmt_expr_pair)),
+		Rule::new_instance_expr => (StmtExpr::Expr(parse_expr(stmt_expr_pair))),
 		_ => unreachable!("unexpected stmt expr rule: {:?}", stmt_expr_pair.as_rule()),
 	}
 }
 
 fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
 
@@ -976,6 +1022,7 @@ fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 		ty,
 		id,
 		rhs,
+		span,
 	})
 }
 

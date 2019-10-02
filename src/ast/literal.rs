@@ -1,6 +1,9 @@
+use crate::source::Span;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Literal {
 	pub kind: LiteralKind,
+	pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -12,50 +15,4 @@ pub enum LiteralKind {
 	String(String),
 	Boolean(bool),
 	Null,
-}
-
-impl From<LiteralKind> for Literal {
-	fn from(lk: LiteralKind) -> Literal {
-		Literal { kind: lk }
-	}
-}
-
-impl From<String> for Literal {
-	fn from(s: String) -> Literal {
-		Literal {
-			kind: LiteralKind::String(s),
-		}
-	}
-}
-
-impl From<&str> for Literal {
-	fn from(s: &str) -> Literal {
-		Literal {
-			kind: LiteralKind::String(s.into()),
-		}
-	}
-}
-
-impl From<f64> for Literal {
-	fn from(f: f64) -> Literal {
-		Literal {
-			kind: LiteralKind::Float(f),
-		}
-	}
-}
-
-impl From<i64> for Literal {
-	fn from(i: i64) -> Literal {
-		Literal {
-			kind: LiteralKind::Integer(i),
-		}
-	}
-}
-
-impl From<bool> for Literal {
-	fn from(b: bool) -> Literal {
-		Literal {
-			kind: LiteralKind::Boolean(b),
-		}
-	}
 }

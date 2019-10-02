@@ -1,30 +1,12 @@
 use pest::Position as PestPosition;
 use pest::Span as PestSpan;
 
-#[cfg(not(test))]
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Span {
 	pub start: usize,
 	pub end: usize,
 	pub start_pos: Position,
 	pub end_pos: Position,
-}
-
-#[cfg(test)]
-#[derive(Debug, Clone, Default)]
-pub struct Span {
-	pub start: usize,
-	pub end: usize,
-	pub start_pos: Position,
-	pub end_pos: Position,
-}
-
-// for tests, we don't really care about spans
-#[cfg(test)]
-impl PartialEq for Span {
-	fn eq(&self, _other: &Span) -> bool {
-		true
-	}
 }
 
 impl<'s> From<PestSpan<'s>> for Span {
