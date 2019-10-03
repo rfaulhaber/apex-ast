@@ -99,7 +99,7 @@ pub fn parse_file(s: &str) -> Result<File, ParseError> {
 	}
 }
 
-pub fn parse_class(p: Pair<Rule>) -> Class {
+fn parse_class(p: Pair<Rule>) -> Class {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -162,7 +162,7 @@ fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
 	}
 }
 
-pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
+fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 	println!("rule: {:?}", p.as_rule());
 	match p.as_rule() {
 		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
@@ -188,7 +188,7 @@ pub fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 	}
 }
 
-pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
+fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -210,7 +210,7 @@ pub fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 	}
 }
 
-pub fn parse_interface(p: Pair<Rule>) -> Interface {
+fn parse_interface(p: Pair<Rule>) -> Interface {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -248,7 +248,7 @@ pub fn parse_interface(p: Pair<Rule>) -> Interface {
 	}
 }
 
-pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
+fn parse_trigger(p: Pair<Rule>) -> Trigger {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -302,7 +302,7 @@ pub fn parse_trigger(p: Pair<Rule>) -> Trigger {
 	}
 }
 
-pub fn parse_enum(p: Pair<Rule>) -> Enum {
+fn parse_enum(p: Pair<Rule>) -> Enum {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -327,7 +327,7 @@ pub fn parse_enum(p: Pair<Rule>) -> Enum {
 	}
 }
 
-pub fn parse_class_field(p: Pair<Rule>) -> ClassField {
+fn parse_class_field(p: Pair<Rule>) -> ClassField {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -466,7 +466,7 @@ fn parse_property_type(p: Pair<Rule>) -> PropertyType {
 	)
 }
 
-pub fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
+fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -482,7 +482,7 @@ pub fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
 	}
 }
 
-pub fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
+fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -559,7 +559,7 @@ fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
 		.collect()
 }
 
-pub fn parse_stmt(p: Pair<Rule>) -> Stmt {
+fn parse_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let inner = p.into_inner().next().unwrap();
 
@@ -919,7 +919,10 @@ fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 	let next_pair = inner.next().unwrap();
 
 	let expr = match next_pair.as_rule() {
-		Rule::identifier => Expr::from(parse_identifier(next_pair)),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(next_pair)),
+			span: Span::from(next_pair.as_span()),
+		},
 		Rule::new_instance_expr => parse_new_instance_expr(next_pair),
 		_ => unreachable!("unexpected rule: {:?}", next_pair.as_rule()),
 	};
@@ -1026,7 +1029,7 @@ fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 	})
 }
 
-pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
+fn parse_annotation(p: Pair<Rule>) -> Annotation {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -1066,7 +1069,7 @@ pub fn parse_annotation(p: Pair<Rule>) -> Annotation {
 }
 
 // Rule::expression or any sub-rule
-pub fn parse_expr(p: Pair<Rule>) -> Expr {
+fn parse_expr(p: Pair<Rule>) -> Expr {
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
@@ -1079,6 +1082,7 @@ pub fn parse_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_infix_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let lhs = parse_expr_inner(inner.next().unwrap());
@@ -1087,10 +1091,12 @@ fn parse_infix_expr(p: Pair<Rule>) -> Expr {
 
 	Expr {
 		kind: ExprKind::Infix(Box::new(lhs), op, Box::new(rhs)),
+		span,
 	}
 }
 
 fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let test_pair = inner.next().unwrap();
@@ -1106,10 +1112,12 @@ fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
 
 	Expr {
 		kind: ExprKind::Ternary(Box::new(test), Box::new(pos), Box::new(neg)),
+		span,
 	}
 }
 
 fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let lhs = parse_expr_inner(inner.next().unwrap());
@@ -1118,6 +1126,7 @@ fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
 
 	Expr {
 		kind: ExprKind::Assignment(Box::new(lhs), assign_op, Box::new(rhs)),
+		span,
 	}
 }
 
@@ -1127,6 +1136,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 	match inner.as_rule() {
 		Rule::braced_expr => Expr {
 			kind: ExprKind::Braced(Box::new(parse_expr(inner.into_inner().next().unwrap()))),
+			span: Span::from(inner.as_span()),
 		},
 		Rule::property_access => parse_property_access(inner),
 		Rule::query_expression => parse_query(inner),
@@ -1139,7 +1149,10 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			let op = UnOp::from(unary_inner.next().unwrap().as_str());
 			let expr = parse_expr(unary_inner.next().unwrap());
 
-			ExprKind::Unary(op, Box::new(expr)).into()
+			Expr {
+				kind: ExprKind::Unary(op, Box::new(expr)),
+				span: Span::from(inner.as_span()),
+			}
 		}
 		Rule::prefix_expr => parse_prefix_expr(inner),
 		Rule::postfix_expr => parse_postfix_expr(inner),
@@ -1150,18 +1163,28 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			inst_pairs.next(); // discard INSTANCEOF token
 			let ty = parse_ty(inst_pairs.next().unwrap());
 
-			ExprKind::Instanceof(id, ty).into()
+			Expr {
+				kind: ExprKind::Instanceof(id, ty),
+				span: Span::from(inner.as_span()),
+			}
 		}
 		Rule::cast_expression => parse_cast_expr(inner),
 		Rule::primary => {
 			let primary = inner.into_inner().next().unwrap();
 
 			match primary.as_rule() {
-				Rule::type_expr => {
-					ExprKind::Type(parse_ty(primary.into_inner().next().unwrap())).into()
-				}
-				Rule::literal => ExprKind::Literal(parse_literal(primary)).into(),
-				Rule::identifier => ExprKind::Identifier(parse_identifier(primary)).into(),
+				Rule::type_expr => Expr {
+					kind: ExprKind::Type(parse_ty(primary.into_inner().next().unwrap())),
+					span: Span::from(primary.as_span()),
+				},
+				Rule::literal => Expr {
+					kind: ExprKind::Literal(parse_literal(primary)),
+					span: Span::from(primary.as_span()),
+				},
+				Rule::identifier => Expr {
+					kind: ExprKind::Identifier(parse_identifier(primary)),
+					span: Span::from(primary.as_span()),
+				},
 				_ => unimplemented!(
 					"rule {:?} either unimplemented or unexpected",
 					primary.as_rule()
@@ -1177,6 +1200,7 @@ fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut prefix_inner = p.into_inner();
 
 	let op = IncDecOp::from(prefix_inner.next().unwrap().as_str());
@@ -1185,14 +1209,21 @@ fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
 	let affixable_expr = match affixable.as_rule() {
 		Rule::property_access => parse_property_access(affixable),
 		Rule::list_access => parse_list_access(affixable),
-		Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(affixable)),
+			span: Span::from(affixable.as_span()),
+		},
 		_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
 	};
 
-	Expr::from(ExprKind::Prefix(op, Box::new(affixable_expr)))
+	Expr {
+		kind: ExprKind::Prefix(op, Box::new(affixable_expr)),
+		span,
+	}
 }
 
 fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut postfix_inner = p.into_inner();
 
 	let affixable = postfix_inner.next().unwrap().into_inner().next().unwrap();
@@ -1201,14 +1232,21 @@ fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
 	let affixable_expr = match affixable.as_rule() {
 		Rule::property_access => parse_property_access(affixable),
 		Rule::list_access => parse_list_access(affixable),
-		Rule::identifier => ExprKind::Identifier(parse_identifier(affixable)).into(),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(affixable)),
+			span: Span::from(affixable.as_span()),
+		},
 		_ => unreachable!("expected affixable subrule, got {:?}", affixable.as_rule()),
 	};
 
-	Expr::from(ExprKind::Postfix(Box::new(affixable_expr), op))
+	Expr {
+		kind: ExprKind::Postfix(Box::new(affixable_expr), op),
+		span,
+	}
 }
 
 fn parse_property_access(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut prop_inner = p.into_inner();
 
 	let first_pair = prop_inner.next().unwrap();
@@ -1219,7 +1257,10 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 		Rule::new_instance_expr => parse_new_instance_expr(first_pair),
 		Rule::query_expression => parse_query(first_pair),
 		Rule::method_call => parse_method_call(first_pair),
-		Rule::identifier => Expr::from(parse_identifier(first_pair)),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(first_pair)),
+			span: Span::from(first_pair.as_span()),
+		},
 		_ => unreachable!("unexpected rule found: {:?}", first_pair.as_rule()),
 	};
 
@@ -1229,16 +1270,21 @@ fn parse_property_access(p: Pair<Rule>) -> Expr {
 		Rule::property_access => parse_property_access(second_pair),
 		Rule::list_access => parse_list_access(second_pair),
 		Rule::method_call => parse_method_call(second_pair),
-		Rule::identifier => Expr::from(parse_identifier(second_pair)),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(second_pair)),
+			span: Span::from(second_pair.as_span()),
+		},
 		_ => unreachable!("unexpected rule found: {:?}", second_pair.as_rule()),
 	};
 
 	Expr {
 		kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector)),
+		span,
 	}
 }
 
 fn parse_query(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let query_str = String::from(inner.as_str().trim());
 
@@ -1247,15 +1293,18 @@ fn parse_query(p: Pair<Rule>) -> Expr {
 	match rule {
 		Rule::SELECT => Expr {
 			kind: ExprKind::Query(Query::Soql(query_str)),
+			span,
 		},
 		Rule::FIND => Expr {
 			kind: ExprKind::Query(Query::Sosl(query_str)),
+			span,
 		},
 		_ => unreachable!("unexpected query rule: {:?}", rule),
 	}
 }
 
 fn parse_list_access(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut list_inner = p.into_inner();
 
 	let accessible_pair = list_inner.next().unwrap();
@@ -1264,7 +1313,10 @@ fn parse_list_access(p: Pair<Rule>) -> Expr {
 		Rule::cast_expression => parse_cast_expr(accessible_pair),
 		Rule::new_instance_expr => parse_new_instance_expr(accessible_pair),
 		Rule::method_call => parse_method_call(accessible_pair),
-		Rule::identifier => Expr::from(parse_identifier(accessible_pair)),
+		Rule::identifier => Expr {
+			kind: ExprKind::Identifier(parse_identifier(accessible_pair)),
+			span: Span::from(accessible_pair.as_span()),
+		},
 		_ => unreachable!(
 			"unimplemented or unexpected rule: {:?}",
 			accessible_pair.as_rule()
@@ -1275,6 +1327,7 @@ fn parse_list_access(p: Pair<Rule>) -> Expr {
 
 	Expr {
 		kind: ExprKind::ListAccess(Box::new(accessible), Box::new(access_expr)),
+		span,
 	}
 }
 
@@ -1292,15 +1345,20 @@ fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
 }
 
 fn parse_cast_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut cast_inner = p.into_inner();
 
 	let ty = parse_ty(cast_inner.next().unwrap());
 	let expr = parse_expr(cast_inner.next().unwrap());
 
-	ExprKind::Cast(ty, Box::new(expr)).into()
+	Expr {
+		kind: ExprKind::Cast(ty, Box::new(expr)),
+		span,
+	}
 }
 
 fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut new_inst_inner = p.into_inner();
 
 	new_inst_inner.next(); // discard "NEW"
@@ -1311,7 +1369,7 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 		Rule::map_literal_init => {
 			let mut map_inner = subrule.into_inner();
 
-			let map_name = Identifier::from(map_inner.next().unwrap().as_str());
+			let map_name = parse_identifier(map_inner.next().unwrap());
 
 			let mut two_types = map_inner.next().unwrap().into_inner();
 
@@ -1324,7 +1382,9 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 					subclass: None,
 					type_arguments: type_args!(first_type, second_type),
 					is_array: false,
+					span: Span::from(subrule.as_span()),
 				}),
+				span: Span::from(subrule.as_span()),
 			};
 
 			let args = map_inner.next().unwrap();
@@ -1345,11 +1405,16 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 					Expr {
 						kind: ExprKind::New(ty, NewType::Map(pairs)),
+						span: Span::from(args.as_span()),
 					}
 				}
 				Rule::arguments => {
+					let span = Span::from(args.as_span());
 					let args = parse_arguments(args);
-					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
+					Expr {
+						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
+						span,
+					}
 				}
 				_ => unreachable!("unexpected rule encountered: {:?}", args.as_rule()),
 			}
@@ -1357,7 +1422,7 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 		Rule::collection_literal_init => {
 			let mut lit_inner = subrule.into_inner();
 
-			let collection_name = Identifier::from(lit_inner.next().unwrap().as_str());
+			let collection_name = parse_identifier(lit_inner.next().unwrap());
 			let gen_type = parse_ty(lit_inner.next().unwrap().into_inner().next().unwrap());
 
 			let args = lit_inner.next().unwrap();
@@ -1368,18 +1433,28 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 					subclass: None,
 					type_arguments: Some((Box::new(gen_type), None)),
 					is_array: false,
+					span: Span::from(subrule.as_span()),
 				}),
+				span: Span::from(subrule.as_span()),
 			};
 
 			match args.as_rule() {
 				Rule::new_collection_literal => {
 					let exprs: Vec<Expr> = args.into_inner().map(parse_expr).collect();
 
-					ExprKind::New(ty, NewType::Collection(exprs)).into()
+					Expr {
+						kind: ExprKind::New(ty, NewType::Collection(exprs)),
+						span: Span::from(args.as_span()),
+					}
 				}
 				Rule::arguments => {
+					let span = Span::from(args.as_span());
 					let args = parse_arguments(args);
-					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
+
+					Expr {
+						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
+						span,
+					}
 				}
 				_ => unreachable!("encountered unexpected rule: {:?}", args.as_rule()),
 			}
@@ -1396,7 +1471,10 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 				.map(parse_expr)
 				.collect();
 
-			ExprKind::New(ty, NewType::Array(exprs)).into()
+			Expr {
+				kind: ExprKind::New(ty, NewType::Array(exprs)),
+				span: Span::from(subrule.as_span()),
+			}
 		}
 		Rule::new_class => {
 			let mut class_inner = subrule.into_inner();
@@ -1407,6 +1485,7 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 			match args.as_rule() {
 				Rule::sobject_arguments => {
+					let span = Span::from(args.as_span());
 					let args: Vec<(Identifier, Expr)> = args
 						.into_inner()
 						.map(|p| {
@@ -1419,11 +1498,19 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 						})
 						.collect();
 
-					ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))).into()
+					Expr {
+						kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
+						span,
+					}
 				}
 				Rule::arguments => {
+					let span = Span::from(args.as_span());
 					let args = parse_arguments(args);
-					ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))).into()
+
+					Expr {
+						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
+						span,
+					}
 				}
 				_ => unreachable!("unexpected rule found: {:?}", args.as_rule()),
 			}
@@ -1433,19 +1520,25 @@ fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_method_call(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
 	let mut method_inner = p.into_inner();
 
 	let id = parse_identifier(method_inner.next().unwrap());
 	let args = parse_arguments(method_inner.next().unwrap());
 
-	ExprKind::Call(id, args).into()
+	Expr {
+		kind: ExprKind::Call(id, args),
+		span,
+	}
 }
 
 // when Rule::identifier is encountered
-pub fn parse_identifier(p: Pair<Rule>) -> Identifier {
+fn parse_identifier(p: Pair<Rule>) -> Identifier {
 	if p.as_rule() == Rule::identifier {
+		let span = Span::from(p.as_span());
 		Identifier {
 			name: String::from(p.as_str()),
+			span,
 		}
 	} else {
 		panic!("expected identifier, got {:?}", p.as_rule())
@@ -1453,21 +1546,26 @@ pub fn parse_identifier(p: Pair<Rule>) -> Identifier {
 }
 
 // when Rule::literal is encountered
-pub fn parse_literal(p: Pair<Rule>) -> Literal {
+fn parse_literal(p: Pair<Rule>) -> Literal {
+	let span = Span::from(p.as_span());
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
 		Rule::float_literal => Literal {
 			kind: LiteralKind::Float(inner.as_str().parse::<f64>().unwrap()),
+			span,
 		},
 		Rule::long_literal => Literal {
 			kind: LiteralKind::Long(inner.as_str().parse::<i64>().unwrap()),
+			span,
 		},
 		Rule::integer_literal => Literal {
 			kind: LiteralKind::Integer(inner.as_str().parse::<i64>().unwrap()),
+			span,
 		},
 		Rule::string_literal => Literal {
 			kind: LiteralKind::String(String::from(inner.as_str())),
+			span,
 		},
 		Rule::bool_literal => {
 			let literal_val = inner.into_inner().next().unwrap();
@@ -1475,15 +1573,18 @@ pub fn parse_literal(p: Pair<Rule>) -> Literal {
 			match literal_val.as_rule() {
 				Rule::TRUE => Literal {
 					kind: LiteralKind::Boolean(true),
+					span,
 				},
 				Rule::FALSE => Literal {
 					kind: LiteralKind::Boolean(false),
+					span,
 				},
 				_ => unreachable!("unexpected boolean value?"),
 			}
 		}
 		Rule::null_literal => Literal {
 			kind: LiteralKind::Null,
+			span,
 		},
 		_ => unreachable!("unexpected literal rule found: {:?}", inner.as_rule()),
 	}
@@ -1491,7 +1592,8 @@ pub fn parse_literal(p: Pair<Rule>) -> Literal {
 
 // Rule::basic_type
 // TODO clean up
-pub fn parse_ty(p: Pair<Rule>) -> Ty {
+fn parse_ty(p: Pair<Rule>) -> Ty {
+	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
 	let t = inner.next().unwrap();
@@ -1503,7 +1605,10 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 			let name = parse_identifier(coi_inner.next().unwrap());
 
 			if name.eq_case_insensitive("void") {
-				return Ty::void();
+				return Ty {
+					kind: TyKind::Void,
+					span,
+				};
 			}
 
 			match coi_inner.next() {
@@ -1519,7 +1624,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 								subclass: Some(subclass),
 								type_arguments: None,
 								is_array: inner.next().is_some(),
+								span,
 							}),
+							span,
 						}
 					} else {
 						let ty_args = next.unwrap().into_inner().next().unwrap();
@@ -1539,7 +1646,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 											Some(Box::new(second)),
 										)),
 										is_array: inner.next().is_some(),
+										span,
 									}),
+									span,
 								}
 							}
 							Rule::one_type_argument => {
@@ -1551,7 +1660,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 										subclass: Some(subclass),
 										type_arguments: Some((Box::new(first), None)),
 										is_array: inner.next().is_some(),
+										span,
 									}),
+									span,
 								}
 							}
 							_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
@@ -1573,7 +1684,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 									subclass: None,
 									type_arguments: Some((Box::new(first), Some(Box::new(second)))),
 									is_array: inner.next().is_some(),
+									span,
 								}),
+								span,
 							}
 						}
 						Rule::one_type_argument => {
@@ -1585,7 +1698,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 									subclass: None,
 									type_arguments: Some((Box::new(first), None)),
 									is_array: inner.next().is_some(),
+									span,
 								}),
+								span,
 							}
 						}
 						_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
@@ -1598,7 +1713,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 						subclass: None,
 						type_arguments: None,
 						is_array: inner.next().is_some(),
+						span,
 					}),
+					span,
 				},
 			}
 		}
@@ -1625,7 +1742,9 @@ pub fn parse_ty(p: Pair<Rule>) -> Ty {
 				kind: TyKind::Primitive(Primitive {
 					kind,
 					is_array: inner.next().is_some(),
+					span,
 				}),
+				span,
 			}
 		}
 		_ => unreachable!("expected basic_type or sub-rule, found {:?}", t.as_rule()),

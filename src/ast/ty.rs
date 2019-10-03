@@ -3,6 +3,15 @@ use crate::source::Span;
 
 pub type TyRef = Box<Ty>;
 
+macro_rules! type_args {
+	($first:expr) => {
+		Some((Box::new($first), None))
+	};
+	($first:expr, $second:expr) => {
+		Some((Box::new($first), Some(Box::new($second))))
+	};
+}
+
 /// An Apex type.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ty {
@@ -42,6 +51,7 @@ pub struct ClassOrInterface {
 	pub subclass: Option<Identifier>,
 	pub type_arguments: Option<(TyRef, Option<TyRef>)>,
 	pub is_array: bool,
+	// TODO is this needed?
 	pub span: Span,
 }
 

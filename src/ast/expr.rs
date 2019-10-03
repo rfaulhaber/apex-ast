@@ -32,33 +32,6 @@ pub enum ExprKind {
 	Identifier(Identifier),
 }
 
-impl From<ExprKind> for Expr {
-	fn from(kind: ExprKind) -> Expr {
-		Expr {
-			kind,
-			span: Span::default(),
-		}
-	}
-}
-
-impl From<Literal> for Expr {
-	fn from(l: Literal) -> Expr {
-		Expr {
-			kind: ExprKind::Literal(l),
-			span: Span::default(),
-		}
-	}
-}
-
-impl From<Identifier> for Expr {
-	fn from(i: Identifier) -> Expr {
-		Expr {
-			kind: ExprKind::Identifier(i),
-			span: Span::default(),
-		}
-	}
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum NewType {
 	Map(Vec<(Expr, Expr)>),
