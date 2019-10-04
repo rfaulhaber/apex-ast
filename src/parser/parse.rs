@@ -99,7 +99,7 @@ pub fn parse_file(s: &str) -> Result<File, ParseError> {
 	}
 }
 
-pub(crate) fn parse_class(p: Pair<Rule>) -> Class {
+pub(super) fn parse_class(p: Pair<Rule>) -> Class {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -149,7 +149,7 @@ pub(crate) fn parse_class(p: Pair<Rule>) -> Class {
 	}
 }
 
-pub(crate) fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
+pub(super) fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
@@ -162,7 +162,7 @@ pub(crate) fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
 	}
 }
 
-pub(crate) fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
+pub(super) fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 	println!("rule: {:?}", p.as_rule());
 	match p.as_rule() {
 		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
@@ -188,7 +188,7 @@ pub(crate) fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
 	}
 }
 
-pub(crate) fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
+pub(super) fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -210,7 +210,7 @@ pub(crate) fn parse_class_constructor(p: Pair<Rule>) -> ClassConstructor {
 	}
 }
 
-pub(crate) fn parse_interface(p: Pair<Rule>) -> Interface {
+pub(super) fn parse_interface(p: Pair<Rule>) -> Interface {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -248,7 +248,7 @@ pub(crate) fn parse_interface(p: Pair<Rule>) -> Interface {
 	}
 }
 
-pub(crate) fn parse_trigger(p: Pair<Rule>) -> Trigger {
+pub(super) fn parse_trigger(p: Pair<Rule>) -> Trigger {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -302,7 +302,7 @@ pub(crate) fn parse_trigger(p: Pair<Rule>) -> Trigger {
 	}
 }
 
-pub(crate) fn parse_enum(p: Pair<Rule>) -> Enum {
+pub(super) fn parse_enum(p: Pair<Rule>) -> Enum {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -327,7 +327,7 @@ pub(crate) fn parse_enum(p: Pair<Rule>) -> Enum {
 	}
 }
 
-pub(crate) fn parse_class_field(p: Pair<Rule>) -> ClassField {
+pub(super) fn parse_class_field(p: Pair<Rule>) -> ClassField {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -412,7 +412,7 @@ pub(crate) fn parse_class_field(p: Pair<Rule>) -> ClassField {
 }
 
 // called upon Rule::class_field_accessors
-pub(crate) fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property>) {
+pub(super) fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property>) {
 	let mut inner = p.into_inner();
 
 	let first = parse_class_field_accessor(inner.next().unwrap());
@@ -427,7 +427,7 @@ pub(crate) fn parse_field_accessors(p: Pair<Rule>) -> (Property, Option<Property
 	(first, second)
 }
 
-pub(crate) fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
+pub(super) fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -450,7 +450,7 @@ pub(crate) fn parse_class_field_accessor(p: Pair<Rule>) -> Property {
 	}
 }
 
-pub(crate) fn parse_instance_modifier(p: Pair<Rule>) -> ClassInstanceModifier {
+pub(super) fn parse_instance_modifier(p: Pair<Rule>) -> ClassInstanceModifier {
 	let inner = p.into_inner().next().unwrap();
 
 	match_as_rule!(inner,
@@ -459,14 +459,14 @@ pub(crate) fn parse_instance_modifier(p: Pair<Rule>) -> ClassInstanceModifier {
 	)
 }
 
-pub(crate) fn parse_property_type(p: Pair<Rule>) -> PropertyType {
+pub(super) fn parse_property_type(p: Pair<Rule>) -> PropertyType {
 	match_as_rule!(p,
 		Rule::GET => PropertyType::Get,
 		Rule::SET => PropertyType::Set
 	)
 }
 
-pub(crate) fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
+pub(super) fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -482,7 +482,7 @@ pub(crate) fn parse_implementatble_method(p: Pair<Rule>) -> ImplementableMethod 
 	}
 }
 
-pub(crate) fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
+pub(super) fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -523,7 +523,7 @@ pub(crate) fn parse_class_method(p: Pair<Rule>) -> ClassMethod {
 	}
 }
 
-pub(crate) fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
+pub(super) fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
 	let inner = p.into_inner().next().unwrap();
 
 	match_as_rule!(inner,
@@ -534,7 +534,7 @@ pub(crate) fn parse_access_modifier(p: Pair<Rule>) -> AccessModifier {
 	)
 }
 
-pub(crate) fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
+pub(super) fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
 	let inner = p.into_inner().next().unwrap();
 
 	match_as_rule!(inner,
@@ -545,7 +545,7 @@ pub(crate) fn parse_impl_modifier(p: Pair<Rule>) -> ImplModifier {
 	)
 }
 
-pub(crate) fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
+pub(super) fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
 	let inner = p.into_inner();
 
 	inner
@@ -559,7 +559,7 @@ pub(crate) fn parse_parameter_list(p: Pair<Rule>) -> Vec<(Ty, Identifier)> {
 		.collect()
 }
 
-pub(crate) fn parse_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let inner = p.into_inner().next().unwrap();
 
@@ -584,7 +584,7 @@ pub(crate) fn parse_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
@@ -594,7 +594,7 @@ pub(crate) fn parse_for_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_for_basic(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_for_basic(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -614,11 +614,11 @@ pub(crate) fn parse_for_basic(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_for_init(p: Pair<Rule>) -> Vec<StmtExpr> {
+pub(super) fn parse_for_init(p: Pair<Rule>) -> Vec<StmtExpr> {
 	p.into_inner().map(parse_stmt_expr_literal).collect()
 }
 
-pub(crate) fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -635,7 +635,7 @@ pub(crate) fn parse_for_enhanced(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -653,7 +653,7 @@ pub(crate) fn parse_do_while_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -668,7 +668,7 @@ pub(crate) fn parse_while_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -706,7 +706,7 @@ pub(crate) fn parse_if_stmt(p: Pair<Rule>) -> Stmt {
 	Stmt { kind, span }
 }
 
-pub(crate) fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
+pub(super) fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
 	let mut inner = p.into_inner();
 
 	// discard "else" and "if"
@@ -719,7 +719,7 @@ pub(crate) fn parse_else_if_stmt(p: Pair<Rule>) -> (Expr, Box<Block>) {
 	(expr, Box::new(block))
 }
 
-pub(crate) fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	inner.next(); // discared "switch"
@@ -775,7 +775,7 @@ pub(crate) fn parse_switch_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_when_case(p: Pair<Rule>) -> WhenCase {
+pub(super) fn parse_when_case(p: Pair<Rule>) -> WhenCase {
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "when"
@@ -809,7 +809,7 @@ pub(crate) fn parse_when_case(p: Pair<Rule>) -> WhenCase {
 	(when_conds, parse_block(inner.next().unwrap()))
 }
 
-pub(crate) fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -846,7 +846,7 @@ pub(crate) fn parse_try_catch_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_catch_clause(p: Pair<Rule>) -> (Ty, Identifier, Block) {
+pub(super) fn parse_catch_clause(p: Pair<Rule>) -> (Ty, Identifier, Block) {
 	let mut inner = p.into_inner();
 
 	inner.next(); // discard "catch"
@@ -858,7 +858,7 @@ pub(crate) fn parse_catch_clause(p: Pair<Rule>) -> (Ty, Identifier, Block) {
 	(ty, id, block)
 }
 
-pub(crate) fn parse_any_block(p: Pair<Rule>) -> Block {
+pub(super) fn parse_any_block(p: Pair<Rule>) -> Block {
 	match p.as_rule() {
 		Rule::block => parse_block(p),
 		Rule::inline_block => parse_inline_block(p),
@@ -869,7 +869,7 @@ pub(crate) fn parse_any_block(p: Pair<Rule>) -> Block {
 	}
 }
 
-pub(crate) fn parse_block(p: Pair<Rule>) -> Block {
+pub(super) fn parse_block(p: Pair<Rule>) -> Block {
 	let inner = p.into_inner();
 
 	let stmts = inner.map(parse_stmt).collect();
@@ -877,7 +877,7 @@ pub(crate) fn parse_block(p: Pair<Rule>) -> Block {
 	Block::Body(stmts)
 }
 
-pub(crate) fn parse_inline_block(p: Pair<Rule>) -> Block {
+pub(super) fn parse_inline_block(p: Pair<Rule>) -> Block {
 	let mut inner = p.into_inner();
 
 	let stmt = parse_stmt(inner.next().unwrap());
@@ -885,7 +885,7 @@ pub(crate) fn parse_inline_block(p: Pair<Rule>) -> Block {
 	Block::Inline(Box::new(stmt))
 }
 
-pub(crate) fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -902,7 +902,7 @@ pub(crate) fn parse_return_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -934,7 +934,7 @@ pub(crate) fn parse_dml_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -948,7 +948,7 @@ pub(crate) fn parse_throw_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	// TODO store span, token
@@ -960,7 +960,7 @@ pub(crate) fn parse_break_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -972,7 +972,7 @@ pub(crate) fn parse_continue_stmt(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
+pub(super) fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
 	let span = Span::from(p.as_span());
 
 	Stmt {
@@ -981,7 +981,7 @@ pub(crate) fn parse_stmt_expr(p: Pair<Rule>) -> Stmt {
 	}
 }
 
-pub(crate) fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
+pub(super) fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
 	let stmt_expr_pair = p.into_inner().next().unwrap();
 
 	match stmt_expr_pair.as_rule() {
@@ -996,7 +996,7 @@ pub(crate) fn parse_stmt_expr_literal(p: Pair<Rule>) -> StmtExpr {
 	}
 }
 
-pub(crate) fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
+pub(super) fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let mut next = inner.next().unwrap();
@@ -1030,7 +1030,7 @@ pub(crate) fn parse_local_variable_declaration(p: Pair<Rule>) -> StmtExpr {
 	})
 }
 
-pub(crate) fn parse_annotation(p: Pair<Rule>) -> Annotation {
+pub(super) fn parse_annotation(p: Pair<Rule>) -> Annotation {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -1070,7 +1070,7 @@ pub(crate) fn parse_annotation(p: Pair<Rule>) -> Annotation {
 }
 
 // Rule::expression or any sub-rule
-pub(crate) fn parse_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_expr(p: Pair<Rule>) -> Expr {
 	let inner = p.into_inner().next().unwrap();
 
 	match inner.as_rule() {
@@ -1082,7 +1082,7 @@ pub(crate) fn parse_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_infix_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_infix_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -1096,7 +1096,7 @@ pub(crate) fn parse_infix_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -1117,7 +1117,7 @@ pub(crate) fn parse_ternary_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
@@ -1131,7 +1131,7 @@ pub(crate) fn parse_assignment_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_expr_inner(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 	let inner = p.into_inner().next().unwrap();
 	let inner_span = Span::from(inner.as_span());
 
@@ -1202,7 +1202,7 @@ pub(crate) fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut prefix_inner = p.into_inner();
 
@@ -1226,7 +1226,7 @@ pub(crate) fn parse_prefix_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut postfix_inner = p.into_inner();
 
@@ -1250,7 +1250,7 @@ pub(crate) fn parse_postfix_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_property_access(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_property_access(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut prop_inner = p.into_inner();
 
@@ -1290,7 +1290,7 @@ pub(crate) fn parse_property_access(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_query(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_query(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 	let query_str = String::from(inner.as_str().trim());
@@ -1310,7 +1310,7 @@ pub(crate) fn parse_query(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_list_access(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_list_access(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut list_inner = p.into_inner();
 
@@ -1340,7 +1340,7 @@ pub(crate) fn parse_list_access(p: Pair<Rule>) -> Expr {
 }
 
 // for Rule::arguments
-pub(crate) fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
+pub(super) fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
 	let args_inner = p.into_inner();
 
 	let pairs: Vec<Expr> = args_inner.map(parse_expr).collect();
@@ -1352,7 +1352,7 @@ pub(crate) fn parse_arguments(p: Pair<Rule>) -> Option<Vec<Expr>> {
 	}
 }
 
-pub(crate) fn parse_cast_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_cast_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut cast_inner = p.into_inner();
 
@@ -1365,7 +1365,7 @@ pub(crate) fn parse_cast_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut new_inst_inner = p.into_inner();
 
@@ -1530,7 +1530,7 @@ pub(crate) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-pub(crate) fn parse_method_call(p: Pair<Rule>) -> Expr {
+pub(super) fn parse_method_call(p: Pair<Rule>) -> Expr {
 	let span = Span::from(p.as_span());
 	let mut method_inner = p.into_inner();
 
@@ -1544,7 +1544,7 @@ pub(crate) fn parse_method_call(p: Pair<Rule>) -> Expr {
 }
 
 // when Rule::identifier is encountered
-pub(crate) fn parse_identifier(p: Pair<Rule>) -> Identifier {
+pub(super) fn parse_identifier(p: Pair<Rule>) -> Identifier {
 	if p.as_rule() == Rule::identifier {
 		let span = Span::from(p.as_span());
 		Identifier {
@@ -1557,7 +1557,7 @@ pub(crate) fn parse_identifier(p: Pair<Rule>) -> Identifier {
 }
 
 // when Rule::literal is encountered
-pub(crate) fn parse_literal(p: Pair<Rule>) -> Literal {
+pub(super) fn parse_literal(p: Pair<Rule>) -> Literal {
 	let span = Span::from(p.as_span());
 	let inner = p.into_inner().next().unwrap();
 
@@ -1603,7 +1603,7 @@ pub(crate) fn parse_literal(p: Pair<Rule>) -> Literal {
 
 // Rule::basic_type
 // TODO clean up
-pub(crate) fn parse_ty(p: Pair<Rule>) -> Ty {
+pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
