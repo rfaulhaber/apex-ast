@@ -1,10 +1,5 @@
-/// Parsing functions for the Apex AST.
-/// Functions generally follow the pattern of `parse_*`, e.g. `parse_ty`.
-pub mod parse;
-
-#[cfg(test)]
-mod tests;
-
+pub(crate) mod parse;
+pub use parse::parse_file;
 // lexically, this is dead code, but Pest needs this imported like so
 #[allow(unused_imports)]
 use pest::Parser;
@@ -13,4 +8,7 @@ use pest::Parser;
 #[derive(Parser)]
 #[grammar = "./apex.pest"]
 #[allow(dead_code)]
-pub(crate) struct GrammarParser;
+pub(crate) struct ApexParser;
+
+#[cfg(test)]
+mod tests;

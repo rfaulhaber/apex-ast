@@ -23,7 +23,7 @@ where
 	F: FnOnce(Pair<Rule>) -> E,
 	E: std::fmt::Debug + PartialEq,
 {
-	let mut parsed = GrammarParser::parse(rule, input).unwrap();
+	let mut parsed = ApexParser::parse(rule, input).unwrap();
 	let result = parse(parsed.next().unwrap());
 
 	assert_eq!(expected, result);
