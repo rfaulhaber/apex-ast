@@ -1057,26 +1057,32 @@ fn file_parses() {
 // 	);
 // }
 
-// #[test]
-// fn annotation_base_parses() {
-// 	test_parse(
-// 		Rule::annotation,
-// 		"@AuraEnabled",
-// 		parse_annotation,
-// 		Annotation {
-// 			name: Identifier {
-// 				name: String::from("AuraEnabled"),
-// 			},
-// 			keypairs: None,
-// 			span: Span {
-// 				start: 0,
-// 				end: 12,
-// 				start_pos: Position::default(),
-// 				end_pos: Position { line: 1, col: 13 },
-// 			},
-// 		},
-// 	)
-// }
+#[test]
+fn annotation_base_parses() {
+	test_parse(
+		Rule::annotation,
+		"@AuraEnabled",
+		parse_annotation,
+		Annotation {
+			name: Identifier {
+				name: String::from("AuraEnabled"),
+				span: Span {
+					start: 1,
+					end: 12,
+					start_pos: Position { line: 1, col: 2 },
+					end_pos: Position { line: 1, col: 13 },
+				},
+			},
+			keypairs: None,
+			span: Span {
+				start: 0,
+				end: 12,
+				start_pos: Position::default(),
+				end_pos: Position { line: 1, col: 13 },
+			},
+		},
+	)
+}
 
 #[test]
 fn annotation_with_attributes_parses() {
@@ -1258,341 +1264,828 @@ fn ty_void_parses() {
 	test_parse(Rule::basic_type, input, parse_ty, expected);
 }
 
-// #[test]
-// fn ty_void_case_insensitive_parses() {
-// 	test_parse(Rule::basic_type, "VOID", parse_ty, Ty::void())
-// }
+#[test]
+fn ty_void_case_insensitive_parses() {
+	let input = "VOID";
+	let expected = Ty {
+		kind: TyKind::Void,
+		span: Span {
+			start: 0,
+			end: 4,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 5 },
+		},
+	};
 
-// #[test]
-// fn ty_primitive_array_parses() {
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Integer[]",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::Primitive(Primitive {
-// 				kind: PrimitiveKind::Integer,
-// 				is_array: true,
-// 			}),
-// 		},
-// 	)
-// }
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// #[test]
-// fn ty_class_parses() {
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: None,
-// 				type_arguments: None,
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_primitive_array_parses() {
+	let input = "Integer[]";
+	let expected = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: true,
+			span: Span {
+				start: 0,
+				end: 9,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 10 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 9,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 10 },
+		},
+	};
 
-// #[test]
-// fn ty_class_array_parses() {
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo[]",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: None,
-// 				type_arguments: None,
-// 				is_array: true,
-// 			}),
-// 		},
-// 	)
-// }
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// #[test]
-// fn ty_subclass_parses() {
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo.Bar",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: Some(Identifier::from("Bar")),
-// 				type_arguments: None,
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_class_parses() {
+	let input = "Foo";
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
 
-// #[test]
-// fn ty_basic_generic_parses() {
-// 	let subtype = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Bar"),
-// 			subclass: None,
-// 			type_arguments: None,
-// 			is_array: false,
-// 		}),
-// 	};
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo<Bar>",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: None,
-// 				type_arguments: Some((Box::new(subtype), None)),
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_class_array_parses() {
+	let input = "Foo[]";
 
-// #[test]
-// fn ty_generic_subtype_parses() {
-// 	let subtype = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Bar"),
-// 			subclass: Some(Identifier::from("Baz")),
-// 			type_arguments: None,
-// 			is_array: false,
-// 		}),
-// 	};
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: true,
+			span: Span {
+				start: 0,
+				end: 5,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 6 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 5,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 6 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo<Bar.Baz>",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: None,
-// 				type_arguments: Some((Box::new(subtype), None)),
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// #[test]
-// fn ty_generic_subtype_array_parses() {
-// 	let subtype = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Bar"),
-// 			subclass: Some(Identifier::from("Baz")),
-// 			type_arguments: None,
-// 			is_array: false,
-// 		}),
-// 	};
+#[test]
+fn ty_subclass_parses() {
+	let input = "Foo.Bar";
 
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo<Bar.Baz>[]",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: None,
-// 				type_arguments: Some((Box::new(subtype), None)),
-// 				is_array: true,
-// 			}),
-// 		},
-// 	)
-// }
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: Some(Identifier {
+				name: String::from("Bar"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			}),
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 7,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 8 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 7,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 8 },
+		},
+	};
 
-// #[test]
-// fn ty_subtype_generic_parses() {
-// 	let gen_type = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Baz"),
-// 			subclass: None,
-// 			type_arguments: None,
-// 			is_array: false,
-// 		}),
-// 	};
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// 	let type_args = (Box::new(gen_type), None);
+#[test]
+fn ty_basic_generic_parses() {
+	let input = "Foo<Bar>";
 
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Foo.Bar<Baz>",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Foo"),
-// 				subclass: Some(Identifier::from("Bar")),
-// 				type_arguments: Some(type_args),
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+	let subtype = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Bar"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 7,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 8 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 7,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 8 },
+		},
+	};
 
-// #[test]
-// fn ty_two_type_args_parses() {
-// 	let id_type = Ty {
-// 		kind: TyKind::Primitive(Primitive {
-// 			kind: PrimitiveKind::ID,
-// 			is_array: false,
-// 		}),
-// 	};
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(subtype), None)),
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 8,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 9 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 8,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// 	let string_type = Ty {
-// 		kind: TyKind::Primitive(Primitive {
-// 			kind: PrimitiveKind::String,
-// 			is_array: false,
-// 		}),
-// 	};
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// 	test_parse(
-// 		Rule::basic_type,
-// 		"Map<Id, String>",
-// 		parse_ty,
-// 		Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier::from("Map"),
-// 				subclass: None,
-// 				type_arguments: Some((Box::new(id_type), Some(Box::new(string_type)))),
-// 				is_array: false,
-// 			}),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_generic_subtype_parses() {
+	let input = "Foo<Bar.Baz>";
 
-// #[test]
-// fn expr_literal_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"2",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Literal(Literal {
-// 				kind: LiteralKind::Integer(2),
-// 			}),
-// 		},
-// 	)
-// }
+	let subtype = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Bar"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: Some(Identifier {
+				name: String::from("Baz"),
+				span: Span {
+					start: 8,
+					end: 11,
+					start_pos: Position { line: 1, col: 9 },
+					end_pos: Position { line: 1, col: 12 },
+				},
+			}),
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 11,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 11,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// #[test]
-// fn expr_identifier_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"foo",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Identifier(Identifier::from("foo")),
-// 		},
-// 	)
-// }
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(subtype), None)),
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 12,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 13 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 12,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 13 },
+		},
+	};
 
-// #[test]
-// fn expr_type_expr_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"Foo.class",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Type(Ty {
-// 				kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 					name: Identifier::from("Foo"),
-// 					is_array: false,
-// 					subclass: None,
-// 					type_arguments: None,
-// 				}),
-// 			}),
-// 		},
-// 	)
-// }
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// #[test]
-// fn instanceof_expr_parses() {
-// 	let id = Identifier::from("foo");
-// 	let ty: Ty = ClassOrInterface {
-// 		name: Identifier::from("Foo"),
-// 		subclass: None,
-// 		type_arguments: None,
-// 		is_array: false,
-// 	}
-// 	.into();
+#[test]
+fn ty_generic_subtype_array_parses() {
+	let input = "Foo<Bar.Baz>[]";
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"foo instanceof Foo",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Instanceof(id, ty),
-// 		},
-// 	)
-// }
+	let subtype = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Bar"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: Some(Identifier {
+				name: String::from("Baz"),
+				span: Span {
+					start: 8,
+					end: 11,
+					start_pos: Position { line: 1, col: 9 },
+					end_pos: Position { line: 1, col: 12 },
+				},
+			}),
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 11,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 11,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// #[test]
-// fn cast_expr_parses() {
-// 	let ty: Ty = Primitive {
-// 		kind: PrimitiveKind::String,
-// 		is_array: false,
-// 	}
-// 	.into();
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(subtype), None)),
+			is_array: true,
+			span: Span {
+				start: 0,
+				end: 14,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 15 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 14,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 15 },
+		},
+	};
 
-// 	let expr: Expr = ExprKind::Identifier(Identifier::from("foo")).into();
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"(String) foo",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Cast(ty, Box::new(expr)),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_subtype_generic_parses() {
+	let input = "Foo.Bar<Baz>";
+	let gen_type = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Baz"),
+				span: Span {
+					start: 8,
+					end: 11,
+					start_pos: Position { line: 1, col: 9 },
+					end_pos: Position { line: 1, col: 12 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 8,
+				end: 11,
+				start_pos: Position { line: 1, col: 9 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 8,
+			end: 11,
+			start_pos: Position { line: 1, col: 9 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// #[test]
-// fn prefix_expr_parses() {
-// 	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+	let type_args = (Box::new(gen_type), None);
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"++i",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Prefix(IncDecOp::Inc, Box::new(inner)),
-// 		},
-// 	)
-// }
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: Some(Identifier {
+				name: String::from("Bar"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			}),
+			type_arguments: Some(type_args),
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 12,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 13 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 12,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 13 },
+		},
+	};
 
-// #[test]
-// fn postfix_expr_parses() {
-// 	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"i++",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
-// 		},
-// 	)
-// }
+#[test]
+fn ty_two_type_args_parses() {
+	let input = "Map<Id, String>";
 
-// #[test]
-// fn unary_expr_parses() {
-// 	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+	let id_type = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::ID,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 6,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 7 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 6,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 7 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"!i",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Unary(UnOp::Not, Box::new(inner)),
-// 		},
-// 	)
-// }
+	let string_type = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::String,
+			is_array: false,
+			span: Span {
+				start: 8,
+				end: 14,
+				start_pos: Position { line: 1, col: 9 },
+				end_pos: Position { line: 1, col: 15 },
+			},
+		}),
+		span: Span {
+			start: 8,
+			end: 14,
+			start_pos: Position { line: 1, col: 9 },
+			end_pos: Position { line: 1, col: 15 },
+		},
+	};
+
+	let expected = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Map"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(id_type), Some(Box::new(string_type)))),
+			is_array: false,
+			span: Span {
+				start: 0,
+				end: 15,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 16 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 15,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 16 },
+		},
+	};
+
+	test_parse(Rule::basic_type, input, parse_ty, expected);
+}
+
+#[test]
+fn expr_literal_parses() {
+	let input = "2";
+	let expected = Expr {
+		kind: ExprKind::Literal(Literal {
+			kind: LiteralKind::Integer(2),
+			span: Span {
+				start: 0,
+				end: 1,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 2 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 1,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 2 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn expr_identifier_parses() {
+	let input = "foo";
+
+	let expected = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected)
+}
+
+#[test]
+fn expr_type_expr_parses() {
+	let input = "Foo.class";
+
+	let expected = Expr {
+		kind: ExprKind::Type(Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Foo"),
+					span: Span {
+						start: 0,
+						end: 3,
+						start_pos: Position { line: 1, col: 1 },
+						end_pos: Position { line: 1, col: 4 },
+					},
+				},
+				is_array: false,
+				subclass: None,
+				type_arguments: None,
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			}),
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 9,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 10 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn instanceof_expr_parses() {
+	let input = "foo instanceof Foo";
+
+	let id = Identifier {
+		name: String::from("foo"),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
+
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 15,
+					end: 18,
+					start_pos: Position { line: 1, col: 16 },
+					end_pos: Position { line: 1, col: 19 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 15,
+				end: 18,
+				start_pos: Position { line: 1, col: 16 },
+				end_pos: Position { line: 1, col: 19 },
+			},
+		}),
+		span: Span {
+			start: 15,
+			end: 18,
+			start_pos: Position { line: 1, col: 16 },
+			end_pos: Position { line: 1, col: 19 },
+		},
+	};
+
+	let expected = Expr {
+		kind: ExprKind::Instanceof(id, ty),
+		span: Span {
+			start: 0,
+			end: 18,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 19 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn cast_expr_parses() {
+	let input = "(String) foo";
+
+	let ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::String,
+			is_array: false,
+			span: Span {
+				start: 1,
+				end: 7,
+				start_pos: Position { line: 1, col: 2 },
+				end_pos: Position { line: 1, col: 8 },
+			},
+		}),
+		span: Span {
+			start: 1,
+			end: 7,
+			start_pos: Position { line: 1, col: 2 },
+			end_pos: Position { line: 1, col: 8 },
+		},
+	};
+
+	let expr = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 9,
+				end: 12,
+				start_pos: Position { line: 1, col: 10 },
+				end_pos: Position { line: 1, col: 13 },
+			},
+		}),
+		span: Span {
+			start: 9,
+			end: 12,
+			start_pos: Position { line: 1, col: 10 },
+			end_pos: Position { line: 1, col: 13 },
+		},
+	};
+
+	let expected = Expr {
+		kind: ExprKind::Cast(ty, Box::new(expr)),
+		span: Span {
+			start: 0,
+			end: 12,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 13 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn prefix_expr_parses() {
+	let input = "++i";
+
+	let inner = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 2,
+				end: 3,
+				start_pos: Position { line: 1, col: 3 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		}),
+		span: Span {
+			start: 2,
+			end: 3,
+			start_pos: Position { line: 1, col: 3 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
+
+	let expected = Expr {
+		kind: ExprKind::Prefix(IncDecOp::Inc, Box::new(inner)),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected)
+}
+
+#[test]
+fn postfix_expr_parses() {
+	let input = "i++";
+
+	let inner = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 0,
+				end: 1,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 2 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 1,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 2 },
+		},
+	};
+
+	let expceted = Expr {
+		kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expceted);
+}
+
+#[test]
+fn unary_expr_parses() {
+	let input = "!i";
+
+	let inner = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 1,
+				end: 2,
+				start_pos: Position { line: 1, col: 2 },
+				end_pos: Position { line: 1, col: 3 },
+			},
+		}),
+		span: Span {
+			start: 1,
+			end: 2,
+			start_pos: Position { line: 1, col: 2 },
+			end_pos: Position { line: 1, col: 3 },
+		},
+	};
+
+	let expected = Expr {
+		kind: ExprKind::Unary(UnOp::Not, Box::new(inner)),
+		span: Span {
+			start: 0,
+			end: 2,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 3 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
 // #[test]
 // fn method_call_no_args_parses() {
