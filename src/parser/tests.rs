@@ -1017,45 +1017,89 @@ fn file_parses() {
 // 	);
 // }
 
-// #[test]
-// fn return_stmt_some_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"return foo;",
-// 		parse_stmt,
-// 		StmtKind::Return(Some(Expr::from(Identifier::from("foo")))).into(),
-// 	);
-// }
+#[test]
+fn return_stmt_some_parses() {
+	let input = "return foo;";
 
-// #[test]
-// fn return_stmt_none_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"return;",
-// 		parse_stmt,
-// 		StmtKind::Return(None).into(),
-// 	);
-// }
+	let expected = Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Identifier(Identifier {
+				name: String::from("foo"),
+				span: Span {
+					start: 7,
+					end: 10,
+					start_pos: Position { line: 1, col: 8 },
+					end_pos: Position { line: 1, col: 11 },
+				},
+			}),
+			span: Span {
+				start: 7,
+				end: 10,
+				start_pos: Position { line: 1, col: 8 },
+				end_pos: Position { line: 1, col: 11 },
+			},
+		})),
+		span: Span {
+			start: 0,
+			end: 11,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// #[test]
-// fn break_stmt_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"break;",
-// 		parse_stmt,
-// 		StmtKind::Break.into(),
-// 	);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected)
+}
 
-// #[test]
-// fn continue_stmt_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"continue;",
-// 		parse_stmt,
-// 		StmtKind::Continue.into(),
-// 	);
-// }
+#[test]
+fn return_stmt_none_parses() {
+	let input = "return;";
+
+	let expected = Stmt {
+		kind: StmtKind::Return(None),
+		span: Span {
+			start: 0,
+			end: 7,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 8 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
+fn break_stmt_parses() {
+	let input = "break;";
+
+	let expected = Stmt {
+		kind: StmtKind::Break,
+		span: Span {
+			start: 0,
+			end: 6,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 7 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
+fn continue_stmt_parses() {
+	let input = "continue;";
+
+	let expected = Stmt {
+		kind: StmtKind::Continue,
+		span: Span {
+			start: 0,
+			end: 9,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 10 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
 #[test]
 fn annotation_base_parses() {
@@ -2087,75 +2131,230 @@ fn unary_expr_parses() {
 	test_parse(Rule::expression, input, parse_expr, expected);
 }
 
-// #[test]
-// fn method_call_no_args_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"foo()",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Call(Identifier::from("foo"), None),
-// 		},
-// 	)
-// }
+#[test]
+fn method_call_no_args_parses() {
+	let input = "foo()";
 
-// #[test]
-// fn method_call_one_arg_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"foo(bar)",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Call(
-// 				Identifier::from("foo"),
-// 				Some(vec![ExprKind::Identifier(Identifier::from("bar")).into()]),
-// 			),
-// 		},
-// 	)
-// }
+	let expected = Expr {
+		kind: ExprKind::Call(
+			Identifier {
+				name: String::from("foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			None,
+		),
+		span: Span {
+			start: 0,
+			end: 5,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 6 },
+		},
+	};
 
-// #[test]
-// fn method_call_two_args_parses() {
-// 	test_parse(
-// 		Rule::expression,
-// 		"foo(bar, \'baz\')",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::Call(
-// 				Identifier::from("foo"),
-// 				Some(vec![
-// 					ExprKind::Identifier(Identifier::from("bar")).into(),
-// 					ExprKind::Literal(Literal::from("\'baz\'")).into(),
-// 				]),
-// 			),
-// 		},
-// 	)
-// }
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
-// #[test]
-// fn new_inst_array_literal_parses() {
-// 	let ty = Ty {
-// 		kind: TyKind::Primitive(Primitive {
-// 			kind: PrimitiveKind::Integer,
-// 			is_array: false,
-// 		}),
-// 	};
+#[test]
+fn method_call_one_arg_parses() {
+	let input = "foo(bar)";
 
-// 	let literal_exprs = vec![
-// 		Expr::from(Literal::from(1)),
-// 		Expr::from(Literal::from(2)),
-// 		Expr::from(Literal::from(3)),
-// 	];
+	let expected = Expr {
+		kind: ExprKind::Call(
+			Identifier {
+				name: String::from("foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			Some(vec![Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("bar"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
+				}),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			}]),
+		),
+		span: Span {
+			start: 0,
+			end: 8,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new Integer[1, 2, 3]",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Array(literal_exprs)),
-// 		},
-// 	)
-// }
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn method_call_two_args_parses() {
+	let input = "foo(bar, 'baz')";
+
+	let expected = Expr {
+		kind: ExprKind::Call(
+			Identifier {
+				name: String::from("foo"),
+				span: Span {
+					start: 0,
+					end: 3,
+					start_pos: Position { line: 1, col: 1 },
+					end_pos: Position { line: 1, col: 4 },
+				},
+			},
+			Some(vec![
+				Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 4,
+							end: 7,
+							start_pos: Position { line: 1, col: 5 },
+							end_pos: Position { line: 1, col: 8 },
+						},
+					}),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
+				},
+				Expr {
+					kind: ExprKind::Literal(Literal {
+						kind: LiteralKind::String(String::from("'baz'")),
+						span: Span {
+							start: 9,
+							end: 14,
+							start_pos: Position { line: 1, col: 10 },
+							end_pos: Position { line: 1, col: 15 },
+						},
+					}),
+					span: Span {
+						start: 9,
+						end: 14,
+						start_pos: Position { line: 1, col: 10 },
+						end_pos: Position { line: 1, col: 15 },
+					},
+				},
+			]),
+		),
+		span: Span {
+			start: 0,
+			end: 15,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 16 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn new_inst_array_literal_parses() {
+	let input = "new Integer[1, 2, 3]";
+
+	let ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 11,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 11,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
+
+	let literal_exprs = vec![
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(1),
+				span: Span {
+					start: 12,
+					end: 13,
+					start_pos: Position { line: 1, col: 13 },
+					end_pos: Position { line: 1, col: 14 },
+				},
+			}),
+			span: Span {
+				start: 12,
+				end: 13,
+				start_pos: Position { line: 1, col: 13 },
+				end_pos: Position { line: 1, col: 14 },
+			},
+		},
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(2),
+				span: Span {
+					start: 15,
+					end: 16,
+					start_pos: Position { line: 1, col: 16 },
+					end_pos: Position { line: 1, col: 17 },
+				},
+			}),
+			span: Span {
+				start: 15,
+				end: 16,
+				start_pos: Position { line: 1, col: 16 },
+				end_pos: Position { line: 1, col: 17 },
+			},
+		},
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(3),
+				span: Span {
+					start: 18,
+					end: 19,
+					start_pos: Position { line: 1, col: 19 },
+					end_pos: Position { line: 1, col: 20 },
+				},
+			}),
+			span: Span {
+				start: 18,
+				end: 19,
+				start_pos: Position { line: 1, col: 19 },
+				end_pos: Position { line: 1, col: 20 },
+			},
+		},
+	];
+
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Array(literal_exprs)),
+		span: Span {
+			start: 4,
+			end: 20,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 21 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
 // #[test]
 // fn new_inst_collection_literal_parses() {
