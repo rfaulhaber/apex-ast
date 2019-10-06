@@ -1273,12 +1273,6 @@ fn ty_primitive_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::Integer,
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 7,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 8 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -1331,12 +1325,6 @@ fn ty_primitive_array_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::Integer,
 			is_array: true,
-			span: Span {
-				start: 0,
-				end: 9,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 10 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -1757,12 +1745,6 @@ fn ty_two_type_args_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::ID,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 6,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 7 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -1776,12 +1758,6 @@ fn ty_two_type_args_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::String,
 			is_array: false,
-			span: Span {
-				start: 8,
-				end: 14,
-				start_pos: Position { line: 1, col: 9 },
-				end_pos: Position { line: 1, col: 15 },
-			},
 		}),
 		span: Span {
 			start: 8,
@@ -1980,12 +1956,6 @@ fn cast_expr_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::String,
 			is_array: false,
-			span: Span {
-				start: 1,
-				end: 7,
-				start_pos: Position { line: 1, col: 2 },
-				end_pos: Position { line: 1, col: 8 },
-			},
 		}),
 		span: Span {
 			start: 1,
@@ -2274,12 +2244,6 @@ fn new_inst_array_literal_parses() {
 		kind: TyKind::Primitive(Primitive {
 			kind: PrimitiveKind::Integer,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 11,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 12 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -2356,160 +2320,550 @@ fn new_inst_array_literal_parses() {
 	test_parse(Rule::expression, input, parse_expr, expected);
 }
 
-// #[test]
-// fn new_inst_collection_literal_parses() {
-// 	let int_ty = Ty::from(PrimitiveKind::Integer);
+#[test]
+fn new_inst_collection_literal_parses() {
+	let input = "new List<Integer>{1, 2, 3}";
 
-// 	let ty = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("List"),
-// 			subclass: None,
-// 			type_arguments: Some((Box::new(int_ty), None)),
-// 			is_array: false,
-// 		}),
-// 	};
+	let int_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+		span: Span {
+			start: 9,
+			end: 16,
+			start_pos: Position { line: 1, col: 10 },
+			end_pos: Position { line: 1, col: 17 },
+		},
+	};
 
-// 	let literal_exprs = vec![
-// 		Expr::from(Literal::from(1)),
-// 		Expr::from(Literal::from(2)),
-// 		Expr::from(Literal::from(3)),
-// 	];
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("List"),
+				span: Span {
+					start: 4,
+					end: 8,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 9 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(int_ty), None)),
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 26,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 27 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 26,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 27 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new List<Integer>{1, 2, 3}",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Collection(literal_exprs)),
-// 		},
-// 	)
-// }
+	let literal_exprs = vec![
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(1),
+				span: Span {
+					start: 18,
+					end: 19,
+					start_pos: Position { line: 1, col: 19 },
+					end_pos: Position { line: 1, col: 20 },
+				},
+			}),
+			span: Span {
+				start: 18,
+				end: 19,
+				start_pos: Position { line: 1, col: 19 },
+				end_pos: Position { line: 1, col: 20 },
+			},
+		},
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(2),
+				span: Span {
+					start: 21,
+					end: 22,
+					start_pos: Position { line: 1, col: 22 },
+					end_pos: Position { line: 1, col: 23 },
+				},
+			}),
+			span: Span {
+				start: 21,
+				end: 22,
+				start_pos: Position { line: 1, col: 22 },
+				end_pos: Position { line: 1, col: 23 },
+			},
+		},
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(3),
+				span: Span {
+					start: 24,
+					end: 25,
+					start_pos: Position { line: 1, col: 25 },
+					end_pos: Position { line: 1, col: 26 },
+				},
+			}),
+			span: Span {
+				start: 24,
+				end: 25,
+				start_pos: Position { line: 1, col: 25 },
+				end_pos: Position { line: 1, col: 26 },
+			},
+		},
+	];
 
-// #[test]
-// fn new_inst_collection_literal_with_args_parses() {
-// 	let int_ty = Ty::from(PrimitiveKind::Integer);
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Collection(literal_exprs)),
+		span: Span {
+			start: 17,
+			end: 26,
+			start_pos: Position { line: 1, col: 18 },
+			end_pos: Position { line: 1, col: 27 },
+		},
+	};
 
-// 	let ty = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("List"),
-// 			subclass: None,
-// 			type_arguments: Some((Box::new(int_ty), None)),
-// 			is_array: false,
-// 		}),
-// 	};
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
-// 	let args = Some(vec![Expr::from(Identifier::from("list"))]);
+#[test]
+fn new_inst_collection_literal_with_args_parses() {
+	let input = "new List<Integer>(list)";
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new List<Integer>(list)",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
-// 		},
-// 	)
-// }
+	let int_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+		span: Span {
+			start: 9,
+			end: 16,
+			start_pos: Position { line: 1, col: 10 },
+			end_pos: Position { line: 1, col: 17 },
+		},
+	};
 
-// #[test]
-// fn new_inst_map_literal_parses() {
-// 	let ty = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Map"),
-// 			subclass: None,
-// 			type_arguments: type_args!(
-// 				Ty::from(PrimitiveKind::Integer),
-// 				Ty::from(PrimitiveKind::String)
-// 			),
-// 			is_array: false,
-// 		}),
-// 	};
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("List"),
+				span: Span {
+					start: 4,
+					end: 8,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 9 },
+				},
+			},
+			subclass: None,
+			type_arguments: Some((Box::new(int_ty), None)),
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 23,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 24 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 23,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 24 },
+		},
+	};
 
-// 	let mapping = vec![
-// 		(
-// 			Expr::from(Literal::from(1)),
-// 			Expr::from(Literal::from("'one'")),
-// 		),
-// 		(
-// 			Expr::from(Literal::from(2)),
-// 			Expr::from(Literal::from("'two'")),
-// 		),
-// 	];
+	let args = Some(vec![Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("list"),
+			span: Span {
+				start: 18,
+				end: 22,
+				start_pos: Position { line: 1, col: 19 },
+				end_pos: Position { line: 1, col: 23 },
+			},
+		}),
+		span: Span {
+			start: 18,
+			end: 22,
+			start_pos: Position { line: 1, col: 19 },
+			end_pos: Position { line: 1, col: 23 },
+		},
+	}]);
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new Map<Integer, String>{1 => 'one', 2 => 'two'}",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Map(mapping)),
-// 		},
-// 	)
-// }
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
+		span: Span {
+			start: 17,
+			end: 23,
+			start_pos: Position { line: 1, col: 18 },
+			end_pos: Position { line: 1, col: 24 },
+		},
+	};
 
-// #[test]
-// fn new_inst_map_args_parses() {
-// 	let ty = Ty {
-// 		kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 			name: Identifier::from("Map"),
-// 			subclass: None,
-// 			type_arguments: type_args!(
-// 				Ty::from(PrimitiveKind::Integer),
-// 				Ty::from(PrimitiveKind::String)
-// 			),
-// 			is_array: false,
-// 		}),
-// 	};
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
-// 	let class_args = vec![Expr::from(Identifier::from("foo"))];
+#[test]
+fn new_inst_map_literal_parses() {
+	let input = "new Map<Integer, String>{1 => 'one', 2 => 'two'}";
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new Map<Integer, String>(foo)",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Some(class_args)))),
-// 		},
-// 	)
-// }
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Map"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: None,
+			type_arguments: type_args!(
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::Integer,
+						is_array: false,
+					}),
+					span: Span {
+						start: 8,
+						end: 15,
+						start_pos: Position { line: 1, col: 9 },
+						end_pos: Position { line: 1, col: 16 },
+					},
+				},
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 17,
+						end: 23,
+						start_pos: Position { line: 1, col: 18 },
+						end_pos: Position { line: 1, col: 24 },
+					},
+				}
+			),
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 48,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 49 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 48,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 49 },
+		},
+	};
 
-// #[test]
-// fn new_inst_class_parses() {
-// 	let ty = Ty::from(Identifier::from("Foo"));
+	let mapping = vec![
+		(
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::Integer(1),
+					span: Span {
+						start: 25,
+						end: 26,
+						start_pos: Position { line: 1, col: 26 },
+						end_pos: Position { line: 1, col: 27 },
+					},
+				}),
+				span: Span {
+					start: 25,
+					end: 26,
+					start_pos: Position { line: 1, col: 26 },
+					end_pos: Position { line: 1, col: 27 },
+				},
+			},
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::String(String::from("'one'")),
+					span: Span {
+						start: 30,
+						end: 35,
+						start_pos: Position { line: 1, col: 31 },
+						end_pos: Position { line: 1, col: 36 },
+					},
+				}),
+				span: Span {
+					start: 30,
+					end: 35,
+					start_pos: Position { line: 1, col: 31 },
+					end_pos: Position { line: 1, col: 36 },
+				},
+			},
+		),
+		(
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::Integer(2),
+					span: Span {
+						start: 37,
+						end: 38,
+						start_pos: Position { line: 1, col: 38 },
+						end_pos: Position { line: 1, col: 39 },
+					},
+				}),
+				span: Span {
+					start: 37,
+					end: 38,
+					start_pos: Position { line: 1, col: 38 },
+					end_pos: Position { line: 1, col: 39 },
+				},
+			},
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::String(String::from("'two'")),
+					span: Span {
+						start: 42,
+						end: 47,
+						start_pos: Position { line: 1, col: 43 },
+						end_pos: Position { line: 1, col: 48 },
+					},
+				}),
+				span: Span {
+					start: 42,
+					end: 47,
+					start_pos: Position { line: 1, col: 43 },
+					end_pos: Position { line: 1, col: 48 },
+				},
+			},
+		),
+	];
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new Foo()",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(None))),
-// 		},
-// 	);
-// }
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Map(mapping)),
+		span: Span {
+			start: 24,
+			end: 48,
+			start_pos: Position { line: 1, col: 25 },
+			end_pos: Position { line: 1, col: 49 },
+		},
+	};
 
-// #[test]
-// fn new_inst_class_sobject_argsparses() {
-// 	let ty = Ty::from(Identifier::from("Account"));
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
-// 	let args = vec![(Identifier {
-// 		name: String::from("Name"),
-// 		span: Span::default(),
-// 	}, Expr {
-// 		kind: ExprKind::Literal(Literal {
-// 			kind: LiteralKind::String(String::from("\'foo\'")),
-// 			span: Span::default(),
-// 		}),
-// 		span: Span::default(),
-// 	})];
+#[test]
+fn new_inst_map_args_parses() {
+	let input = "new Map<Integer, String>(foo)";
 
-// 	test_parse(
-// 		Rule::expression,
-// 		"new Account(Name = 'foo')",
-// 		parse_expr,
-// 		Expr {
-// 			kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
-// 			span: Span::default(),
-// 		},
-// 	);
-// }
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Map"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: None,
+			type_arguments: type_args!(
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::Integer,
+						is_array: false,
+					}),
+					span: Span {
+						start: 8,
+						end: 15,
+						start_pos: Position { line: 1, col: 9 },
+						end_pos: Position { line: 1, col: 16 },
+					},
+				},
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 17,
+						end: 23,
+						start_pos: Position { line: 1, col: 18 },
+						end_pos: Position { line: 1, col: 24 },
+					},
+				}
+			),
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 29,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 30 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 29,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 30 },
+		},
+	};
+
+	let class_args = vec![Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 25,
+				end: 28,
+				start_pos: Position { line: 1, col: 26 },
+				end_pos: Position { line: 1, col: 29 },
+			},
+		}),
+		span: Span {
+			start: 25,
+			end: 28,
+			start_pos: Position { line: 1, col: 26 },
+			end_pos: Position { line: 1, col: 29 },
+		},
+	}];
+
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Some(class_args)))),
+		span: Span {
+			start: 24,
+			end: 29,
+			start_pos: Position { line: 1, col: 25 },
+			end_pos: Position { line: 1, col: 30 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn new_inst_class_parses() {
+	let input = "new Foo()";
+
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Foo"),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 7,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 8 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 7,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 8 },
+		},
+	};
+
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(None))),
+		span: Span {
+			start: 7,
+			end: 9,
+			start_pos: Position { line: 1, col: 8 },
+			end_pos: Position { line: 1, col: 10 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
+
+#[test]
+fn new_inst_class_sobject_argsparses() {
+	let input = "new Account(Name = 'foo')";
+	let ty = Ty {
+		kind: TyKind::ClassOrInterface(ClassOrInterface {
+			name: Identifier {
+				name: String::from("Account"),
+				span: Span {
+					start: 4,
+					end: 11,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 12 },
+				},
+			},
+			subclass: None,
+			type_arguments: None,
+			is_array: false,
+			span: Span {
+				start: 4,
+				end: 11,
+				start_pos: Position { line: 1, col: 5 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 4,
+			end: 11,
+			start_pos: Position { line: 1, col: 5 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
+
+	let args = vec![(
+		Identifier {
+			name: String::from("Name"),
+			span: Span {
+				start: 12,
+				end: 16,
+				start_pos: Position { line: 1, col: 13 },
+				end_pos: Position { line: 1, col: 17 },
+			},
+		},
+		Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::String(String::from("\'foo\'")),
+				span: Span {
+					start: 19,
+					end: 24,
+					start_pos: Position { line: 1, col: 20 },
+					end_pos: Position { line: 1, col: 25 },
+				},
+			}),
+			span: Span {
+				start: 19,
+				end: 24,
+				start_pos: Position { line: 1, col: 20 },
+				end_pos: Position { line: 1, col: 25 },
+			},
+		},
+	)];
+
+	let expected = Expr {
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
+		span: Span {
+			start: 11,
+			end: 25,
+			start_pos: Position { line: 1, col: 12 },
+			end_pos: Position { line: 1, col: 26 },
+		},
+	};
+
+	test_parse(Rule::expression, input, parse_expr, expected);
+}
 
 #[test]
 fn list_access_parses() {

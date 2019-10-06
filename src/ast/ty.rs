@@ -51,7 +51,6 @@ pub struct ClassOrInterface {
 	pub subclass: Option<Identifier>,
 	pub type_arguments: Option<(TyRef, Option<TyRef>)>,
 	pub is_array: bool,
-	// TODO is this needed?
 	pub span: Span,
 }
 
@@ -59,7 +58,6 @@ pub struct ClassOrInterface {
 pub struct Primitive {
 	pub kind: PrimitiveKind,
 	pub is_array: bool,
-	pub span: Span,
 }
 
 #[derive(Debug, PartialEq, Clone)]

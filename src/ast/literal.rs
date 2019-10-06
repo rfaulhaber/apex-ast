@@ -3,6 +3,7 @@ use crate::source::Span;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Literal {
 	pub kind: LiteralKind,
+	// TODO is this needed?
 	pub span: Span,
 }
 

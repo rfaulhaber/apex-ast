@@ -1545,14 +1545,27 @@ pub(super) fn parse_method_call(p: Pair<Rule>) -> Expr {
 
 // when Rule::identifier is encountered
 pub(super) fn parse_identifier(p: Pair<Rule>) -> Identifier {
-	if p.as_rule() == Rule::identifier {
-		let span = Span::from(p.as_span());
-		Identifier {
+	let span = Span::from(p.as_span());
+	match p.as_rule() {
+		Rule::identifier => Identifier {
 			name: String::from(p.as_str()),
 			span,
+		},
+		Rule::collection_type => {
+			let lit_type = p.into_inner().next().unwrap();
+			Identifier {
+				name: String::from(lit_type.as_str()),
+				span,
+			}
 		}
-	} else {
-		panic!("expected identifier, got {:?}", p.as_rule())
+		Rule::map_type => Identifier {
+			name: String::from(p.as_str()),
+			span,
+		},
+		_ => unreachable!(
+			"expected identifier or rule that leads to identifier, got: {:?}",
+			p.as_rule()
+		),
 	}
 }
 
@@ -1753,7 +1766,6 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 				kind: TyKind::Primitive(Primitive {
 					kind,
 					is_array: inner.next().is_some(),
-					span: span.clone(),
 				}),
 				span,
 			}

@@ -254,7 +254,7 @@ mapping_pair = { expression ~ "=>" ~ expression }
 array_literal_init = { basic_type ~ new_array_literal }
 new_array_literal = { "[" ~ expression ~ ("," ~ expression)* ~ "]" }
 collection_literal_init = { collection_type ~ one_type_argument ~ (new_collection_literal | arguments) }
-collection_type = { ^"LIST" | ^"SET" }
+collection_type = { LIST | SET }
 new_collection_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
 
 new_class = { basic_type ~ (sobject_arguments | arguments) }
@@ -342,6 +342,7 @@ escape_sequence = {
     | "\\" ~ "u" ~ ASCII_HEX_DIGIT{4}
 }
 
+// apex "primitive" types
 BLOB = { ^"Blob" }
 BOOLEAN = { ^"Boolean" }
 DATE = { ^"Date" }
@@ -354,6 +355,9 @@ LONG = { ^"Long" }
 OBJECT = { ^"Object" }
 STRING = { ^"String" } 
 TIME = { ^"Time" }
+
+LIST = { ^"List" }
+SET = { ^"Set" }  
 
 assignment_operator = _{
     ASSIGNMENT
@@ -512,7 +516,6 @@ PRIVATE = { ^"private" }
 PROTECTED = { ^"protected" }
 PUBLIC = { ^"public" }
 RETURN = { ^"return" }
-SET = { ^"set" }  
 STATIC = { ^"static" }
 SUPER = { ^"super" }
 SWITCH = { ^"switch" }
