@@ -738,284 +738,1027 @@ fn file_parses() {
 // 	test_parse(Rule::statement, input, parse_stmt, expected);
 // }
 
-// #[test]
-// fn do_while_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		r#"do {
-// 			return x;
-// 		} while (true);"#,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: StmtKind::DoWhile(
-// 				Box::new(Block::from(vec![Stmt {
-// 					kind: StmtKind::Return(Some(Expr::from(Identifier::from("x")))),
-// 				}])),
-// 				Expr::from(Literal::from(true)),
-// 			),
-// 		},
-// 	);
-// }
+#[test]
+fn do_while_parses() {
+	let input = r#"do {
+			return x;
+		} while (true);"#;
 
-// #[test]
-// fn while_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		r#"while (true) {
-// 		return x;
-// 	}"#,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: StmtKind::While(
-// 				Expr::from(Literal::from(true)),
-// 				Box::new(Block::from(vec![Stmt {
-// 					kind: StmtKind::Return(Some(Expr::from(Identifier::from("x")))),
-// 				}])),
-// 			),
-// 		},
-// 	)
-// }
+	let expected = Stmt {
+		kind: StmtKind::DoWhile(
+			Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("x"),
+						span: Span {
+							start: 15,
+							end: 16,
+							start_pos: Position { line: 2, col: 11 },
+							end_pos: Position { line: 2, col: 12 },
+						},
+					}),
+					span: Span {
+						start: 15,
+						end: 16,
+						start_pos: Position { line: 2, col: 11 },
+						end_pos: Position { line: 2, col: 12 },
+					},
+				})),
+				span: Span {
+					start: 8,
+					end: 17,
+					start_pos: Position { line: 2, col: 4 },
+					end_pos: Position { line: 2, col: 13 },
+				},
+			}])),
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::Boolean(true),
+					span: Span {
+						start: 29,
+						end: 33,
+						start_pos: Position { line: 3, col: 12 },
+						end_pos: Position { line: 3, col: 16 },
+					},
+				}),
+				span: Span {
+					start: 29,
+					end: 33,
+					start_pos: Position { line: 3, col: 12 },
+					end_pos: Position { line: 3, col: 16 },
+				},
+			},
+		),
+		span: Span {
+			start: 0,
+			end: 35,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 18 },
+		},
+	};
 
-// #[test]
-// fn if_else_if_else_parses() {
-// 	let input = r#"if (foo) {
-// 		return bar;
-// 	} else if (bar) {
-// 		return baz;
-// 	} else {
-// 		return quux;
-// 	}"#;
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	let expected_kind = StmtKind::If(
-// 		Expr::from(Identifier::from("foo")),
-// 		Box::new(Block::from(vec![Stmt {
-// 			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
-// 		}])),
-// 		Some(vec![(
-// 			Expr::from(Identifier::from("bar")),
-// 			Box::new(Block::from(vec![Stmt {
-// 				kind: StmtKind::Return(Some(Expr::from(Identifier::from("baz")))),
-// 			}])),
-// 		)]),
-// 		Some(Box::new(Block::from(vec![Stmt {
-// 			kind: StmtKind::Return(Some(Expr::from(Identifier::from("quux")))),
-// 		}]))),
-// 	);
+#[test]
+fn while_parses() {
+	let input = r#"while (true) {
+		return x;
+	}"#;
 
-// 	test_parse(
-// 		Rule::statement,
-// 		input,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: expected_kind,
-// 		},
-// 	);
-// }
+	let expected = Stmt {
+		kind: StmtKind::While(
+			Expr {
+				kind: ExprKind::Literal(Literal {
+					kind: LiteralKind::Boolean(true),
+					span: Span {
+						start: 7,
+						end: 11,
+						start_pos: Position { line: 1, col: 8 },
+						end_pos: Position { line: 1, col: 12 },
+					},
+				}),
+				span: Span {
+					start: 7,
+					end: 11,
+					start_pos: Position { line: 1, col: 8 },
+					end_pos: Position { line: 1, col: 12 },
+				},
+			},
+			Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("x"),
+						span: Span {
+							start: 24,
+							end: 25,
+							start_pos: Position { line: 2, col: 10 },
+							end_pos: Position { line: 2, col: 11 },
+						},
+					}),
+					span: Span {
+						start: 24,
+						end: 25,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 11 },
+					},
+				})),
+				span: Span {
+					start: 17,
+					end: 26,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 12 },
+				},
+			}])),
+		),
+		span: Span {
+			start: 0,
+			end: 29,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 3 },
+		},
+	};
 
-// #[test]
-// fn if_else_if_parses() {
-// 	let input = r#"if (foo) {
-// 		return bar;
-// 	} else if (bar) {
-// 		return baz;
-// 	}"#;
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	let expected_kind = StmtKind::If(
-// 		Expr::from(Identifier::from("foo")),
-// 		Box::new(Block::from(vec![Stmt {
-// 			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
-// 		}])),
-// 		Some(vec![(
-// 			Expr::from(Identifier::from("bar")),
-// 			Box::new(Block::from(vec![Stmt {
-// 				kind: StmtKind::Return(Some(Expr::from(Identifier::from("baz")))),
-// 			}])),
-// 		)]),
-// 		None,
-// 	);
+#[test]
+fn if_else_if_else_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	} else if (bar) {
+		return baz;
+	} else {
+		return quux;
+	}"#;
 
-// 	test_parse(
-// 		Rule::statement,
-// 		input,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: expected_kind,
-// 		},
-// 	);
-// }
+	let expected = Stmt {
+		kind: StmtKind::If(
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
+				}),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 20,
+							end: 23,
+							start_pos: Position { line: 2, col: 10 },
+							end_pos: Position { line: 2, col: 13 },
+						},
+					}),
+					span: Span {
+						start: 20,
+						end: 23,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 13 },
+					},
+				})),
+				span: Span {
+					start: 13,
+					end: 24,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 14 },
+				},
+			}])),
+			Some(vec![(
+				Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 37,
+							end: 40,
+							start_pos: Position { line: 3, col: 13 },
+							end_pos: Position { line: 3, col: 16 },
+						},
+					}),
+					span: Span {
+						start: 37,
+						end: 40,
+						start_pos: Position { line: 3, col: 13 },
+						end_pos: Position { line: 3, col: 16 },
+					},
+				},
+				Box::new(Block::Body(vec![Stmt {
+					kind: StmtKind::Return(Some(Expr {
+						kind: ExprKind::Identifier(Identifier {
+							name: String::from("baz"),
+							span: Span {
+								start: 53,
+								end: 56,
+								start_pos: Position { line: 4, col: 10 },
+								end_pos: Position { line: 4, col: 13 },
+							},
+						}),
+						span: Span {
+							start: 53,
+							end: 56,
+							start_pos: Position { line: 4, col: 10 },
+							end_pos: Position { line: 4, col: 13 },
+						},
+					})),
+					span: Span {
+						start: 46,
+						end: 57,
+						start_pos: Position { line: 4, col: 3 },
+						end_pos: Position { line: 4, col: 14 },
+					},
+				}])),
+			)]),
+			Some(Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("quux"),
+						span: Span {
+							start: 77,
+							end: 81,
+							start_pos: Position { line: 6, col: 10 },
+							end_pos: Position { line: 6, col: 14 },
+						},
+					}),
+					span: Span {
+						start: 77,
+						end: 81,
+						start_pos: Position { line: 6, col: 10 },
+						end_pos: Position { line: 6, col: 14 },
+					},
+				})),
+				span: Span {
+					start: 70,
+					end: 82,
+					start_pos: Position { line: 6, col: 3 },
+					end_pos: Position { line: 6, col: 15 },
+				},
+			}]))),
+		),
+		span: Span {
+			start: 0,
+			end: 85,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 7, col: 3 },
+		},
+	};
 
-// #[test]
-// fn basic_if_parses() {
-// 	let input = r#"if (foo) {
-// 		return bar;
-// 	}"#;
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	let expected_kind = StmtKind::If(
-// 		Expr::from(Identifier::from("foo")),
-// 		Box::new(Block::from(vec![Stmt {
-// 			kind: StmtKind::Return(Some(Expr::from(Identifier::from("bar")))),
-// 		}])),
-// 		None,
-// 		None,
-// 	);
+#[test]
+fn if_else_if_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	} else if (bar) {
+		return baz;
+	}"#;
 
-// 	test_parse(
-// 		Rule::statement,
-// 		input,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: expected_kind,
-// 		},
-// 	);
-// }
+	let expected = Stmt {
+		kind: StmtKind::If(
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
+				}),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 20,
+							end: 23,
+							start_pos: Position { line: 2, col: 10 },
+							end_pos: Position { line: 2, col: 13 },
+						},
+					}),
+					span: Span {
+						start: 20,
+						end: 23,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 13 },
+					},
+				})),
+				span: Span {
+					start: 13,
+					end: 24,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 14 },
+				},
+			}])),
+			Some(vec![(
+				Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 37,
+							end: 40,
+							start_pos: Position { line: 3, col: 13 },
+							end_pos: Position { line: 3, col: 16 },
+						},
+					}),
+					span: Span {
+						start: 37,
+						end: 40,
+						start_pos: Position { line: 3, col: 13 },
+						end_pos: Position { line: 3, col: 16 },
+					},
+				},
+				Box::new(Block::Body(vec![Stmt {
+					kind: StmtKind::Return(Some(Expr {
+						kind: ExprKind::Identifier(Identifier {
+							name: String::from("baz"),
+							span: Span {
+								start: 53,
+								end: 56,
+								start_pos: Position { line: 4, col: 10 },
+								end_pos: Position { line: 4, col: 13 },
+							},
+						}),
+						span: Span {
+							start: 53,
+							end: 56,
+							start_pos: Position { line: 4, col: 10 },
+							end_pos: Position { line: 4, col: 13 },
+						},
+					})),
+					span: Span {
+						start: 46,
+						end: 57,
+						start_pos: Position { line: 4, col: 3 },
+						end_pos: Position { line: 4, col: 14 },
+					},
+				}])),
+			)]),
+			None,
+		),
+		span: Span {
+			start: 0,
+			end: 60,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 5, col: 3 },
+		},
+	};
 
-// #[test]
-// fn stmt_expr_postfix_parses() {
-// 	let inner: Expr = ExprKind::Identifier(Identifier::from("i")).into();
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	test_parse(
-// 		Rule::statement,
-// 		"i++;",
-// 		parse_stmt,
-// 		Stmt::from(StmtExpr::from(Expr {
-// 			kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
-// 		})),
-// 	)
-// }
+#[test]
+fn basic_if_parses() {
+	let input = r#"if (foo) {
+		return bar;
+	}"#;
 
-// #[test]
-// fn stmt_expr_expr_parses() {
-// 	let lhs = Expr::from(Identifier::from("foo"));
-// 	let rhs = Expr::from(Literal::from(22));
+	let expected = Stmt {
+		kind: StmtKind::If(
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
+				}),
+				span: Span {
+					start: 4,
+					end: 7,
+					start_pos: Position { line: 1, col: 5 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			Box::new(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Identifier(Identifier {
+						name: String::from("bar"),
+						span: Span {
+							start: 20,
+							end: 23,
+							start_pos: Position { line: 2, col: 10 },
+							end_pos: Position { line: 2, col: 13 },
+						},
+					}),
+					span: Span {
+						start: 20,
+						end: 23,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 13 },
+					},
+				})),
+				span: Span {
+					start: 13,
+					end: 24,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 14 },
+				},
+			}])),
+			None,
+			None,
+		),
+		span: Span {
+			start: 0,
+			end: 27,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 3 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::statement,
-// 		"foo = 22;",
-// 		parse_stmt,
-// 		Stmt::from(StmtExpr::from(Expr {
-// 			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs)),
-// 		})),
-// 	);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// #[test]
-// fn stmt_expr_local_parses() {
-// 	let test_str = "Integer foo = 22;";
+#[test]
+fn stmt_expr_postfix_parses() {
+	let input = "i++;";
 
-// 	let ty = Ty::from(PrimitiveKind::Integer);
-// 	let id = Identifier::from("foo");
-// 	let rhs = Expr::from(Literal::from(22));
+	let inner = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 0,
+				end: 1,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 2 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 1,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 2 },
+		},
+	};
 
-// 	let expected = Stmt {
-// 		kind: StmtKind::StmtExpr(StmtExpr::Local(Local {
-// 			annotation: None,
-// 			is_final: false,
-// 			ty,
-// 			id,
-// 			rhs: Some(rhs),
-// 		})),
-// 	};
+	let expected = Stmt {
+		kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+			kind: ExprKind::Postfix(Box::new(inner), IncDecOp::Inc),
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		})),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
 
-// 	test_parse(Rule::statement, test_str, parse_stmt, expected);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// #[test]
-// fn try_catch_catch_finally_parses() {
-// 	let test_str = r#"try {
-// 		insert foo;
-// 	} catch (Exception e) {
-// 		return bar;
-// 	} catch (DmlException de) {
-// 		return baz;
-// 	} finally {
-// 		return quux;
-// 	}"#;
+#[test]
+fn stmt_expr_expr_parses() {
+	let input = "foo = 22;";
 
-// 	let try_block = vec![StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into()];
+	let lhs = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 3,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 4 },
+		},
+	};
 
-// 	let catch_clause = (
-// 		Ty::from(Identifier::from("Exception")),
-// 		Identifier::from("e"),
-// 		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
-// 			"bar",
-// 		))))
-// 		.into()]),
-// 	);
+	let rhs = Expr {
+		kind: ExprKind::Literal(Literal {
+			kind: LiteralKind::Integer(22),
+			span: Span {
+				start: 6,
+				end: 8,
+				start_pos: Position { line: 1, col: 7 },
+				end_pos: Position { line: 1, col: 9 },
+			},
+		}),
+		span: Span {
+			start: 6,
+			end: 8,
+			start_pos: Position { line: 1, col: 7 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// 	let opt_catch = Some(vec![(
-// 		Ty::from(Identifier::from("DmlException")),
-// 		Identifier::from("de"),
-// 		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
-// 			"baz",
-// 		))))
-// 		.into()]),
-// 	)]);
+	let expected = Stmt {
+		kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+			kind: ExprKind::Assignment(Box::new(lhs), AssignOp::Eq, Box::new(rhs)),
+			span: Span {
+				start: 0,
+				end: 8,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 9 },
+			},
+		})),
+		span: Span {
+			start: 0,
+			end: 8,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// 	let finally = Some(Block::from(vec![StmtKind::Return(Some(Expr::from(
-// 		Identifier::from("quux"),
-// 	)))
-// 	.into()]));
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	let expected = StmtKind::TryCatch(
-// 		Block::from(try_block).to_boxed(),
-// 		catch_clause,
-// 		opt_catch,
-// 		finally,
-// 	);
+#[test]
+fn stmt_expr_local_parses() {
+	let input = "Integer foo = 22;";
 
-// 	test_parse(Rule::statement, test_str, parse_stmt, expected.into());
-// }
+	let ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+		span: Span {
+			start: 0,
+			end: 8,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// #[test]
-// fn try_catch_simple_parses() {
-// 	let test_str = r#"try {
-// 		insert foo;
-// 	} catch (Exception e) {
-// 		return bar;
-// 	}"#;
+	let id = Identifier {
+		name: String::from("foo"),
+		span: Span {
+			start: 8,
+			end: 11,
+			start_pos: Position { line: 1, col: 9 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// 	let try_block = vec![StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into()];
+	let rhs = Expr {
+		kind: ExprKind::Literal(Literal {
+			kind: LiteralKind::Integer(22),
+			span: Span {
+				start: 14,
+				end: 16,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 17 },
+			},
+		}),
+		span: Span {
+			start: 14,
+			end: 16,
+			start_pos: Position { line: 1, col: 15 },
+			end_pos: Position { line: 1, col: 17 },
+		},
+	};
 
-// 	let catch_clause = (
-// 		Ty::from(Identifier::from("Exception")),
-// 		Identifier::from("e"),
-// 		Block::from(vec![StmtKind::Return(Some(Expr::from(Identifier::from(
-// 			"bar",
-// 		))))
-// 		.into()]),
-// 	);
+	let expected = Stmt {
+		kind: StmtKind::StmtExpr(StmtExpr::Local(Local {
+			annotation: None,
+			is_final: false,
+			ty,
+			id,
+			rhs: Some(rhs),
+			span: Span {
+				start: 0,
+				end: 16,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 17 },
+			},
+		})),
+		span: Span {
+			start: 0,
+			end: 16,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 17 },
+		},
+	};
 
-// 	let expected = StmtKind::TryCatch(Block::from(try_block).to_boxed(), catch_clause, None, None);
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	test_parse(Rule::statement, test_str, parse_stmt, expected.into());
-// }
+#[test]
+fn try_catch_catch_finally_parses() {
+	let test_str = r#"try {
+		insert foo;
+	} catch (Exception e) {
+		return bar;
+	} catch (DmlException de) {
+		return baz;
+	} finally {
+		return quux;
+	}"#;
 
-// #[test]
-// fn dml_stmt_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"insert foo;",
-// 		parse_stmt,
-// 		StmtKind::Dml(DmlOp::Insert, Expr::from(Identifier::from("foo"))).into(),
-// 	);
-// }
+	let try_block = Box::new(Block::Body(vec![Stmt {
+		kind: StmtKind::Dml(
+			DmlOp::Insert,
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 15,
+						end: 18,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 13 },
+					},
+				}),
+				span: Span {
+					start: 15,
+					end: 18,
+					start_pos: Position { line: 2, col: 10 },
+					end_pos: Position { line: 2, col: 13 },
+				},
+			},
+		),
+		span: Span {
+			start: 8,
+			end: 19,
+			start_pos: Position { line: 2, col: 3 },
+			end_pos: Position { line: 2, col: 14 },
+		},
+	}]));
 
-// #[test]
-// fn throw_stmt_parses() {
-// 	test_parse(
-// 		Rule::statement,
-// 		"throw new TestException();",
-// 		parse_stmt,
-// 		StmtKind::Throw(
-// 			ExprKind::New(
-// 				Ty::from(Identifier::from("TestException")),
-// 				NewType::Class(ClassArgs::Basic(None)),
-// 			)
-// 			.into(),
-// 		)
-// 		.into(),
-// 	);
-// }
+	let catch_clause = (
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Exception"),
+					span: Span {
+						start: 30,
+						end: 39,
+						start_pos: Position { line: 3, col: 11 },
+						end_pos: Position { line: 3, col: 20 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 30,
+					end: 40,
+					start_pos: Position { line: 3, col: 11 },
+					end_pos: Position { line: 3, col: 21 },
+				},
+			}),
+			span: Span {
+				start: 30,
+				end: 40,
+				start_pos: Position { line: 3, col: 11 },
+				end_pos: Position { line: 3, col: 21 },
+			},
+		},
+		Identifier {
+			name: String::from("e"),
+			span: Span {
+				start: 40,
+				end: 41,
+				start_pos: Position { line: 3, col: 21 },
+				end_pos: Position { line: 3, col: 22 },
+			},
+		},
+		Block::Body(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("bar"),
+					span: Span {
+						start: 54,
+						end: 57,
+						start_pos: Position { line: 4, col: 10 },
+						end_pos: Position { line: 4, col: 13 },
+					},
+				}),
+				span: Span {
+					start: 54,
+					end: 57,
+					start_pos: Position { line: 4, col: 10 },
+					end_pos: Position { line: 4, col: 13 },
+				},
+			})),
+			span: Span {
+				start: 47,
+				end: 58,
+				start_pos: Position { line: 4, col: 3 },
+				end_pos: Position { line: 4, col: 14 },
+			},
+		}]),
+	);
+
+	let opt_catch = Some(vec![(
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("DmlException"),
+					span: Span {
+						start: 69,
+						end: 81,
+						start_pos: Position { line: 5, col: 11 },
+						end_pos: Position { line: 5, col: 23 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 69,
+					end: 82,
+					start_pos: Position { line: 5, col: 11 },
+					end_pos: Position { line: 5, col: 24 },
+				},
+			}),
+			span: Span {
+				start: 69,
+				end: 82,
+				start_pos: Position { line: 5, col: 11 },
+				end_pos: Position { line: 5, col: 24 },
+			},
+		},
+		Identifier {
+			name: String::from("de"),
+			span: Span {
+				start: 82,
+				end: 84,
+				start_pos: Position { line: 5, col: 24 },
+				end_pos: Position { line: 5, col: 26 },
+			},
+		},
+		Block::Body(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("baz"),
+					span: Span {
+						start: 97,
+						end: 100,
+						start_pos: Position { line: 6, col: 10 },
+						end_pos: Position { line: 6, col: 13 },
+					},
+				}),
+				span: Span {
+					start: 97,
+					end: 100,
+					start_pos: Position { line: 6, col: 10 },
+					end_pos: Position { line: 6, col: 13 },
+				},
+			})),
+			span: Span {
+				start: 90,
+				end: 101,
+				start_pos: Position { line: 6, col: 3 },
+				end_pos: Position { line: 6, col: 14 },
+			},
+		}]),
+	)]);
+
+	let finally = Some(Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Identifier(Identifier {
+				name: String::from("quux"),
+				span: Span {
+					start: 124,
+					end: 128,
+					start_pos: Position { line: 8, col: 10 },
+					end_pos: Position { line: 8, col: 14 },
+				},
+			}),
+			span: Span {
+				start: 124,
+				end: 128,
+				start_pos: Position { line: 8, col: 10 },
+				end_pos: Position { line: 8, col: 14 },
+			},
+		})),
+		span: Span {
+			start: 117,
+			end: 129,
+			start_pos: Position { line: 8, col: 3 },
+			end_pos: Position { line: 8, col: 15 },
+		},
+	}]));
+
+	let expected = Stmt {
+		kind: StmtKind::TryCatch(try_block, catch_clause, opt_catch, finally),
+		span: Span {
+			start: 0,
+			end: 132,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 9, col: 3 },
+		},
+	};
+
+	test_parse(Rule::statement, test_str, parse_stmt, expected);
+}
+
+#[test]
+fn try_catch_simple_parses() {
+	let input = r#"try {
+		insert foo;
+	} catch (Exception e) {
+		return bar;
+	}"#;
+
+	let try_block = Box::new(Block::Body(vec![Stmt {
+		kind: StmtKind::Dml(
+			DmlOp::Insert,
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 15,
+						end: 18,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 13 },
+					},
+				}),
+				span: Span {
+					start: 15,
+					end: 18,
+					start_pos: Position { line: 2, col: 10 },
+					end_pos: Position { line: 2, col: 13 },
+				},
+			},
+		),
+		span: Span {
+			start: 8,
+			end: 19,
+			start_pos: Position { line: 2, col: 3 },
+			end_pos: Position { line: 2, col: 14 },
+		},
+	}]));
+
+	let catch_clause = (
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Exception"),
+					span: Span {
+						start: 30,
+						end: 39,
+						start_pos: Position { line: 3, col: 11 },
+						end_pos: Position { line: 3, col: 20 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 30,
+					end: 40,
+					start_pos: Position { line: 3, col: 11 },
+					end_pos: Position { line: 3, col: 21 },
+				},
+			}),
+			span: Span {
+				start: 30,
+				end: 40,
+				start_pos: Position { line: 3, col: 11 },
+				end_pos: Position { line: 3, col: 21 },
+			},
+		},
+		Identifier {
+			name: String::from("e"),
+			span: Span {
+				start: 40,
+				end: 41,
+				start_pos: Position { line: 3, col: 21 },
+				end_pos: Position { line: 3, col: 22 },
+			},
+		},
+		Block::Body(vec![Stmt {
+			kind: StmtKind::Return(Some(Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("bar"),
+					span: Span {
+						start: 54,
+						end: 57,
+						start_pos: Position { line: 4, col: 10 },
+						end_pos: Position { line: 4, col: 13 },
+					},
+				}),
+				span: Span {
+					start: 54,
+					end: 57,
+					start_pos: Position { line: 4, col: 10 },
+					end_pos: Position { line: 4, col: 13 },
+				},
+			})),
+			span: Span {
+				start: 47,
+				end: 58,
+				start_pos: Position { line: 4, col: 3 },
+				end_pos: Position { line: 4, col: 14 },
+			},
+		}]),
+	);
+
+	let expected = Stmt {
+		kind: StmtKind::TryCatch(try_block, catch_clause, None, None),
+		span: Span {
+			start: 0,
+			end: 61,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 5, col: 3 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
+fn dml_stmt_parses() {
+	let input = "insert foo;";
+
+	let expected = Stmt {
+		kind: StmtKind::Dml(
+			DmlOp::Insert,
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("foo"),
+					span: Span {
+						start: 7,
+						end: 10,
+						start_pos: Position { line: 1, col: 8 },
+						end_pos: Position { line: 1, col: 11 },
+					},
+				}),
+				span: Span {
+					start: 7,
+					end: 10,
+					start_pos: Position { line: 1, col: 8 },
+					end_pos: Position { line: 1, col: 11 },
+				},
+			},
+		),
+		span: Span {
+			start: 0,
+			end: 11,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
+fn throw_stmt_parses() {
+	let input = "throw new TestException();";
+
+	let expected = Stmt {
+		kind: StmtKind::Throw(Expr {
+			kind: ExprKind::New(
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						name: Identifier {
+							name: String::from("TestException"),
+							span: Span {
+								start: 10,
+								end: 23,
+								start_pos: Position { line: 1, col: 11 },
+								end_pos: Position { line: 1, col: 24 },
+							},
+						},
+						subclass: None,
+						type_arguments: None,
+						is_array: false,
+						span: Span {
+							start: 10,
+							end: 23,
+							start_pos: Position { line: 1, col: 11 },
+							end_pos: Position { line: 1, col: 24 },
+						},
+					}),
+					span: Span {
+						start: 10,
+						end: 23,
+						start_pos: Position { line: 1, col: 11 },
+						end_pos: Position { line: 1, col: 24 },
+					},
+				},
+				NewType::Class(ClassArgs::Basic(None)),
+			),
+			span: Span {
+				start: 23,
+				end: 25,
+				start_pos: Position { line: 1, col: 24 },
+				end_pos: Position { line: 1, col: 26 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 26,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 27 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
 #[test]
 fn return_stmt_some_parses() {
