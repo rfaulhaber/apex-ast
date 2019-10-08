@@ -674,69 +674,306 @@ fn file_parses() {
 // 	)
 // }
 
-// #[test]
-// fn for_basic_simple_parses() {
-// 	let input = "for (Integer i = 0; i < 10; i++) sum += i;";
+#[test]
+fn for_basic_simple_parses() {
+	let input = "for (Integer i = 0; i < 10; i++) sum += i;";
 
-// 	let expected = Stmt {
-// 		kind: StmtKind::For(ForStmt::Basic(
-// 			Some(vec![StmtExpr::Local(Local {
-// 				annotation: None,
-// 				is_final: false,
-// 				ty: Ty::from(PrimitiveKind::Integer),
-// 				id: Identifier::from("i"),
-// 				rhs: Some(Expr {
-// 					kind: ExprKind::Literal(Literal::from(0)),
-// 				}),
-// 			})]),
-// 			Some(Expr {
-// 				kind: ExprKind::Infix(
-// 					Box::new(Expr::from(Identifier::from("i"))),
-// 					BinOp::Lt,
-// 					Box::new(Expr::from(Literal::from(10))),
-// 				),
-// 			}),
-// 			Some(StmtExpr::Expr(Expr {
-// 				kind: ExprKind::Postfix(Box::new(Expr::from(Identifier::from("i"))), IncDecOp::Inc),
-// 			})),
-// 			Box::new(Block::Inline(Box::new(Stmt {
-// 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
-// 					kind: ExprKind::Assignment(
-// 						Box::new(Expr::from(Identifier::from("sum"))),
-// 						AssignOp::Add,
-// 						Box::new(Expr::from(Identifier::from("i"))),
-// 					),
-// 				})),
-// 			}))),
-// 		)),
-// 	};
+	let expected = Stmt {
+		kind: StmtKind::For(ForStmt::Basic(
+			Some(vec![StmtExpr::Local(Local {
+				annotation: None,
+				is_final: false,
+				ty: Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::Integer,
+						is_array: false,
+					}),
+					span: Span {
+						start: 5,
+						end: 13,
+						start_pos: Position { line: 1, col: 6 },
+						end_pos: Position { line: 1, col: 14 },
+					},
+				},
+				id: Identifier {
+					name: String::from("i"),
+					span: Span {
+						start: 13,
+						end: 14,
+						start_pos: Position { line: 1, col: 14 },
+						end_pos: Position { line: 1, col: 15 },
+					},
+				},
+				rhs: Some(Expr {
+					kind: ExprKind::Literal(Literal {
+						kind: LiteralKind::Integer(0),
+						span: Span {
+							start: 17,
+							end: 18,
+							start_pos: Position { line: 1, col: 18 },
+							end_pos: Position { line: 1, col: 19 },
+						},
+					}),
+					span: Span {
+						start: 17,
+						end: 18,
+						start_pos: Position { line: 1, col: 18 },
+						end_pos: Position { line: 1, col: 19 },
+					},
+				}),
+				span: Span {
+					start: 5,
+					end: 18,
+					start_pos: Position { line: 1, col: 6 },
+					end_pos: Position { line: 1, col: 19 },
+				},
+			})]),
+			Some(Expr {
+				kind: ExprKind::Infix(
+					Box::new(Expr {
+						kind: ExprKind::Identifier(Identifier {
+							name: String::from("i"),
+							span: Span {
+								start: 20,
+								end: 21,
+								start_pos: Position { line: 1, col: 21 },
+								end_pos: Position { line: 1, col: 22 },
+							},
+						}),
+						span: Span {
+							start: 20,
+							end: 21,
+							start_pos: Position { line: 1, col: 21 },
+							end_pos: Position { line: 1, col: 22 },
+						},
+					}),
+					BinOp::Lt,
+					Box::new(Expr {
+						kind: ExprKind::Literal(Literal {
+							kind: LiteralKind::Integer(10),
+							span: Span {
+								start: 24,
+								end: 26,
+								start_pos: Position { line: 1, col: 25 },
+								end_pos: Position { line: 1, col: 27 },
+							},
+						}),
+						span: Span {
+							start: 24,
+							end: 26,
+							start_pos: Position { line: 1, col: 25 },
+							end_pos: Position { line: 1, col: 27 },
+						},
+					}),
+				),
+				span: Span {
+					start: 20,
+					end: 26,
+					start_pos: Position { line: 1, col: 21 },
+					end_pos: Position { line: 1, col: 27 },
+				},
+			}),
+			Some(StmtExpr::Expr(Expr {
+				kind: ExprKind::Postfix(
+					Box::new(Expr {
+						kind: ExprKind::Identifier(Identifier {
+							name: String::from("i"),
+							span: Span {
+								start: 28,
+								end: 29,
+								start_pos: Position { line: 1, col: 29 },
+								end_pos: Position { line: 1, col: 30 },
+							},
+						}),
+						span: Span {
+							start: 28,
+							end: 29,
+							start_pos: Position { line: 1, col: 29 },
+							end_pos: Position { line: 1, col: 30 },
+						},
+					}),
+					IncDecOp::Inc,
+				),
+				span: Span {
+					start: 28,
+					end: 31,
+					start_pos: Position { line: 1, col: 29 },
+					end_pos: Position { line: 1, col: 32 },
+				},
+			})),
+			Box::new(Block::Inline(Box::new(Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("sum"),
+								span: Span {
+									start: 33,
+									end: 36,
+									start_pos: Position { line: 1, col: 34 },
+									end_pos: Position { line: 1, col: 37 },
+								},
+							}),
+							span: Span {
+								start: 33,
+								end: 36,
+								start_pos: Position { line: 1, col: 34 },
+								end_pos: Position { line: 1, col: 37 },
+							},
+						}),
+						AssignOp::Add,
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("i"),
+								span: Span {
+									start: 40,
+									end: 41,
+									start_pos: Position { line: 1, col: 41 },
+									end_pos: Position { line: 1, col: 42 },
+								},
+							}),
+							span: Span {
+								start: 40,
+								end: 41,
+								start_pos: Position { line: 1, col: 41 },
+								end_pos: Position { line: 1, col: 42 },
+							},
+						}),
+					),
+					span: Span {
+						start: 33,
+						end: 41,
+						start_pos: Position { line: 1, col: 34 },
+						end_pos: Position { line: 1, col: 42 },
+					},
+				})),
+				span: Span {
+					start: 33,
+					end: 41,
+					start_pos: Position { line: 1, col: 34 },
+					end_pos: Position { line: 1, col: 42 },
+				},
+			}))),
+		)),
+		span: Span {
+			start: 0,
+			end: 42,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 43 },
+		},
+	};
 
-// 	test_parse(Rule::statement, input, parse_stmt, expected);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// #[test]
-// fn for_enhanced_parses() {
-// 	let input = "for (Integer i : numbers) sum += i;";
+#[test]
+fn for_enhanced_parses() {
+	let input = "for (Integer i : numbers) sum += i;";
 
-// 	let expected = Stmt {
-// 		kind: StmtKind::For(ForStmt::Enhanced(
-// 			Ty::from(PrimitiveKind::Integer),
-// 			Identifier::from("i"),
-// 			Expr::from(Identifier::from("numbers")),
-// 			Box::new(Block::Inline(Box::new(Stmt {
-// 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
-// 					kind: ExprKind::Assignment(
-// 						Box::new(Expr::from(Identifier::from("sum"))),
-// 						AssignOp::Add,
-// 						Box::new(Expr::from(Identifier::from("i"))),
-// 					),
-// 				})),
-// 			}))),
-// 		)),
-// 	};
+	let expected = Stmt {
+		kind: StmtKind::For(ForStmt::Enhanced(
+			Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: false,
+				}),
+				span: Span {
+					start: 5,
+					end: 13,
+					start_pos: Position { line: 1, col: 6 },
+					end_pos: Position { line: 1, col: 14 },
+				},
+			},
+			Identifier {
+				name: String::from("i"),
+				span: Span {
+					start: 13,
+					end: 14,
+					start_pos: Position { line: 1, col: 14 },
+					end_pos: Position { line: 1, col: 15 },
+				},
+			},
+			Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("numbers"),
+					span: Span {
+						start: 17,
+						end: 24,
+						start_pos: Position { line: 1, col: 18 },
+						end_pos: Position { line: 1, col: 25 },
+					},
+				}),
+				span: Span {
+					start: 17,
+					end: 24,
+					start_pos: Position { line: 1, col: 18 },
+					end_pos: Position { line: 1, col: 25 },
+				},
+			},
+			Box::new(Block::Inline(Box::new(Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("sum"),
+								span: Span {
+									start: 26,
+									end: 29,
+									start_pos: Position { line: 1, col: 27 },
+									end_pos: Position { line: 1, col: 30 },
+								},
+							}),
+							span: Span {
+								start: 26,
+								end: 29,
+								start_pos: Position { line: 1, col: 27 },
+								end_pos: Position { line: 1, col: 30 },
+							},
+						}),
+						AssignOp::Add,
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("i"),
+								span: Span {
+									start: 33,
+									end: 34,
+									start_pos: Position { line: 1, col: 34 },
+									end_pos: Position { line: 1, col: 35 },
+								},
+							}),
+							span: Span {
+								start: 33,
+								end: 34,
+								start_pos: Position { line: 1, col: 34 },
+								end_pos: Position { line: 1, col: 35 },
+							},
+						}),
+					),
+					span: Span {
+						start: 26,
+						end: 34,
+						start_pos: Position { line: 1, col: 27 },
+						end_pos: Position { line: 1, col: 35 },
+					},
+				})),
+				span: Span {
+					start: 26,
+					end: 34,
+					start_pos: Position { line: 1, col: 27 },
+					end_pos: Position { line: 1, col: 35 },
+				},
+			}))),
+		)),
+		span: Span {
+			start: 0,
+			end: 35,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 36 },
+		},
+	};
 
-// 	test_parse(Rule::statement, input, parse_stmt, expected);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
 #[test]
 fn do_while_parses() {
