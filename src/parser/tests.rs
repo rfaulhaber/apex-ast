@@ -483,196 +483,701 @@ fn file_parses() {
 // 	);
 // }
 
-// #[test]
-// fn class_method_maximal_parses() {
-// 	let input = "@isTest public static testMethod Integer foo(Bar b, Baz bz) {}";
+#[test]
+fn class_method_maximal_parses() {
+	let input = "@isTest public static testMethod Integer foo(Bar b, Baz bz) {}";
 
-// 	let expected = ClassMethod {
-// 		annotation: Some(Annotation::from("isTest")),
-// 		access_mod: Some(AccessModifier::Public),
-// 		impl_mod: Some(ImplModifier::Static),
-// 		is_testmethod: true,
-// 		return_type: Ty::from(PrimitiveKind::Integer),
-// 		identifier: Identifier::from("foo"),
-// 		params: vec![
-// 			(Ty::from(Identifier::from("Bar")), Identifier::from("b")),
-// 			(Ty::from(Identifier::from("Baz")), Identifier::from("bz")),
-// 		],
-// 		block: Some(Block::Body(Vec::new())),
-// 	};
+	let expected = ClassMethod {
+		annotation: Some(Annotation {
+			name: Identifier {
+				name: String::from("isTest"),
+				span: Span {
+					start: 1,
+					end: 7,
+					start_pos: Position { line: 1, col: 2 },
+					end_pos: Position { line: 1, col: 8 },
+				},
+			},
+			keypairs: None,
+			span: Span {
+				start: 0,
+				end: 8,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 9 },
+			},
+		}),
+		access_mod: Some(AccessModifier::Public),
+		impl_mod: Some(ImplModifier::Static),
+		is_testmethod: true,
+		return_type: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::Integer,
+				is_array: false,
+			}),
+			span: Span {
+				start: 33,
+				end: 41,
+				start_pos: Position { line: 1, col: 34 },
+				end_pos: Position { line: 1, col: 42 },
+			},
+		},
+		identifier: Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 41,
+				end: 44,
+				start_pos: Position { line: 1, col: 42 },
+				end_pos: Position { line: 1, col: 45 },
+			},
+		},
+		params: vec![
+			// (Ty::from(Identifier::from("Bar")), Identifier::from("b")),
+			(
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						name: Identifier {
+							name: String::from("Bar"),
+							span: Span {
+								start: 45,
+								end: 48,
+								start_pos: Position { line: 1, col: 46 },
+								end_pos: Position { line: 1, col: 49 },
+							},
+						},
+						subclass: None,
+						type_arguments: None,
+						is_array: false,
+						span: Span {
+							start: 45,
+							end: 49,
+							start_pos: Position { line: 1, col: 46 },
+							end_pos: Position { line: 1, col: 50 },
+						},
+					}),
+					span: Span {
+						start: 45,
+						end: 49,
+						start_pos: Position { line: 1, col: 46 },
+						end_pos: Position { line: 1, col: 50 },
+					},
+				},
+				Identifier {
+					name: String::from("b"),
+					span: Span {
+						start: 49,
+						end: 50,
+						start_pos: Position { line: 1, col: 50 },
+						end_pos: Position { line: 1, col: 51 },
+					},
+				},
+			),
+			(
+				Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						name: Identifier {
+							name: String::from("Baz"),
+							span: Span {
+								start: 52,
+								end: 55,
+								start_pos: Position { line: 1, col: 53 },
+								end_pos: Position { line: 1, col: 56 },
+							},
+						},
+						subclass: None,
+						type_arguments: None,
+						is_array: false,
+						span: Span {
+							start: 52,
+							end: 56,
+							start_pos: Position { line: 1, col: 53 },
+							end_pos: Position { line: 1, col: 57 },
+						},
+					}),
+					span: Span {
+						start: 52,
+						end: 56,
+						start_pos: Position { line: 1, col: 53 },
+						end_pos: Position { line: 1, col: 57 },
+					},
+				},
+				Identifier {
+					name: String::from("bz"),
+					span: Span {
+						start: 56,
+						end: 58,
+						start_pos: Position { line: 1, col: 57 },
+						end_pos: Position { line: 1, col: 59 },
+					},
+				},
+			),
+		],
+		block: Some(Block::Body(Vec::new())),
+		span: Span {
+			start: 0,
+			end: 62,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 63 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_method_declaration,
-// 		input,
-// 		parse_class_method,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
+}
 
-// #[test]
-// fn class_method_basic_parses() {
-// 	let input = "public static void foo() {}";
+#[test]
+fn class_method_basic_parses() {
+	let input = "public static void foo() {}";
 
-// 	let expected = ClassMethod {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		impl_mod: Some(ImplModifier::Static),
-// 		is_testmethod: false,
-// 		return_type: Ty::void(),
-// 		identifier: Identifier::from("foo"),
-// 		params: Vec::new(),
-// 		block: Some(Block::Body(Vec::new())),
-// 	};
+	let expected = ClassMethod {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		impl_mod: Some(ImplModifier::Static),
+		is_testmethod: false,
+		return_type: Ty {
+			kind: TyKind::Void,
+			span: Span {
+				start: 14,
+				end: 19,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 20 },
+			},
+		},
+		identifier: Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 19,
+				end: 22,
+				start_pos: Position { line: 1, col: 20 },
+				end_pos: Position { line: 1, col: 23 },
+			},
+		},
+		params: Vec::new(),
+		block: Some(Block::Body(Vec::new())),
+		span: Span {
+			start: 0,
+			end: 27,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 28 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_method_declaration,
-// 		input,
-// 		parse_class_method,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
+}
 
-// #[test]
-// fn switch_basic_parses() {
-// 	let input = r#"switch on i {}"#;
+#[test]
+fn switch_basic_parses() {
+	let input = r#"switch on i {}"#;
 
-// 	let expr = Expr::from(Identifier::from("i"));
+	let expr = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 10,
+				end: 11,
+				start_pos: Position { line: 1, col: 11 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 10,
+			end: 11,
+			start_pos: Position { line: 1, col: 11 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// 	let expected = Stmt {
-// 		kind: StmtKind::Switch(expr, None, None),
-// 	};
+	let expected = Stmt {
+		kind: StmtKind::Switch(expr, None, None),
+		span: Span {
+			start: 0,
+			end: 14,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 15 },
+		},
+	};
 
-// 	test_parse(Rule::statement, input, parse_stmt, expected);
-// }
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// #[test]
-// fn switch_values_parses() {
-// 	let input = r#"switch on i {
-//    when 2, 3, 4 {
-//        return 1;
-//    }
-//    when 5, 6 {
-//        return 2;
-//    }
-//    when 7 {
-//        return 3;
-//    }
-//    when else {
-//        return 4;
-//    }
-// }"#;
+#[test]
+fn switch_values_parses() {
+	let input = r#"switch on i {
+   when 2, 3, 4 {
+       return 1;
+   }
+   when 5, 6 {
+       return 2;
+   }
+   when 7 {
+       return 3;
+   }
+   when else {
+       return 4;
+   }
+}"#;
 
-// 	let test_expr = Expr::from(Identifier::from("i"));
+	let test_expr = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("i"),
+			span: Span {
+				start: 10,
+				end: 11,
+				start_pos: Position { line: 1, col: 11 },
+				end_pos: Position { line: 1, col: 12 },
+			},
+		}),
+		span: Span {
+			start: 10,
+			end: 11,
+			start_pos: Position { line: 1, col: 11 },
+			end_pos: Position { line: 1, col: 12 },
+		},
+	};
 
-// 	let first_when_values = WhenCondition::Value(vec![
-// 		WhenValue::Literal(Literal::from(2)),
-// 		WhenValue::Literal(Literal::from(3)),
-// 		WhenValue::Literal(Literal::from(4)),
-// 	]);
+	let first_when_values = WhenCondition::Value(vec![
+		WhenValue::Literal(Literal {
+			kind: LiteralKind::Integer(2),
+			span: Span {
+				start: 22,
+				end: 23,
+				start_pos: Position { line: 2, col: 9 },
+				end_pos: Position { line: 2, col: 10 },
+			},
+		}),
+		WhenValue::Literal(Literal {
+			kind: LiteralKind::Integer(3),
+			span: Span {
+				start: 25,
+				end: 26,
+				start_pos: Position { line: 2, col: 12 },
+				end_pos: Position { line: 2, col: 13 },
+			},
+		}),
+		WhenValue::Literal(Literal {
+			kind: LiteralKind::Integer(4),
+			span: Span {
+				start: 28,
+				end: 29,
+				start_pos: Position { line: 2, col: 15 },
+				end_pos: Position { line: 2, col: 16 },
+			},
+		}),
+	]);
 
-// 	let first_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(1)))),
-// 	}]);
+	let first_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(1),
+				span: Span {
+					start: 46,
+					end: 47,
+					start_pos: Position { line: 3, col: 15 },
+					end_pos: Position { line: 3, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 46,
+				end: 47,
+				start_pos: Position { line: 3, col: 15 },
+				end_pos: Position { line: 3, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 39,
+			end: 48,
+			start_pos: Position { line: 3, col: 8 },
+			end_pos: Position { line: 3, col: 17 },
+		},
+	}]);
 
-// 	let second_when_values = WhenCondition::Value(vec![
-// 		WhenValue::Literal(Literal::from(5)),
-// 		WhenValue::Literal(Literal::from(6)),
-// 	]);
+	let second_when_values = WhenCondition::Value(vec![
+		WhenValue::Literal(Literal {
+			kind: LiteralKind::Integer(5),
+			span: Span {
+				start: 62,
+				end: 63,
+				start_pos: Position { line: 5, col: 9 },
+				end_pos: Position { line: 5, col: 10 },
+			},
+		}),
+		WhenValue::Literal(Literal {
+			kind: LiteralKind::Integer(6),
+			span: Span {
+				start: 65,
+				end: 66,
+				start_pos: Position { line: 5, col: 12 },
+				end_pos: Position { line: 5, col: 13 },
+			},
+		}),
+	]);
 
-// 	let second_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(2)))),
-// 	}]);
+	let second_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(2),
+				span: Span {
+					start: 83,
+					end: 84,
+					start_pos: Position { line: 6, col: 15 },
+					end_pos: Position { line: 6, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 83,
+				end: 84,
+				start_pos: Position { line: 6, col: 15 },
+				end_pos: Position { line: 6, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 76,
+			end: 85,
+			start_pos: Position { line: 6, col: 8 },
+			end_pos: Position { line: 6, col: 17 },
+		},
+	}]);
 
-// 	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal::from(7))]);
+	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal {
+		kind: LiteralKind::Integer(7),
+		span: Span {
+			start: 99,
+			end: 100,
+			start_pos: Position { line: 8, col: 9 },
+			end_pos: Position { line: 8, col: 10 },
+		},
+	})]);
 
-// 	let third_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(3)))),
-// 	}]);
+	let third_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(3),
+				span: Span {
+					start: 117,
+					end: 118,
+					start_pos: Position { line: 9, col: 15 },
+					end_pos: Position { line: 9, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 117,
+				end: 118,
+				start_pos: Position { line: 9, col: 15 },
+				end_pos: Position { line: 9, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 110,
+			end: 119,
+			start_pos: Position { line: 9, col: 8 },
+			end_pos: Position { line: 9, col: 17 },
+		},
+	}]);
 
-// 	let else_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(4)))),
-// 	}]);
+	let else_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(4),
+				span: Span {
+					start: 154,
+					end: 155,
+					start_pos: Position { line: 12, col: 15 },
+					end_pos: Position { line: 12, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 154,
+				end: 155,
+				start_pos: Position { line: 12, col: 15 },
+				end_pos: Position { line: 12, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 147,
+			end: 156,
+			start_pos: Position { line: 12, col: 8 },
+			end_pos: Position { line: 12, col: 17 },
+		},
+	}]);
 
-// 	test_parse(
-// 		Rule::statement,
-// 		input,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: StmtKind::Switch(
-// 				test_expr,
-// 				Some(vec![
-// 					(first_when_values, first_block),
-// 					(second_when_values, second_block),
-// 					(third_when_values, third_block),
-// 				]),
-// 				Some(else_block),
-// 			),
-// 		},
-// 	)
-// }
+	let expected = Stmt {
+		kind: StmtKind::Switch(
+			test_expr,
+			Some(vec![
+				(first_when_values, first_block),
+				(second_when_values, second_block),
+				(third_when_values, third_block),
+			]),
+			Some(else_block),
+		),
+		span: Span {
+			start: 0,
+			end: 163,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 14, col: 2 },
+		},
+	};
 
-// #[test]
-// fn switch_types_parses() {
-// 	let input = r#"switch on sobject {
-//    when Account a {
-//        return 1;
-//    }
-//    when Contact c {
-//        return 2;
-//    }
-//    when null {
-//        return 3;
-//    }
-//    when else {
-//        return 4;
-//    }
-// }"#;
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
-// 	let test_expr = Expr::from(Identifier::from("sobject"));
+#[test]
+fn switch_types_parses() {
+	let input = r#"switch on sobject {
+   when Account a {
+       return 1;
+   }
+   when Contact c {
+       return 2;
+   }
+   when null {
+       return 3;
+   }
+   when else {
+       return 4;
+   }
+}"#;
 
-// 	let first_when_values =
-// 		WhenCondition::Type(Ty::from(Identifier::from("Account")), Identifier::from("a"));
+	let test_expr = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("sobject"),
+			span: Span {
+				start: 10,
+				end: 17,
+				start_pos: Position { line: 1, col: 11 },
+				end_pos: Position { line: 1, col: 18 },
+			},
+		}),
+		span: Span {
+			start: 10,
+			end: 17,
+			start_pos: Position { line: 1, col: 11 },
+			end_pos: Position { line: 1, col: 18 },
+		},
+	};
 
-// 	let first_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(1)))),
-// 	}]);
+	let first_when_values = WhenCondition::Type(
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Account"),
+					span: Span {
+						start: 28,
+						end: 35,
+						start_pos: Position { line: 2, col: 9 },
+						end_pos: Position { line: 2, col: 16 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 28,
+					end: 36,
+					start_pos: Position { line: 2, col: 9 },
+					end_pos: Position { line: 2, col: 17 },
+				},
+			}),
+			span: Span {
+				start: 28,
+				end: 36,
+				start_pos: Position { line: 2, col: 9 },
+				end_pos: Position { line: 2, col: 17 },
+			},
+		},
+		Identifier {
+			name: String::from("a"),
+			span: Span {
+				start: 36,
+				end: 37,
+				start_pos: Position { line: 2, col: 17 },
+				end_pos: Position { line: 2, col: 18 },
+			},
+		},
+	);
 
-// 	let second_when_values =
-// 		WhenCondition::Type(Ty::from(Identifier::from("Contact")), Identifier::from("c"));
+	let first_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(1),
+				span: Span {
+					start: 54,
+					end: 55,
+					start_pos: Position { line: 3, col: 15 },
+					end_pos: Position { line: 3, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 54,
+				end: 55,
+				start_pos: Position { line: 3, col: 15 },
+				end_pos: Position { line: 3, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 47,
+			end: 56,
+			start_pos: Position { line: 3, col: 8 },
+			end_pos: Position { line: 3, col: 17 },
+		},
+	}]);
 
-// 	let second_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(2)))),
-// 	}]);
+	let second_when_values = WhenCondition::Type(
+		Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Contact"),
+					span: Span {
+						start: 70,
+						end: 77,
+						start_pos: Position { line: 5, col: 9 },
+						end_pos: Position { line: 5, col: 16 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 70,
+					end: 78,
+					start_pos: Position { line: 5, col: 9 },
+					end_pos: Position { line: 5, col: 17 },
+				},
+			}),
+			span: Span {
+				start: 70,
+				end: 78,
+				start_pos: Position { line: 5, col: 9 },
+				end_pos: Position { line: 5, col: 17 },
+			},
+		},
+		Identifier {
+			name: String::from("c"),
+			span: Span {
+				start: 78,
+				end: 79,
+				start_pos: Position { line: 5, col: 17 },
+				end_pos: Position { line: 5, col: 18 },
+			},
+		},
+	);
 
-// 	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal {
-// 		kind: LiteralKind::Null,
-// 	})]);
+	let second_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(2),
+				span: Span {
+					start: 96,
+					end: 97,
+					start_pos: Position { line: 6, col: 15 },
+					end_pos: Position { line: 6, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 96,
+				end: 97,
+				start_pos: Position { line: 6, col: 15 },
+				end_pos: Position { line: 6, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 89,
+			end: 98,
+			start_pos: Position { line: 6, col: 8 },
+			end_pos: Position { line: 6, col: 17 },
+		},
+	}]);
 
-// 	let third_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(3)))),
-// 	}]);
+	let third_when_values = WhenCondition::Value(vec![WhenValue::Literal(Literal {
+		kind: LiteralKind::Null,
+		span: Span {
+			start: 112,
+			end: 116,
+			start_pos: Position { line: 8, col: 9 },
+			end_pos: Position { line: 8, col: 13 },
+		},
+	})]);
 
-// 	let else_block = Block::Body(vec![Stmt {
-// 		kind: StmtKind::Return(Some(Expr::from(Literal::from(4)))),
-// 	}]);
+	let third_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(3),
+				span: Span {
+					start: 133,
+					end: 134,
+					start_pos: Position { line: 9, col: 15 },
+					end_pos: Position { line: 9, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 133,
+				end: 134,
+				start_pos: Position { line: 9, col: 15 },
+				end_pos: Position { line: 9, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 126,
+			end: 135,
+			start_pos: Position { line: 9, col: 8 },
+			end_pos: Position { line: 9, col: 17 },
+		},
+	}]);
 
-// 	test_parse(
-// 		Rule::statement,
-// 		input,
-// 		parse_stmt,
-// 		Stmt {
-// 			kind: StmtKind::Switch(
-// 				test_expr,
-// 				Some(vec![
-// 					(first_when_values, first_block),
-// 					(second_when_values, second_block),
-// 					(third_when_values, third_block),
-// 				]),
-// 				Some(else_block),
-// 			),
-// 		},
-// 	)
-// }
+	let else_block = Block::Body(vec![Stmt {
+		kind: StmtKind::Return(Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(4),
+				span: Span {
+					start: 170,
+					end: 171,
+					start_pos: Position { line: 12, col: 15 },
+					end_pos: Position { line: 12, col: 16 },
+				},
+			}),
+			span: Span {
+				start: 170,
+				end: 171,
+				start_pos: Position { line: 12, col: 15 },
+				end_pos: Position { line: 12, col: 16 },
+			},
+		})),
+		span: Span {
+			start: 163,
+			end: 172,
+			start_pos: Position { line: 12, col: 8 },
+			end_pos: Position { line: 12, col: 17 },
+		},
+	}]);
+
+	let expected = Stmt {
+		kind: StmtKind::Switch(
+			test_expr,
+			Some(vec![
+				(first_when_values, first_block),
+				(second_when_values, second_block),
+				(third_when_values, third_block),
+			]),
+			Some(else_block),
+		),
+		span: Span {
+			start: 0,
+			end: 179,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 14, col: 2 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
 
 #[test]
 fn for_basic_simple_parses() {
