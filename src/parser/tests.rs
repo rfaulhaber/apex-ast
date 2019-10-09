@@ -38,196 +38,373 @@ fn file_parses() {
 	assert!(result.is_ok());
 }
 
-// #[test]
-// fn class_basic_parses() {
-// 	let input = r#"public with sharing class FileWriter implements Writer {
-// 		public Buffer buf;
-// 		public static final String name;
+#[test]
+fn class_basic_parses() {
+	let input = r#"public with sharing class FileWriter implements Writer {
+		public Buffer buf;
+		public static final String name;
 
-// 		static {
-// 			name = 'WRITER';
-// 		}
+		static {
+			name = 'WRITER';
+		}
 
-// 		{
-// 			buf = new Buffer();
-// 		}
+		{
+			buf = new Buffer();
+		}
 
-// 		public FileWriter() {}
+		public FileWriter() {}
 
-// 		public Integer write(String output) {}
-// }"#;
+		public Integer write(String output) {}
+}"#;
 
-// 	let expected = Class {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		sharing_or_impl_modifier: Some(ImplOrSharingMod::With),
-// 		name: Identifier {
-// 			name: String::from("FileWriter"),
-// 			span: Span::default(),
-// 		},
-// 		extension: None,
-// 		implementations: vec![Ty {
-// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 				name: Identifier {
-// 					name: String::from("Writer"),
-// 					span: Span {
-// 						start: 32,
-// 						end: 35,
-// 						start_pos: Position { line: 1, col: 33 },
-// 						end_pos: Position { line: 1, col: 36 },
-// 					},
-// 				},
-// 				subclass: None,
-// 				type_arguments: None,
-// 				is_array: false,
-// 				span: Span {
-// 					start: 32,
-// 					end: 36,
-// 					start_pos: Position { line: 1, col: 33 },
-// 					end_pos: Position { line: 1, col: 37 },
-// 				},
-// 			}),
-// 			span: Span::default(),
-// 		}],
-// 		body: vec![
-// 			ClassBodyMember::Field(ClassField {
-// 				annotation: None,
-// 				access_mod: Some(AccessModifier::Public),
-// 				instance_mod: None,
-// 				is_final: false,
-// 				ty: Ty {
-// 					kind: TyKind::ClassOrInterface(ClassOrInterface {
-// 						name: Identifier {
-// 							name: String::from("Buffer"),
-// 							span: Span {
-// 								start: 32,
-// 								end: 35,
-// 								start_pos: Position { line: 1, col: 33 },
-// 								end_pos: Position { line: 1, col: 36 },
-// 							},
-// 						},
-// 						subclass: None,
-// 						type_arguments: None,
-// 						is_array: false,
-// 						span: Span {
-// 							start: 32,
-// 							end: 36,
-// 							start_pos: Position { line: 1, col: 33 },
-// 							end_pos: Position { line: 1, col: 37 },
-// 						},
-// 					}),
-// 					span: Span {
-// 						start: 32,
-// 						end: 36,
-// 						start_pos: Position { line: 1, col: 33 },
-// 						end_pos: Position { line: 1, col: 37 },
-// 					},
-// 				},
-// 				id: Identifier {
-// 					name: String::from("buf"),
-// 					span: Span {
-// 						start: 32,
-// 						end: 35,
-// 						start_pos: Position { line: 1, col: 33 },
-// 						end_pos: Position { line: 1, col: 36 },
-// 					},
-// 				},
-// 				getter: None,
-// 				setter: None,
-// 				rhs: None,
-// 				span: Span::default(),
-// 			}),
-// 			ClassBodyMember::Field(ClassField {
-// 				annotation: None,
-// 				access_mod: Some(AccessModifier::Public),
-// 				instance_mod: Some(ClassInstanceModifier::Static),
-// 				is_final: true,
-// 				ty: Ty {
-// 					kind: TyKind::Primitive(Primitive {
-// 						kind: PrimitiveKind::String,
-// 					}),
-// 					span: Span::default(),
-// 				},
-// 				id: Identifier {
-// 					name: String::from("name"),
-// 					span: Span {
-// 						start: 32,
-// 						end: 35,
-// 						start_pos: Position { line: 1, col: 33 },
-// 						end_pos: Position { line: 1, col: 36 },
-// 					},
-// 				},
-// 				getter: None,
-// 				setter: None,
-// 				rhs: None,
-// 				span: Span {
-// 					start: 80,
-// 					end: 112,
-// 					start_pos: Position { line: 3, col: 3 },
-// 					end_pos: Position { line: 3, col: 35 },
-// 				},
-// 			}),
-// 			ClassBodyMember::StaticBlock(Block::Body(vec![Stmt {
-// 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
-// 					kind: ExprKind::Assignment(
-// 						Box::from(Expr::from(Identifier::from("name"))),
-// 						AssignOp::Eq,
-// 						Box::from(Expr::from(Literal::from("\'WRITER\'"))),
-// 					),
-// 				})),
-// 			}])),
-// 			ClassBodyMember::InstanceBlock(Block::Body(vec![Stmt {
-// 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
-// 					kind: ExprKind::Assignment(
-// 						Box::from(Expr::from(Identifier::from("buf"))),
-// 						AssignOp::Eq,
-// 						Box::from(Expr {
-// 							kind: ExprKind::New(
-// 								Ty::from(Identifier::from("Buffer")),
-// 								NewType::Class(ClassArgs::Basic(None)),
-// 							),
-// 						}),
-// 					),
-// 				})),
-// 			}])),
-// 			ClassBodyMember::Constructor(ClassConstructor {
-// 				annotation: None,
-// 				access_mod: Some(AccessModifier::Public),
-// 				identifier: Identifier {
-// 					name: String::from("FileWriter"),
-// 					span: Span::default(),
-// 				},
-// 				params: Vec::new(),
-// 				block: Block::Body(Vec::new()),
-// 				span: Span {
-// 					start: 184,
-// 					end: 206,
-// 					start_pos: Position { line: 13, col: 3 },
-// 					end_pos: Position { line: 13, col: 25 },
-// 				},
-// 			}),
-// 			ClassBodyMember::Method(ClassMethod {
-// 				annotation: None,
-// 				access_mod: Some(AccessModifier::Public),
-// 				impl_mod: None,
-// 				is_testmethod: false,
-// 				return_type: Ty::from(PrimitiveKind::Integer),
-// 				identifier: Identifier::from("write"),
-// 				params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
-// 				block: Some(Block::Body(Vec::new())),
-// 				span: Span::default(),
-// 			}),
-// 		],
-// 		span: Span {
-// 			start: 0,
-// 			end: 250,
-// 			start_pos: Position { line: 1, col: 1 },
-// 			end_pos: Position { line: 16, col: 2 },
-// 		},
-// 	};
+	let expected = Class {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		sharing_or_impl_modifier: Some(ImplOrSharingMod::With),
+		name: Identifier {
+			name: String::from("FileWriter"),
+			span: Span {
+				start: 26,
+				end: 36,
+				start_pos: Position { line: 1, col: 27 },
+				end_pos: Position { line: 1, col: 37 },
+			},
+		},
+		extension: None,
+		implementations: vec![Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Writer"),
+					span: Span {
+						start: 48,
+						end: 54,
+						start_pos: Position { line: 1, col: 49 },
+						end_pos: Position { line: 1, col: 55 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 48,
+					end: 55,
+					start_pos: Position { line: 1, col: 49 },
+					end_pos: Position { line: 1, col: 56 },
+				},
+			}),
+			span: Span {
+				start: 48,
+				end: 55,
+				start_pos: Position { line: 1, col: 49 },
+				end_pos: Position { line: 1, col: 56 },
+			},
+		}],
+		body: vec![
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				instance_mod: None,
+				is_final: false,
+				ty: Ty {
+					kind: TyKind::ClassOrInterface(ClassOrInterface {
+						name: Identifier {
+							name: String::from("Buffer"),
+							span: Span {
+								start: 66,
+								end: 72,
+								start_pos: Position { line: 2, col: 10 },
+								end_pos: Position { line: 2, col: 16 },
+							},
+						},
+						subclass: None,
+						type_arguments: None,
+						is_array: false,
+						span: Span {
+							start: 66,
+							end: 73,
+							start_pos: Position { line: 2, col: 10 },
+							end_pos: Position { line: 2, col: 17 },
+						},
+					}),
+					span: Span {
+						start: 66,
+						end: 73,
+						start_pos: Position { line: 2, col: 10 },
+						end_pos: Position { line: 2, col: 17 },
+					},
+				},
+				id: Identifier {
+					name: String::from("buf"),
+					span: Span {
+						start: 73,
+						end: 76,
+						start_pos: Position { line: 2, col: 17 },
+						end_pos: Position { line: 2, col: 20 },
+					},
+				},
+				getter: None,
+				setter: None,
+				rhs: None,
+				span: Span {
+					start: 59,
+					end: 77,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 21 },
+				},
+			}),
+			ClassBodyMember::Field(ClassField {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				instance_mod: Some(ClassInstanceModifier::Static),
+				is_final: true,
+				ty: Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 100,
+						end: 107,
+						start_pos: Position { line: 3, col: 23 },
+						end_pos: Position { line: 3, col: 30 },
+					},
+				},
+				id: Identifier {
+					name: String::from("name"),
+					span: Span {
+						start: 107,
+						end: 111,
+						start_pos: Position { line: 3, col: 30 },
+						end_pos: Position { line: 3, col: 34 },
+					},
+				},
+				getter: None,
+				setter: None,
+				rhs: None,
+				span: Span {
+					start: 80,
+					end: 112,
+					start_pos: Position { line: 3, col: 3 },
+					end_pos: Position { line: 3, col: 35 },
+				},
+			}),
+			ClassBodyMember::StaticBlock(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("name"),
+								span: Span {
+									start: 128,
+									end: 132,
+									start_pos: Position { line: 6, col: 4 },
+									end_pos: Position { line: 6, col: 8 },
+								},
+							}),
+							span: Span {
+								start: 128,
+								end: 132,
+								start_pos: Position { line: 6, col: 4 },
+								end_pos: Position { line: 6, col: 8 },
+							},
+						}),
+						AssignOp::Eq,
+						Box::new(Expr {
+							kind: ExprKind::Literal(Literal {
+								kind: LiteralKind::String(String::from("'WRITER'")),
+								span: Span {
+									start: 135,
+									end: 143,
+									start_pos: Position { line: 6, col: 11 },
+									end_pos: Position { line: 6, col: 19 },
+								},
+							}),
+							span: Span {
+								start: 135,
+								end: 143,
+								start_pos: Position { line: 6, col: 11 },
+								end_pos: Position { line: 6, col: 19 },
+							},
+						}),
+					),
+					span: Span {
+						start: 128,
+						end: 143,
+						start_pos: Position { line: 6, col: 4 },
+						end_pos: Position { line: 6, col: 19 },
+					},
+				})),
+				span: Span {
+					start: 128,
+					end: 143,
+					start_pos: Position { line: 6, col: 4 },
+					end_pos: Position { line: 6, col: 19 },
+				},
+			}])),
+			ClassBodyMember::InstanceBlock(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("buf"),
+								span: Span {
+									start: 157,
+									end: 160,
+									start_pos: Position { line: 10, col: 4 },
+									end_pos: Position { line: 10, col: 7 },
+								},
+							}),
+							span: Span {
+								start: 157,
+								end: 160,
+								start_pos: Position { line: 10, col: 4 },
+								end_pos: Position { line: 10, col: 7 },
+							},
+						}),
+						AssignOp::Eq,
+						Box::from(Expr {
+							kind: ExprKind::New(
+								Ty {
+									kind: TyKind::ClassOrInterface(ClassOrInterface {
+										name: Identifier {
+											name: String::from("Buffer"),
+											span: Span {
+												start: 167,
+												end: 173,
+												start_pos: Position { line: 10, col: 14 },
+												end_pos: Position { line: 10, col: 20 },
+											},
+										},
+										subclass: None,
+										type_arguments: None,
+										is_array: false,
+										span: Span {
+											start: 167,
+											end: 173,
+											start_pos: Position { line: 10, col: 14 },
+											end_pos: Position { line: 10, col: 20 },
+										},
+									}),
+									span: Span {
+										start: 167,
+										end: 173,
+										start_pos: Position { line: 10, col: 14 },
+										end_pos: Position { line: 10, col: 20 },
+									},
+								},
+								NewType::Class(ClassArgs::Basic(None)),
+							),
+							span: Span {
+								start: 163,
+								end: 175,
+								start_pos: Position { line: 10, col: 10 },
+								end_pos: Position { line: 10, col: 22 },
+							},
+						}),
+					),
+					span: Span {
+						start: 157,
+						end: 175,
+						start_pos: Position { line: 10, col: 4 },
+						end_pos: Position { line: 10, col: 22 },
+					},
+				})),
+				span: Span {
+					start: 157,
+					end: 175,
+					start_pos: Position { line: 10, col: 4 },
+					end_pos: Position { line: 10, col: 22 },
+				},
+			}])),
+			ClassBodyMember::Constructor(ClassConstructor {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				identifier: Identifier {
+					name: String::from("FileWriter"),
+					span: Span {
+						start: 191,
+						end: 201,
+						start_pos: Position { line: 13, col: 10 },
+						end_pos: Position { line: 13, col: 20 },
+					},
+				},
+				params: Vec::new(),
+				block: Block::Body(Vec::new()),
+				span: Span {
+					start: 184,
+					end: 206,
+					start_pos: Position { line: 13, col: 3 },
+					end_pos: Position { line: 13, col: 25 },
+				},
+			}),
+			ClassBodyMember::Method(ClassMethod {
+				annotation: None,
+				access_mod: Some(AccessModifier::Public),
+				impl_mod: None,
+				is_testmethod: false,
+				return_type: Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::Integer,
+						is_array: false,
+					}),
+					span: Span {
+						start: 217,
+						end: 225,
+						start_pos: Position { line: 15, col: 10 },
+						end_pos: Position { line: 15, col: 18 },
+					},
+				},
+				identifier: Identifier {
+					name: String::from("write"),
+					span: Span {
+						start: 225,
+						end: 230,
+						start_pos: Position { line: 15, col: 18 },
+						end_pos: Position { line: 15, col: 23 },
+					},
+				},
+				params: vec![(
+					Ty {
+						kind: TyKind::Primitive(Primitive {
+							kind: PrimitiveKind::String,
+							is_array: false,
+						}),
+						span: Span {
+							start: 231,
+							end: 238,
+							start_pos: Position { line: 15, col: 24 },
+							end_pos: Position { line: 15, col: 31 },
+						},
+					},
+					Identifier {
+						name: String::from("output"),
+						span: Span {
+							start: 238,
+							end: 244,
+							start_pos: Position { line: 15, col: 31 },
+							end_pos: Position { line: 15, col: 37 },
+						},
+					},
+				)],
+				block: Some(Block::Body(Vec::new())),
+				span: Span {
+					start: 210,
+					end: 248,
+					start_pos: Position { line: 15, col: 3 },
+					end_pos: Position { line: 15, col: 41 },
+				},
+			}),
+		],
+		span: Span {
+			start: 0,
+			end: 250,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 16, col: 2 },
+		},
+	};
 
-// 	test_parse(Rule::class_declaration, input, parse_class, expected);
-// }
+	test_parse(Rule::class_declaration, input, parse_class, expected);
+}
 
 #[test]
 fn class_constructor_parses() {
