@@ -216,6 +216,9 @@ pub(super) fn parse_interface(p: Pair<Rule>) -> Interface {
 	let mut next = inner.next().unwrap();
 
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+
+	// TODO fix!
+	#[allow(unused_assignments)]
 	let is_virtual = next_is_rule!(inner, next, Rule::VIRTUAL);
 	let name = parse_identifier(inner.next().unwrap());
 
@@ -226,8 +229,6 @@ pub(super) fn parse_interface(p: Pair<Rule>) -> Interface {
 	} else {
 		Vec::new()
 	};
-
-	println!("inner: {:?}", inner);
 
 	let methods = if let Some(pair) = inner.next() {
 		pair.into_inner().map(parse_implementatble_method).collect()
@@ -1397,7 +1398,6 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 			};
 
 			let args = map_inner.next().unwrap();
-			let args_span = Span::from(args.as_span());
 
 			match args.as_rule() {
 				Rule::map_literal_values => {
@@ -1415,11 +1415,10 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 					Expr {
 						kind: ExprKind::New(ty, NewType::Map(pairs)),
-						span: args_span,
+						span,
 					}
 				}
 				Rule::arguments => {
-					let span = Span::from(args.as_span());
 					let args = parse_arguments(args);
 					Expr {
 						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
@@ -1436,7 +1435,6 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 			let gen_type = parse_ty(lit_inner.next().unwrap().into_inner().next().unwrap());
 
 			let args = lit_inner.next().unwrap();
-			let args_span = Span::from(args.as_span());
 
 			let ty = Ty {
 				kind: TyKind::ClassOrInterface(ClassOrInterface {
@@ -1455,7 +1453,7 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 					Expr {
 						kind: ExprKind::New(ty, NewType::Collection(exprs)),
-						span: args_span,
+						span,
 					}
 				}
 				Rule::arguments => {
@@ -1484,7 +1482,7 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 			Expr {
 				kind: ExprKind::New(ty, NewType::Array(exprs)),
-				span: subrule_span,
+				span,
 			}
 		}
 		Rule::new_class => {
@@ -1515,7 +1513,6 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 					}
 				}
 				Rule::arguments => {
-					let span = Span::from(args.as_span());
 					let args = parse_arguments(args);
 
 					Expr {

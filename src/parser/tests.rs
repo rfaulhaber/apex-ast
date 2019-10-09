@@ -64,35 +64,99 @@ fn file_parses() {
 // 		name: Identifier {
 // 			name: String::from("FileWriter"),
 // 			span: Span::default(),
-// 		}
+// 		},
 // 		extension: None,
-// 		implementations: vec![Ty::from(Identifier::from("Writer"))],
+// 		implementations: vec![Ty {
+// 			kind: TyKind::ClassOrInterface(ClassOrInterface {
+// 				name: Identifier {
+// 					name: String::from("Writer"),
+// 					span: Span {
+// 						start: 32,
+// 						end: 35,
+// 						start_pos: Position { line: 1, col: 33 },
+// 						end_pos: Position { line: 1, col: 36 },
+// 					},
+// 				},
+// 				subclass: None,
+// 				type_arguments: None,
+// 				is_array: false,
+// 				span: Span {
+// 					start: 32,
+// 					end: 36,
+// 					start_pos: Position { line: 1, col: 33 },
+// 					end_pos: Position { line: 1, col: 37 },
+// 				},
+// 			}),
+// 			span: Span::default(),
+// 		}],
 // 		body: vec![
 // 			ClassBodyMember::Field(ClassField {
 // 				annotation: None,
 // 				access_mod: Some(AccessModifier::Public),
 // 				instance_mod: None,
 // 				is_final: false,
-// 				ty: Ty::from(Identifier::from("Buffer")),
-// 				id: Identifier::from("buf"),
+// 				ty: Ty {
+// 					kind: TyKind::ClassOrInterface(ClassOrInterface {
+// 						name: Identifier {
+// 							name: String::from("Buffer"),
+// 							span: Span {
+// 								start: 32,
+// 								end: 35,
+// 								start_pos: Position { line: 1, col: 33 },
+// 								end_pos: Position { line: 1, col: 36 },
+// 							},
+// 						},
+// 						subclass: None,
+// 						type_arguments: None,
+// 						is_array: false,
+// 						span: Span {
+// 							start: 32,
+// 							end: 36,
+// 							start_pos: Position { line: 1, col: 33 },
+// 							end_pos: Position { line: 1, col: 37 },
+// 						},
+// 					}),
+// 					span: Span {
+// 						start: 32,
+// 						end: 36,
+// 						start_pos: Position { line: 1, col: 33 },
+// 						end_pos: Position { line: 1, col: 37 },
+// 					},
+// 				},
+// 				id: Identifier {
+// 					name: String::from("buf"),
+// 					span: Span {
+// 						start: 32,
+// 						end: 35,
+// 						start_pos: Position { line: 1, col: 33 },
+// 						end_pos: Position { line: 1, col: 36 },
+// 					},
+// 				},
 // 				getter: None,
 // 				setter: None,
 // 				rhs: None,
 // 				span: Span::default(),
-// 				// span: Span {
-// 				// 	start: 59,
-// 				// 	end: 77,
-// 				// 	start_pos: Position { line: 2, col: 3 },
-// 				// 	end_pos: Position { line: 2, col: 21 },
-// 				// },
 // 			}),
 // 			ClassBodyMember::Field(ClassField {
 // 				annotation: None,
 // 				access_mod: Some(AccessModifier::Public),
 // 				instance_mod: Some(ClassInstanceModifier::Static),
 // 				is_final: true,
-// 				ty: Ty::from(PrimitiveKind::String),
-// 				id: Identifier::from("name"),
+// 				ty: Ty {
+// 					kind: TyKind::Primitive(Primitive {
+// 						kind: PrimitiveKind::String,
+// 					}),
+// 					span: Span::default(),
+// 				},
+// 				id: Identifier {
+// 					name: String::from("name"),
+// 					span: Span {
+// 						start: 32,
+// 						end: 35,
+// 						start_pos: Position { line: 1, col: 33 },
+// 						end_pos: Position { line: 1, col: 36 },
+// 					},
+// 				},
 // 				getter: None,
 // 				setter: None,
 // 				rhs: None,
@@ -129,7 +193,10 @@ fn file_parses() {
 // 			ClassBodyMember::Constructor(ClassConstructor {
 // 				annotation: None,
 // 				access_mod: Some(AccessModifier::Public),
-// 				identifier: Identifier::from("FileWriter"),
+// 				identifier: Identifier {
+// 					name: String::from("FileWriter"),
+// 					span: Span::default(),
+// 				},
 // 				params: Vec::new(),
 // 				block: Block::Body(Vec::new()),
 // 				span: Span {
@@ -148,7 +215,7 @@ fn file_parses() {
 // 				identifier: Identifier::from("write"),
 // 				params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
 // 				block: Some(Block::Body(Vec::new())),
-// 				// span: Span::default(),
+// 				span: Span::default(),
 // 			}),
 // 		],
 // 		span: Span {
@@ -162,326 +229,922 @@ fn file_parses() {
 // 	test_parse(Rule::class_declaration, input, parse_class, expected);
 // }
 
-// #[test]
-// fn class_constructor_parses() {
-// 	let input = "public Foo(String bar) {}";
+#[test]
+fn class_constructor_parses() {
+	let input = "public Foo(String bar) {}";
 
-// 	let expected = ClassConstructor {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		identifier: Identifier::from("Foo"),
-// 		params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("bar"))],
-// 		block: Block::from(Vec::new()),
-// 		span: Span {
-// 			start: 0,
-// 			end: 25,
-// 			start_pos: Position { line: 1, col: 1 },
-// 			end_pos: Position { line: 1, col: 26 },
-// 		},
-// 	};
+	let expected = ClassConstructor {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		identifier: Identifier {
+			name: String::from("Foo"),
+			span: Span {
+				start: 7,
+				end: 10,
+				start_pos: Position { line: 1, col: 8 },
+				end_pos: Position { line: 1, col: 11 },
+			},
+		},
+		params: vec![(
+			Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::String,
+					is_array: false,
+				}),
+				span: Span {
+					start: 11,
+					end: 18,
+					start_pos: Position { line: 1, col: 12 },
+					end_pos: Position { line: 1, col: 19 },
+				},
+			},
+			Identifier {
+				name: String::from("bar"),
+				span: Span {
+					start: 18,
+					end: 21,
+					start_pos: Position { line: 1, col: 19 },
+					end_pos: Position { line: 1, col: 22 },
+				},
+			},
+		)],
+		block: Block::Body(Vec::new()),
+		span: Span {
+			start: 0,
+			end: 25,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 26 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_constructor_definition,
-// 		input,
-// 		parse_class_constructor,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_constructor_definition,
+		input,
+		parse_class_constructor,
+		expected,
+	);
+}
 
-// #[test]
-// fn class_constructor_no_access_mod_parses() {
-// 	let input = "Foo() {}";
+#[test]
+fn class_constructor_no_access_mod_parses() {
+	let input = "Foo() {}";
 
-// 	let expected = ClassConstructor {
-// 		annotation: None,
-// 		access_mod: None,
-// 		identifier: Identifier::from("Foo"),
-// 		params: Vec::new(),
-// 		block: Block::from(Vec::new()),
-// 		span: Span::default(),
-// 	};
+	let expected = ClassConstructor {
+		annotation: None,
+		access_mod: None,
+		identifier: Identifier {
+			name: String::from("Foo"),
+			span: Span {
+				start: 0,
+				end: 3,
+				start_pos: Position { line: 1, col: 1 },
+				end_pos: Position { line: 1, col: 4 },
+			},
+		},
+		params: Vec::new(),
+		block: Block::Body(Vec::new()),
+		span: Span {
+			start: 0,
+			end: 8,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 9 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_constructor_definition,
-// 		input,
-// 		parse_class_constructor,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_constructor_definition,
+		input,
+		parse_class_constructor,
+		expected,
+	);
+}
 
-// #[test]
-// fn abstract_class_method_parses() {
-// 	let input = "abstract Integer abstractMethod();";
+#[test]
+fn abstract_class_method_parses() {
+	let input = "abstract Integer abstractMethod();";
 
-// 	let expected = ClassMethod {
-// 		annotation: None,
-// 		access_mod: None,
-// 		impl_mod: Some(ImplModifier::Abstract),
-// 		is_testmethod: false,
-// 		return_type: Ty::from(PrimitiveKind::Integer),
-// 		identifier: Identifier::from("abstractMethod"),
-// 		params: Vec::new(),
-// 		block: None,
-// 	};
+	let expected = ClassMethod {
+		annotation: None,
+		access_mod: None,
+		impl_mod: Some(ImplModifier::Abstract),
+		is_testmethod: false,
+		return_type: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::Integer,
+				is_array: false,
+			}),
+			span: Span {
+				start: 9,
+				end: 17,
+				start_pos: Position { line: 1, col: 10 },
+				end_pos: Position { line: 1, col: 18 },
+			},
+		},
+		identifier: Identifier {
+			name: String::from("abstractMethod"),
+			span: Span {
+				start: 17,
+				end: 31,
+				start_pos: Position { line: 1, col: 18 },
+				end_pos: Position { line: 1, col: 32 },
+			},
+		},
+		params: Vec::new(),
+		block: None,
+		span: Span {
+			start: 0,
+			end: 34,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 35 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_method_declaration,
-// 		input,
-// 		parse_class_method,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_method_declaration,
+		input,
+		parse_class_method,
+		expected,
+	);
+}
 
-// #[test]
-// fn interface_with_access_mod_parses() {
-// 	let input = r#"public interface Writer extends Foo {
-// 		Integer write(String output);
-// 	}"#;
+#[test]
+fn interface_with_access_mod_parses() {
+	let input = r#"public interface Writer extends Foo {
+		Integer write(String output);
+	}"#;
 
-// 	let expected = Interface {
-// 		access_mod: Some(AccessModifier::Public),
-// 		is_virtual: false,
-// 		name: Identifier::from("Writer"),
-// 		extensions: vec![Ty::from(Identifier::from("Foo"))],
-// 		methods: vec![ImplementableMethod {
-// 			ty: Ty::from(PrimitiveKind::Integer),
-// 			id: Identifier::from("write"),
-// 			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
-// 		}],
-// 	};
+	let expected = Interface {
+		access_mod: Some(AccessModifier::Public),
+		is_virtual: false,
+		name: Identifier {
+			name: String::from("Writer"),
+			span: Span {
+				start: 17,
+				end: 23,
+				start_pos: Position { line: 1, col: 18 },
+				end_pos: Position { line: 1, col: 24 },
+			},
+		},
+		extensions: vec![Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Foo"),
+					span: Span {
+						start: 32,
+						end: 35,
+						start_pos: Position { line: 1, col: 33 },
+						end_pos: Position { line: 1, col: 36 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 32,
+					end: 36,
+					start_pos: Position { line: 1, col: 33 },
+					end_pos: Position { line: 1, col: 37 },
+				},
+			}),
+			span: Span {
+				start: 32,
+				end: 36,
+				start_pos: Position { line: 1, col: 33 },
+				end_pos: Position { line: 1, col: 37 },
+			},
+		}],
+		methods: vec![ImplementableMethod {
+			ty: Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: false,
+				}),
+				span: Span {
+					start: 40,
+					end: 48,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 11 },
+				},
+			},
+			id: Identifier {
+				name: String::from("write"),
+				span: Span {
+					start: 48,
+					end: 53,
+					start_pos: Position { line: 2, col: 11 },
+					end_pos: Position { line: 2, col: 16 },
+				},
+			},
+			params: vec![(
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 54,
+						end: 61,
+						start_pos: Position { line: 2, col: 17 },
+						end_pos: Position { line: 2, col: 24 },
+					},
+				},
+				Identifier {
+					name: String::from("output"),
+					span: Span {
+						start: 61,
+						end: 67,
+						start_pos: Position { line: 2, col: 24 },
+						end_pos: Position { line: 2, col: 30 },
+					},
+				},
+			)],
+			span: Span {
+				start: 40,
+				end: 69,
+				start_pos: Position { line: 2, col: 3 },
+				end_pos: Position { line: 2, col: 32 },
+			},
+		}],
+		span: Span {
+			start: 0,
+			end: 72,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 3 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::interface_declaration,
-// 		input,
-// 		parse_interface,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
+}
 
-// #[test]
-// fn interface_parses() {
-// 	let input = r#"interface Writer extends Foo {
-// 		Integer write(String output);
-// 	}"#;
+#[test]
+fn interface_parses() {
+	let input = r#"interface Writer extends Foo {
+		Integer write(String output);
+	}"#;
 
-// 	let expected = Interface {
-// 		access_mod: None,
-// 		is_virtual: false,
-// 		name: Identifier::from("Writer"),
-// 		extensions: vec![Ty::from(Identifier::from("Foo"))],
-// 		methods: vec![ImplementableMethod {
-// 			ty: Ty::from(PrimitiveKind::Integer),
-// 			id: Identifier::from("write"),
-// 			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
-// 		}],
-// 	};
+	let expected = Interface {
+		access_mod: None,
+		is_virtual: false,
+		name: Identifier {
+			name: String::from("Writer"),
+			span: Span {
+				start: 10,
+				end: 16,
+				start_pos: Position { line: 1, col: 11 },
+				end_pos: Position { line: 1, col: 17 },
+			},
+		},
+		extensions: vec![Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Foo"),
+					span: Span {
+						start: 25,
+						end: 28,
+						start_pos: Position { line: 1, col: 26 },
+						end_pos: Position { line: 1, col: 29 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 25,
+					end: 29,
+					start_pos: Position { line: 1, col: 26 },
+					end_pos: Position { line: 1, col: 30 },
+				},
+			}),
+			span: Span {
+				start: 25,
+				end: 29,
+				start_pos: Position { line: 1, col: 26 },
+				end_pos: Position { line: 1, col: 30 },
+			},
+		}],
+		methods: vec![ImplementableMethod {
+			ty: Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: false,
+				}),
+				span: Span {
+					start: 33,
+					end: 41,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 11 },
+				},
+			},
+			id: Identifier {
+				name: String::from("write"),
+				span: Span {
+					start: 41,
+					end: 46,
+					start_pos: Position { line: 2, col: 11 },
+					end_pos: Position { line: 2, col: 16 },
+				},
+			},
+			params: vec![(
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 47,
+						end: 54,
+						start_pos: Position { line: 2, col: 17 },
+						end_pos: Position { line: 2, col: 24 },
+					},
+				},
+				Identifier {
+					name: String::from("output"),
+					span: Span {
+						start: 54,
+						end: 60,
+						start_pos: Position { line: 2, col: 24 },
+						end_pos: Position { line: 2, col: 30 },
+					},
+				},
+			)],
+			span: Span {
+				start: 33,
+				end: 62,
+				start_pos: Position { line: 2, col: 3 },
+				end_pos: Position { line: 2, col: 32 },
+			},
+		}],
+		span: Span {
+			start: 0,
+			end: 65,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 3 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::interface_declaration,
-// 		input,
-// 		parse_interface,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
+}
 
-// #[test]
-// fn virtual_interface_parses() {
-// 	let input = r#"public virtual interface Writer {
-// 		Integer write(String output);
-// 	}"#;
+#[test]
+fn virtual_interface_parses() {
+	let input = r#"public virtual interface Writer {
+		Integer write(String output);
+	}"#;
 
-// 	let expected = Interface {
-// 		access_mod: Some(AccessModifier::Public),
-// 		is_virtual: true,
-// 		name: Identifier::from("Writer"),
-// 		extensions: Vec::new(),
-// 		methods: vec![ImplementableMethod {
-// 			ty: Ty::from(PrimitiveKind::Integer),
-// 			id: Identifier::from("write"),
-// 			params: vec![(Ty::from(PrimitiveKind::String), Identifier::from("output"))],
-// 		}],
-// 	};
+	let expected = Interface {
+		access_mod: Some(AccessModifier::Public),
+		is_virtual: true,
+		name: Identifier {
+			name: String::from("Writer"),
+			span: Span {
+				start: 25,
+				end: 31,
+				start_pos: Position { line: 1, col: 26 },
+				end_pos: Position { line: 1, col: 32 },
+			},
+		},
+		extensions: Vec::new(),
+		methods: vec![ImplementableMethod {
+			ty: Ty {
+				kind: TyKind::Primitive(Primitive {
+					kind: PrimitiveKind::Integer,
+					is_array: false,
+				}),
+				span: Span {
+					start: 36,
+					end: 44,
+					start_pos: Position { line: 2, col: 3 },
+					end_pos: Position { line: 2, col: 11 },
+				},
+			},
+			id: Identifier {
+				name: String::from("write"),
+				span: Span {
+					start: 44,
+					end: 49,
+					start_pos: Position { line: 2, col: 11 },
+					end_pos: Position { line: 2, col: 16 },
+				},
+			},
+			params: vec![(
+				Ty {
+					kind: TyKind::Primitive(Primitive {
+						kind: PrimitiveKind::String,
+						is_array: false,
+					}),
+					span: Span {
+						start: 50,
+						end: 57,
+						start_pos: Position { line: 2, col: 17 },
+						end_pos: Position { line: 2, col: 24 },
+					},
+				},
+				Identifier {
+					name: String::from("output"),
+					span: Span {
+						start: 57,
+						end: 63,
+						start_pos: Position { line: 2, col: 24 },
+						end_pos: Position { line: 2, col: 30 },
+					},
+				},
+			)],
+			span: Span {
+				start: 36,
+				end: 65,
+				start_pos: Position { line: 2, col: 3 },
+				end_pos: Position { line: 2, col: 32 },
+			},
+		}],
+		span: Span {
+			start: 0,
+			end: 68,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 3, col: 3 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::interface_declaration,
-// 		input,
-// 		parse_interface,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::interface_declaration,
+		input,
+		parse_interface,
+		expected,
+	);
+}
 
-// #[test]
-// fn trigger_parses() {
-// 	let input = "trigger MyAccountTrigger on Account (before insert, before update) {}";
+#[test]
+fn trigger_parses() {
+	let input = "trigger MyAccountTrigger on Account (before insert, before update) {}";
 
-// 	let expected = Trigger {
-// 		name: Identifier::from("MyAccountTrigger"),
-// 		object: Ty::from(Identifier::from("Account")),
-// 		events: vec![
-// 			TriggerEvent(TriggerWhen::Before, DmlOp::Insert),
-// 			TriggerEvent(TriggerWhen::Before, DmlOp::Update),
-// 		],
-// 		body: Block::Body(Vec::new()),
-// 	};
+	let expected = Trigger {
+		name: Identifier {
+			name: String::from("MyAccountTrigger"),
+			span: Span {
+				start: 8,
+				end: 24,
+				start_pos: Position { line: 1, col: 9 },
+				end_pos: Position { line: 1, col: 25 },
+			},
+		},
+		object: Ty {
+			kind: TyKind::ClassOrInterface(ClassOrInterface {
+				name: Identifier {
+					name: String::from("Account"),
+					span: Span {
+						start: 28,
+						end: 35,
+						start_pos: Position { line: 1, col: 29 },
+						end_pos: Position { line: 1, col: 36 },
+					},
+				},
+				subclass: None,
+				type_arguments: None,
+				is_array: false,
+				span: Span {
+					start: 28,
+					end: 36,
+					start_pos: Position { line: 1, col: 29 },
+					end_pos: Position { line: 1, col: 37 },
+				},
+			}),
+			span: Span {
+				start: 28,
+				end: 36,
+				start_pos: Position { line: 1, col: 29 },
+				end_pos: Position { line: 1, col: 37 },
+			},
+		},
+		events: vec![
+			TriggerEvent {
+				when: TriggerWhen::Before,
+				op: DmlOp::Insert,
+			},
+			TriggerEvent {
+				when: TriggerWhen::Before,
+				op: DmlOp::Update,
+			},
+		],
+		body: Block::Body(Vec::new()),
+		span: Span {
+			start: 0,
+			end: 69,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 70 },
+		},
+	};
 
-// 	test_parse(Rule::trigger_declaration, input, parse_trigger, expected);
-// }
+	test_parse(Rule::trigger_declaration, input, parse_trigger, expected);
+}
 
-// #[test]
-// fn enum_parses() {
-// 	let input = "public enum Season {WINTER, SPRING, SUMMER, FALL}";
+#[test]
+fn enum_parses() {
+	let input = "public enum Season {WINTER, SPRING, SUMMER, FALL}";
 
-// 	let expected = Enum {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		name: Identifier::from("Season"),
-// 		ids: vec![
-// 			Identifier::from("WINTER"),
-// 			Identifier::from("SPRING"),
-// 			Identifier::from("SUMMER"),
-// 			Identifier::from("FALL"),
-// 		],
-// 	};
+	let expected = Enum {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		name: Identifier {
+			name: String::from("Season"),
+			span: Span {
+				start: 12,
+				end: 18,
+				start_pos: Position { line: 1, col: 13 },
+				end_pos: Position { line: 1, col: 19 },
+			},
+		},
+		ids: vec![
+			Identifier {
+				name: String::from("WINTER"),
+				span: Span {
+					start: 20,
+					end: 26,
+					start_pos: Position { line: 1, col: 21 },
+					end_pos: Position { line: 1, col: 27 },
+				},
+			},
+			Identifier {
+				name: String::from("SPRING"),
+				span: Span {
+					start: 28,
+					end: 34,
+					start_pos: Position { line: 1, col: 29 },
+					end_pos: Position { line: 1, col: 35 },
+				},
+			},
+			Identifier {
+				name: String::from("SUMMER"),
+				span: Span {
+					start: 36,
+					end: 42,
+					start_pos: Position { line: 1, col: 37 },
+					end_pos: Position { line: 1, col: 43 },
+				},
+			},
+			Identifier {
+				name: String::from("FALL"),
+				span: Span {
+					start: 44,
+					end: 48,
+					start_pos: Position { line: 1, col: 45 },
+					end_pos: Position { line: 1, col: 49 },
+				},
+			},
+		],
+		span: Span {
+			start: 0,
+			end: 49,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 50 },
+		},
+	};
 
-// 	test_parse(Rule::enum_declaration, input, parse_enum, expected);
-// }
+	test_parse(Rule::enum_declaration, input, parse_enum, expected);
+}
 
-// #[test]
-// fn class_field_no_rhs_parses() {
-// 	let input = "public static String foo;";
+#[test]
+fn class_field_no_rhs_parses() {
+	let input = "public static String foo;";
 
-// 	let expected = ClassField {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		instance_mod: Some(ClassInstanceModifier::Static),
-// 		is_final: false,
-// 		ty: Ty::from(PrimitiveKind::String),
-// 		id: Identifier::from("foo"),
-// 		getter: None,
-// 		setter: None,
-// 		rhs: None,
-// 		span: Span::default(),
-// 	};
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: Some(ClassInstanceModifier::Static),
+		is_final: false,
+		ty: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::String,
+				is_array: false,
+			}),
+			span: Span {
+				start: 14,
+				end: 21,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 22 },
+			},
+		},
+		id: Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 21,
+				end: 24,
+				start_pos: Position { line: 1, col: 22 },
+				end_pos: Position { line: 1, col: 25 },
+			},
+		},
+		getter: None,
+		setter: None,
+		rhs: None,
+		span: Span {
+			start: 0,
+			end: 25,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 26 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_field_declaration,
-// 		input,
-// 		parse_class_field,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
 
-// #[test]
-// fn class_field_getter_setter_basic_parses() {
-// 	let input = "public String name {get; set;}";
+#[test]
+fn class_field_getter_setter_basic_parses() {
+	let input = "public String name {get; set;}";
 
-// 	let expected = ClassField {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		instance_mod: None,
-// 		is_final: false,
-// 		ty: Ty::from(PrimitiveKind::String),
-// 		id: Identifier::from("name"),
-// 		getter: Some(Property {
-// 			access_mod: None,
-// 			property_type: PropertyType::Get,
-// 			body: None,
-// 			span: Span::default(),
-// 		}),
-// 		setter: Some(Property {
-// 			access_mod: None,
-// 			property_type: PropertyType::Set,
-// 			body: None,
-// 			span: Span::default(),
-// 		}),
-// 		rhs: None,
-// 		span: Span::default(),
-// 	};
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: None,
+		is_final: false,
+		ty: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::String,
+				is_array: false,
+			}),
+			span: Span {
+				start: 7,
+				end: 14,
+				start_pos: Position { line: 1, col: 8 },
+				end_pos: Position { line: 1, col: 15 },
+			},
+		},
+		id: Identifier {
+			name: String::from("name"),
+			span: Span {
+				start: 14,
+				end: 18,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 19 },
+			},
+		},
+		getter: Some(Property {
+			access_mod: None,
+			property_type: PropertyType::Get,
+			body: None,
+			span: Span {
+				start: 20,
+				end: 24,
+				start_pos: Position { line: 1, col: 21 },
+				end_pos: Position { line: 1, col: 25 },
+			},
+		}),
+		setter: Some(Property {
+			access_mod: None,
+			property_type: PropertyType::Set,
+			body: None,
+			span: Span {
+				start: 25,
+				end: 29,
+				start_pos: Position { line: 1, col: 26 },
+				end_pos: Position { line: 1, col: 30 },
+			},
+		}),
+		rhs: None,
+		span: Span {
+			start: 0,
+			end: 30,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 31 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_field_declaration,
-// 		input,
-// 		parse_class_field,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
 
-// #[test]
-// fn class_field_rhs_parses() {
-// 	let input = "public static Integer foo = 22;";
+#[test]
+fn class_field_rhs_parses() {
+	let input = "public static Integer foo = 22;";
 
-// 	let expected = ClassField {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		instance_mod: Some(ClassInstanceModifier::Static),
-// 		is_final: false,
-// 		ty: Ty::from(PrimitiveKind::Integer),
-// 		id: Identifier::from("foo"),
-// 		getter: None,
-// 		setter: None,
-// 		rhs: Some(Expr::from(Literal::from(22))),
-// 		span: Span::default(),
-// 	};
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: Some(ClassInstanceModifier::Static),
+		is_final: false,
+		ty: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::Integer,
+				is_array: false,
+			}),
+			span: Span {
+				start: 14,
+				end: 22,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 23 },
+			},
+		},
+		id: Identifier {
+			name: String::from("foo"),
+			span: Span {
+				start: 22,
+				end: 25,
+				start_pos: Position { line: 1, col: 23 },
+				end_pos: Position { line: 1, col: 26 },
+			},
+		},
+		getter: None,
+		setter: None,
+		rhs: Some(Expr {
+			kind: ExprKind::Literal(Literal {
+				kind: LiteralKind::Integer(22),
+				span: Span {
+					start: 28,
+					end: 30,
+					start_pos: Position { line: 1, col: 29 },
+					end_pos: Position { line: 1, col: 31 },
+				},
+			}),
+			span: Span {
+				start: 28,
+				end: 30,
+				start_pos: Position { line: 1, col: 29 },
+				end_pos: Position { line: 1, col: 31 },
+			},
+		}),
+		span: Span {
+			start: 0,
+			end: 31,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 32 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_field_declaration,
-// 		input,
-// 		parse_class_field,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
 
-// #[test]
-// fn class_field_getter_setter_maximal_parses() {
-// 	let input = r#"public String name {
-// 		public get {
-// 			return 'foo';
-// 		}
-// 		private set {
-// 			name = value;
-// 		}
-// 	}"#;
+#[test]
+fn class_field_getter_setter_maximal_parses() {
+	let input = r#"public String name {
+		public get {
+			return 'foo';
+		}
+		private set {
+			name = value;
+		}
+	}"#;
 
-// 	let expected = ClassField {
-// 		annotation: None,
-// 		access_mod: Some(AccessModifier::Public),
-// 		instance_mod: None,
-// 		is_final: false,
-// 		ty: Ty::from(PrimitiveKind::String),
-// 		id: Identifier::from("name"),
-// 		getter: Some(Property {
-// 			access_mod: Some(AccessModifier::Public),
-// 			property_type: PropertyType::Get,
-// 			body: Some(Block::Body(vec![Stmt {
-// 				kind: StmtKind::Return(Some(Expr::from(Literal::from("\'foo\'")))),
-// 			}])),
-// 			span: Span::default(),
-// 		}),
-// 		setter: Some(Property {
-// 			access_mod: Some(AccessModifier::Private),
-// 			property_type: PropertyType::Set,
-// 			body: Some(Block::Body(vec![Stmt {
-// 				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
-// 					kind: ExprKind::Assignment(
-// 						Box::new(Expr::from(Identifier::from("name"))),
-// 						AssignOp::Eq,
-// 						Box::new(Expr::from(Identifier::from("value"))),
-// 					),
-// 				})),
-// 			}])),
-// 			span: Span::default(),
-// 		}),
-// 		rhs: None,
-// 		span: Span::default(),
-// 	};
+	let expected = ClassField {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		instance_mod: None,
+		is_final: false,
+		ty: Ty {
+			kind: TyKind::Primitive(Primitive {
+				kind: PrimitiveKind::String,
+				is_array: false,
+			}),
+			span: Span {
+				start: 7,
+				end: 14,
+				start_pos: Position { line: 1, col: 8 },
+				end_pos: Position { line: 1, col: 15 },
+			},
+		},
+		id: Identifier {
+			name: String::from("name"),
+			span: Span {
+				start: 14,
+				end: 18,
+				start_pos: Position { line: 1, col: 15 },
+				end_pos: Position { line: 1, col: 19 },
+			},
+		},
+		getter: Some(Property {
+			access_mod: Some(AccessModifier::Public),
+			property_type: PropertyType::Get,
+			body: Some(Block::Body(vec![Stmt {
+				kind: StmtKind::Return(Some(Expr {
+					kind: ExprKind::Literal(Literal {
+						kind: LiteralKind::String(String::from("'foo'")),
+						span: Span {
+							start: 46,
+							end: 51,
+							start_pos: Position { line: 3, col: 11 },
+							end_pos: Position { line: 3, col: 16 },
+						},
+					}),
+					span: Span {
+						start: 46,
+						end: 51,
+						start_pos: Position { line: 3, col: 11 },
+						end_pos: Position { line: 3, col: 16 },
+					},
+				})),
+				span: Span {
+					start: 39,
+					end: 52,
+					start_pos: Position { line: 3, col: 4 },
+					end_pos: Position { line: 3, col: 17 },
+				},
+			}])),
+			span: Span {
+				start: 23,
+				end: 56,
+				start_pos: Position { line: 2, col: 3 },
+				end_pos: Position { line: 4, col: 4 },
+			},
+		}),
+		setter: Some(Property {
+			access_mod: Some(AccessModifier::Private),
+			property_type: PropertyType::Set,
+			body: Some(Block::Body(vec![Stmt {
+				kind: StmtKind::StmtExpr(StmtExpr::Expr(Expr {
+					kind: ExprKind::Assignment(
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("name"),
+								span: Span {
+									start: 76,
+									end: 80,
+									start_pos: Position { line: 6, col: 4 },
+									end_pos: Position { line: 6, col: 8 },
+								},
+							}),
+							span: Span {
+								start: 76,
+								end: 80,
+								start_pos: Position { line: 6, col: 4 },
+								end_pos: Position { line: 6, col: 8 },
+							},
+						}),
+						AssignOp::Eq,
+						Box::new(Expr {
+							kind: ExprKind::Identifier(Identifier {
+								name: String::from("value"),
+								span: Span {
+									start: 83,
+									end: 88,
+									start_pos: Position { line: 6, col: 11 },
+									end_pos: Position { line: 6, col: 16 },
+								},
+							}),
+							span: Span {
+								start: 83,
+								end: 88,
+								start_pos: Position { line: 6, col: 11 },
+								end_pos: Position { line: 6, col: 16 },
+							},
+						}),
+					),
+					span: Span {
+						start: 76,
+						end: 88,
+						start_pos: Position { line: 6, col: 4 },
+						end_pos: Position { line: 6, col: 16 },
+					},
+				})),
+				span: Span {
+					start: 76,
+					end: 88,
+					start_pos: Position { line: 6, col: 4 },
+					end_pos: Position { line: 6, col: 16 },
+				},
+			}])),
+			span: Span {
+				start: 59,
+				end: 93,
+				start_pos: Position { line: 5, col: 3 },
+				end_pos: Position { line: 7, col: 4 },
+			},
+		}),
+		rhs: None,
+		span: Span {
+			start: 0,
+			end: 96,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 8, col: 3 },
+		},
+	};
 
-// 	test_parse(
-// 		Rule::class_field_declaration,
-// 		input,
-// 		parse_class_field,
-// 		expected,
-// 	);
-// }
+	test_parse(
+		Rule::class_field_declaration,
+		input,
+		parse_class_field,
+		expected,
+	);
+}
 
 #[test]
 fn class_method_maximal_parses() {
@@ -531,7 +1194,6 @@ fn class_method_maximal_parses() {
 			},
 		},
 		params: vec![
-			// (Ty::from(Identifier::from("Bar")), Identifier::from("b")),
 			(
 				Ty {
 					kind: TyKind::ClassOrInterface(ClassOrInterface {
@@ -2485,9 +3147,9 @@ fn throw_stmt_parses() {
 				NewType::Class(ClassArgs::Basic(None)),
 			),
 			span: Span {
-				start: 23,
+				start: 6,
 				end: 25,
-				start_pos: Position { line: 1, col: 24 },
+				start_pos: Position { line: 1, col: 7 },
 				end_pos: Position { line: 1, col: 26 },
 			},
 		}),
@@ -3795,9 +4457,9 @@ fn new_inst_array_literal_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Array(literal_exprs)),
 		span: Span {
-			start: 4,
+			start: 0,
 			end: 20,
-			start_pos: Position { line: 1, col: 5 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 21 },
 		},
 	};
@@ -3908,9 +4570,9 @@ fn new_inst_collection_literal_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Collection(literal_exprs)),
 		span: Span {
-			start: 17,
+			start: 0,
 			end: 26,
-			start_pos: Position { line: 1, col: 18 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 27 },
 		},
 	};
@@ -4131,9 +4793,9 @@ fn new_inst_map_literal_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Map(mapping)),
 		span: Span {
-			start: 24,
+			start: 0,
 			end: 48,
-			start_pos: Position { line: 1, col: 25 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 49 },
 		},
 	};
@@ -4220,9 +4882,9 @@ fn new_inst_map_args_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Some(class_args)))),
 		span: Span {
-			start: 24,
+			start: 0,
 			end: 29,
-			start_pos: Position { line: 1, col: 25 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 30 },
 		},
 	};
@@ -4266,9 +4928,9 @@ fn new_inst_class_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(None))),
 		span: Span {
-			start: 7,
+			start: 0,
 			end: 9,
-			start_pos: Position { line: 1, col: 8 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 10 },
 		},
 	};
