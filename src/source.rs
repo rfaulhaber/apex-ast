@@ -1,7 +1,8 @@
 use pest::Position as PestPosition;
 use pest::Span as PestSpan;
+use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct Span {
 	pub start: usize,
 	pub end: usize,
@@ -20,7 +21,7 @@ impl<'s> From<PestSpan<'s>> for Span {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Position {
 	pub line: usize,
 	pub col: usize,

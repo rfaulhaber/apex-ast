@@ -8,8 +8,9 @@ use super::r#enum::*;
 use super::stmt::Block;
 use super::ty::*;
 use crate::source::Span;
+use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Class {
 	pub annotation: Option<Annotation>,
 	pub access_mod: Option<AccessModifier>,
@@ -21,7 +22,7 @@ pub struct Class {
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ClassBodyMember {
 	InnerClass(Box<Class>),
 	InnerInterface(Interface),
@@ -33,7 +34,7 @@ pub enum ClassBodyMember {
 	Constructor(ClassConstructor),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ImplOrSharingMod {
 	Virtual,
 	Abstract,
@@ -42,7 +43,7 @@ pub enum ImplOrSharingMod {
 	Inherited,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClassField {
 	pub annotation: Option<Annotation>,
 	pub access_mod: Option<AccessModifier>,
@@ -56,13 +57,13 @@ pub struct ClassField {
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ClassInstanceModifier {
 	Static,
 	Transient,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Property {
 	pub access_mod: Option<AccessModifier>,
 	pub property_type: PropertyType,
@@ -81,14 +82,14 @@ impl From<PropertyType> for Property {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum PropertyType {
 	Get,
 	Set,
 }
 
 // constructors are basically methods without return types
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClassConstructor {
 	pub annotation: Option<Annotation>,
 	pub access_mod: Option<AccessModifier>,

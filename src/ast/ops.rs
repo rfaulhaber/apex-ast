@@ -1,5 +1,7 @@
+use serde::Serialize;
+
 /// binary operators
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum BinOp {
 	Add,
 	Sub,
@@ -70,7 +72,7 @@ impl BinOp {
 }
 
 /// UnOp is prefix operators exclusively.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum UnOp {
 	/// `!` operator
 	Not,
@@ -105,7 +107,7 @@ impl UnOp {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum IncDecOp {
 	Inc,
 	Dec,
@@ -130,7 +132,7 @@ impl IncDecOp {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum AssignOp {
 	Eq,
 	Add,

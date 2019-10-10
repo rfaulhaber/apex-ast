@@ -3,14 +3,15 @@ use super::literal::*;
 use super::ops::*;
 use super::ty::*;
 use crate::source::Span;
+use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Expr {
 	pub kind: ExprKind,
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ExprKind {
 	Infix(Box<Expr>, BinOp, Box<Expr>),
 	Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
@@ -32,7 +33,7 @@ pub enum ExprKind {
 	Identifier(Identifier),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum NewType {
 	Map(Vec<(Expr, Expr)>),
 	Collection(Vec<Expr>),
@@ -42,13 +43,13 @@ pub enum NewType {
 
 // this is necessary because we need a generic way of supporting both
 // `new Foo(bar)` and `new Account(Name = 'foo')`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ClassArgs {
 	Basic(Option<Vec<Expr>>),
 	SObject(Vec<(Identifier, Expr)>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Query {
 	Soql(String),
 	Sosl(String),

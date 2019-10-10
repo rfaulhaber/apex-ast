@@ -4,8 +4,9 @@ use super::modifier::{AccessModifier, ImplModifier};
 use super::stmt::Block;
 use super::ty::Ty;
 use crate::source::Span;
+use serde::Serialize;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClassMethod {
 	pub annotation: Option<Annotation>,
 	pub access_mod: Option<AccessModifier>,
@@ -31,7 +32,7 @@ impl ClassMethod {
 }
 
 // either an interface method definition or an abstract method
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ImplementableMethod {
 	pub ty: Ty,
 	pub id: Identifier,
@@ -39,7 +40,7 @@ pub struct ImplementableMethod {
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Method {
 	/// an ordinary class method, with a signature and body
 	ClassMethod(ClassMethod),

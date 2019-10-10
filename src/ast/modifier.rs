@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::Serialize;
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum AccessModifier {
 	Global,
 	Public,
@@ -6,7 +8,7 @@ pub enum AccessModifier {
 	Private,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ImplModifier {
 	Virtual,
 	Override,

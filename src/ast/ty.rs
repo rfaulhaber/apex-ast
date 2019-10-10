@@ -1,5 +1,6 @@
 use super::identifier::Identifier;
 use crate::source::Span;
+use serde::Serialize;
 
 pub type TyRef = Box<Ty>;
 
@@ -13,13 +14,13 @@ macro_rules! type_args {
 }
 
 /// An Apex type.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Ty {
 	pub kind: TyKind,
 	pub span: Span,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum TyKind {
 	/// A user-defined type.
 	ClassOrInterface(ClassOrInterface),
@@ -45,7 +46,7 @@ impl Ty {
 /// - `Foo.Bar<Baz>` (generic inner with one type argument)
 /// - `Foo[]` (syntactic sugar for List<Foo>)
 /// - `Foo.Bar[]` (syntactic sugar for List<Foo.Bar>)
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ClassOrInterface {
 	pub name: Identifier,
 	pub subclass: Option<Identifier>,
@@ -54,13 +55,13 @@ pub struct ClassOrInterface {
 	pub span: Span,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Primitive {
 	pub kind: PrimitiveKind,
 	pub is_array: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum PrimitiveKind {
 	Blob,
 	Boolean,

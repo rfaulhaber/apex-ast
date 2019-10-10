@@ -4,16 +4,17 @@ use super::identifier::*;
 use super::literal::*;
 use super::ty::*;
 use crate::source::Span;
+use serde::Serialize;
 
 pub type BlockRef = Box<Block>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Stmt {
 	pub kind: StmtKind,
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum StmtKind {
 	For(ForStmt),
 	DoWhile(BlockRef, Expr),
@@ -46,25 +47,25 @@ pub enum StmtKind {
 
 pub type WhenCase = (WhenCondition, Block);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum WhenCondition {
 	Type(Ty, Identifier),
 	Value(Vec<WhenValue>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum WhenValue {
 	Literal(Literal),
 	Identifier(Identifier),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Block {
 	Body(Vec<Stmt>),
 	Inline(Box<Stmt>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ForStmt {
 	Basic(
 		Option<Vec<StmtExpr>>,
@@ -75,13 +76,13 @@ pub enum ForStmt {
 	Enhanced(Ty, Identifier, Expr, BlockRef),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum StmtExpr {
 	Expr(Expr),
 	Local(Local),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Local {
 	pub annotation: Option<Annotation>,
 	pub is_final: bool,
@@ -91,7 +92,7 @@ pub struct Local {
 	pub span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum DmlOp {
 	Insert,
 	Update,
