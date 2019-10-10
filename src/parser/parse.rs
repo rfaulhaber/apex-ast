@@ -107,12 +107,14 @@ pub(super) fn parse_class(p: Pair<Rule>) -> Class {
 
 	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
-	let sharing_or_impl_modifier = parse_iter_if_rule!(
-		inner,
-		next,
-		Rule::class_impl_or_sharing_modifier,
-		parse_class_impl_mod
-	);
+
+	let sharing_or_impl_modifier = if next.as_rule() == Rule::class_impl_or_sharing_modifier {
+		let ret = parse_class_impl_mod(next);
+		inner.next().unwrap();
+		Some(ret)
+	} else {
+		None
+	};
 
 	let name = parse_identifier(inner.next().unwrap());
 
@@ -217,9 +219,13 @@ pub(super) fn parse_interface(p: Pair<Rule>) -> Interface {
 
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
 
-	// TODO fix!
-	#[allow(unused_assignments)]
-	let is_virtual = next_is_rule!(inner, next, Rule::VIRTUAL);
+	let is_virtual = if next.as_rule() == Rule::VIRTUAL {
+		inner.next().unwrap();
+		true
+	} else {
+		false
+	};
+
 	let name = parse_identifier(inner.next().unwrap());
 
 	let following = inner.next().unwrap();
@@ -309,7 +315,14 @@ pub(super) fn parse_enum(p: Pair<Rule>) -> Enum {
 	let mut next = inner.next().unwrap();
 
 	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
-	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
+
+	let access_mod = if next.as_rule() == Rule::access_modifier {
+		let ret = parse_access_modifier(next);
+		inner.next().unwrap();
+		Some(ret)
+	} else {
+		None
+	};
 
 	let name = parse_identifier(inner.next().unwrap());
 	let ids: Vec<Identifier> = inner
@@ -1638,19 +1651,8 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 
 					let next = coi_inner.next();
 
-					if next.is_none() {
-						Ty {
-							kind: TyKind::ClassOrInterface(ClassOrInterface {
-								name,
-								subclass: Some(subclass),
-								type_arguments: None,
-								is_array: inner.next().is_some(),
-								span: span.clone(),
-							}),
-							span,
-						}
-					} else {
-						let ty_args = next.unwrap().into_inner().next().unwrap();
+					if let Some(following) = next {
+						let ty_args = following.into_inner().next().unwrap();
 
 						match ty_args.as_rule() {
 							Rule::two_type_arguments => {
@@ -1687,6 +1689,17 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 								}
 							}
 							_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
+						}
+					} else {
+						Ty {
+							kind: TyKind::ClassOrInterface(ClassOrInterface {
+								name,
+								subclass: Some(subclass),
+								type_arguments: None,
+								is_array: inner.next().is_some(),
+								span: span.clone(),
+							}),
+							span,
 						}
 					}
 				}
