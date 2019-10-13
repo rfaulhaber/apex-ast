@@ -52,7 +52,7 @@ macro_rules! match_as_rule {
 	};
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParseError {
 	location: pest::error::InputLocation,
 	line_col: pest::error::LineColLocation,
