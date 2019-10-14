@@ -1091,6 +1091,7 @@ pub(super) fn parse_expr(p: Pair<Rule>) -> Expr {
 		Rule::infix_expr => parse_infix_expr(inner),
 		Rule::ternary_expr => parse_ternary_expr(inner),
 		Rule::assignment_expr => parse_assignment_expr(inner),
+		Rule::instanceof_expr => parse_instanceof_expr(inner),
 		Rule::expr_inner => parse_expr_inner(inner),
 		_ => unreachable!("unexpected rule: {:?}", inner.as_rule()),
 	}
@@ -1163,7 +1164,7 @@ pub(super) fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 			let mut unary_inner = inner.into_inner();
 
 			let op = UnOp::from(unary_inner.next().unwrap().as_str());
-			let expr = parse_expr(unary_inner.next().unwrap());
+			let expr = parse_expr_inner(unary_inner.next().unwrap());
 
 			Expr {
 				kind: ExprKind::Unary(op, Box::new(expr)),
@@ -1172,18 +1173,6 @@ pub(super) fn parse_expr_inner(p: Pair<Rule>) -> Expr {
 		}
 		Rule::prefix_expr => parse_prefix_expr(inner),
 		Rule::postfix_expr => parse_postfix_expr(inner),
-		Rule::instanceof_expr => {
-			let mut inst_pairs = inner.into_inner();
-
-			let id = parse_identifier(inst_pairs.next().unwrap());
-			inst_pairs.next(); // discard INSTANCEOF token
-			let ty = parse_ty(inst_pairs.next().unwrap());
-
-			Expr {
-				kind: ExprKind::Instanceof(id, ty),
-				span: inner_span,
-			}
-		}
 		Rule::cast_expression => parse_cast_expr(inner),
 		Rule::primary => {
 			let primary = inner.into_inner().next().unwrap();
@@ -1300,6 +1289,20 @@ pub(super) fn parse_property_access(p: Pair<Rule>) -> Expr {
 
 	Expr {
 		kind: ExprKind::PropertyAccess(Box::new(accessible), Box::new(selector)),
+		span,
+	}
+}
+
+pub(super) fn parse_instanceof_expr(p: Pair<Rule>) -> Expr {
+	let span = Span::from(p.as_span());
+	let mut inner = p.into_inner();
+
+	let lhs = parse_expr_inner(inner.next().unwrap());
+	inner.next(); // discard INSTANCEOF token
+	let ty = parse_ty(inner.next().unwrap());
+
+	Expr {
+		kind: ExprKind::Instanceof(Box::new(lhs), ty),
 		span,
 	}
 }

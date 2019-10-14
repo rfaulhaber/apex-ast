@@ -26,7 +26,7 @@ pub enum ExprKind {
 	Unary(UnOp, Box<Expr>),
 	Prefix(IncDecOp, Box<Expr>),
 	Postfix(Box<Expr>, IncDecOp),
-	Instanceof(Identifier, Ty),
+	Instanceof(Box<Expr>, Ty),
 	Cast(Ty, Box<Expr>),
 	Type(Ty),
 	Literal(Literal),

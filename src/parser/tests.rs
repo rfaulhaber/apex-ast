@@ -4173,31 +4173,12 @@ fn expr_identifier_parses() {
 }
 
 #[test]
-fn expr_type_expr_parses() {
-	let input = "Foo.class";
+fn instanceof_expr_parses() {
+	let input = "foo instanceof Foo";
 
-	let expected = Expr {
-		kind: ExprKind::Type(Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
-				name: Identifier {
-					name: String::from("Foo"),
-					span: Span {
-						start: 0,
-						end: 3,
-						start_pos: Position { line: 1, col: 1 },
-						end_pos: Position { line: 1, col: 4 },
-					},
-				},
-				is_array: false,
-				subclass: None,
-				type_arguments: None,
-				span: Span {
-					start: 0,
-					end: 3,
-					start_pos: Position { line: 1, col: 1 },
-					end_pos: Position { line: 1, col: 4 },
-				},
-			}),
+	let lhs = Expr {
+		kind: ExprKind::Identifier(Identifier {
+			name: String::from("foo"),
 			span: Span {
 				start: 0,
 				end: 3,
@@ -4205,23 +4186,6 @@ fn expr_type_expr_parses() {
 				end_pos: Position { line: 1, col: 4 },
 			},
 		}),
-		span: Span {
-			start: 0,
-			end: 9,
-			start_pos: Position { line: 1, col: 1 },
-			end_pos: Position { line: 1, col: 10 },
-		},
-	};
-
-	test_parse(Rule::expression, input, parse_expr, expected);
-}
-
-#[test]
-fn instanceof_expr_parses() {
-	let input = "foo instanceof Foo";
-
-	let id = Identifier {
-		name: String::from("foo"),
 		span: Span {
 			start: 0,
 			end: 3,
@@ -4260,7 +4224,7 @@ fn instanceof_expr_parses() {
 	};
 
 	let expected = Expr {
-		kind: ExprKind::Instanceof(id, ty),
+		kind: ExprKind::Instanceof(Box::new(lhs), ty),
 		span: Span {
 			start: 0,
 			end: 18,

@@ -177,7 +177,7 @@ stmt_expr = {
 
 // expressions 
 
-expression = { infix_expr | ternary_expr | assignment_expr | expr_inner }
+expression = { infix_expr | ternary_expr | assignment_expr | instanceof_expr | expr_inner }
 
 // these are supposed to be "terminal" expressions, to avoid left-recursion 
 expr_inner = {
@@ -190,7 +190,6 @@ expr_inner = {
     | unary_expr
     | prefix_expr
     | postfix_expr
-    | instanceof_expr
     | cast_expression
     | primary
 }
@@ -201,24 +200,28 @@ ternary_expr = { (infix_expr | expr_inner) ~ "?" ~ expression ~ ":" ~ expression
 // infix_expr is right-recursive, so 1 + 2 + 3 is actually 1 + (2 + 3)
 infix_expr = { expr_inner ~ binary_operator ~ expression }
 assignment_expr = { expr_inner ~ assignment_operator ~ expression }
-unary_expr = { unary_operator  ~ expression }
+unary_expr = { unary_operator ~ expr_inner }
 prefix_expr = { (INC_OP | DEC_OP) ~ affixable }
 postfix_expr = { affixable ~ (INC_OP | DEC_OP) }
 affixable = { property_access | list_access | identifier }
 
 // technically, something like "1 instanceof Integer" is apparently syntactically
 // correct but Salesforce throws a compile-time error rather than a parsing error
-instanceof_expr = { identifier ~ INSTANCEOF ~ basic_type }
+instanceof_expr = { expr_inner ~ INSTANCEOF ~ basic_type }
 
 // TODO make method calls distinct from property access
-property_access = { (list_access | access_partial) ~ "." ~ !CLASS ~ (property_access | list_access | method_call | identifier) }
+// NOTE a previous version had this include !CLASS to make distinct from type
+// expressions, however in Apex `something.class.getName()` is valid, so for
+// now we'll lump them in with this rule
+property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | identifier) }
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
 cast_operator = _{ "(" ~ basic_type ~ ")" }
 
 access_partial = _{
-    cast_expression
+	braced_expr
+    | cast_expression
     | new_instance_expr
     | query_expression
     | SUPER ~ super_suffix
@@ -231,7 +234,6 @@ access_partial = _{
 primary = {
     THIS ~ arguments?
     | SUPER ~ super_suffix
-    | type_expr
     | literal
     | identifier
 }
@@ -322,7 +324,7 @@ literal = {
 
 long_literal = @{ integer_literal ~ ^"L" }
 integer_literal = @{ "0" | "-"? ~ ASCII_NONZERO_DIGIT ~ (ASCII_DIGIT | "_")* }
-float_literal = @{ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT* | "." ~ ASCII_DIGIT* }
+float_literal = @{ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT+ | "." ~ ASCII_DIGIT+ }
 
 bool_literal = { TRUE | FALSE }
 

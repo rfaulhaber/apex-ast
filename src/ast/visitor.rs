@@ -409,8 +409,8 @@ pub fn walk_expr<V: Visitor>(visitor: &mut V, expr: Expr) {
 		ExprKind::Postfix(expr, _op) => {
 			visitor.visit_expr(*expr);
 		}
-		ExprKind::Instanceof(id, ty) => {
-			visitor.visit_identifier(id);
+		ExprKind::Instanceof(lhs, ty) => {
+			visitor.visit_expr(*lhs);
 			visitor.visit_ty(ty);
 		}
 		ExprKind::Cast(ty, expr) => {
