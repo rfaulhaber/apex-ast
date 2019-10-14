@@ -14,7 +14,8 @@ use serde::Serialize;
 pub struct Class {
 	pub annotation: Option<Annotation>,
 	pub access_mod: Option<AccessModifier>,
-	pub sharing_or_impl_modifier: Option<ImplOrSharingMod>,
+	pub impl_mod: Option<ClassImplMod>,
+	pub sharing_mod: Option<ClassSharingMod>,
 	pub name: Identifier,
 	pub extension: Option<Ty>,
 	pub implementations: Vec<Ty>,
@@ -35,9 +36,13 @@ pub enum ClassBodyMember {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
-pub enum ImplOrSharingMod {
+pub enum ClassImplMod {
 	Virtual,
 	Abstract,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub enum ClassSharingMod {
 	With,
 	Without,
 	Inherited,

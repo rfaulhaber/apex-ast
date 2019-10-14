@@ -107,14 +107,18 @@ pub(super) fn parse_class(p: Pair<Rule>) -> Class {
 
 	let annotation = parse_iter_if_rule!(inner, next, Rule::annotation, parse_annotation);
 	let access_mod = parse_iter_if_rule!(inner, next, Rule::access_modifier, parse_access_modifier);
-
-	let sharing_or_impl_modifier = if next.as_rule() == Rule::class_impl_or_sharing_modifier {
-		let ret = parse_class_impl_mod(next);
-		inner.next().unwrap();
-		Some(ret)
-	} else {
-		None
-	};
+	let impl_mod = parse_iter_if_rule!(
+		inner,
+		next,
+		Rule::class_impl_modifier,
+		parse_class_impl_modifier
+	);
+	let sharing_mod = parse_iter_if_rule!(
+		inner,
+		next,
+		Rule::class_sharing_modifier,
+		parse_class_sharing_modifier
+	);
 
 	let name = parse_identifier(inner.next().unwrap());
 
@@ -142,7 +146,8 @@ pub(super) fn parse_class(p: Pair<Rule>) -> Class {
 	Class {
 		annotation,
 		access_mod,
-		sharing_or_impl_modifier,
+		impl_mod,
+		sharing_mod,
 		name,
 		implementations,
 		extension,
@@ -151,17 +156,23 @@ pub(super) fn parse_class(p: Pair<Rule>) -> Class {
 	}
 }
 
-pub(super) fn parse_class_impl_mod(p: Pair<Rule>) -> ImplOrSharingMod {
+pub(super) fn parse_class_impl_modifier(p: Pair<Rule>) -> ClassImplMod {
 	let inner = p.into_inner().next().unwrap();
 
-	match inner.as_rule() {
-		Rule::ABSTRACT => ImplOrSharingMod::Abstract,
-		Rule::VIRTUAL => ImplOrSharingMod::Virtual,
-		Rule::WITH_SHARING => ImplOrSharingMod::With,
-		Rule::WITHOUT_SHARING => ImplOrSharingMod::Without,
-		Rule::INHERITED_SHARING => ImplOrSharingMod::Inherited,
-		_ => unreachable!("unexpected class impl rule: {:?}", inner.as_rule()),
-	}
+	match_as_rule!(inner,
+		Rule::VIRTUAL => ClassImplMod::Virtual,
+		Rule::ABSTRACT => ClassImplMod::Abstract
+	)
+}
+
+pub(super) fn parse_class_sharing_modifier(p: Pair<Rule>) -> ClassSharingMod {
+	let inner = p.into_inner().next().unwrap();
+
+	match_as_rule!(inner,
+		Rule::WITH_SHARING => ClassSharingMod::With,
+		Rule::WITHOUT_SHARING => ClassSharingMod::Without,
+		Rule::INHERITED_SHARING => ClassSharingMod::Inherited
+	)
 }
 
 pub(super) fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {

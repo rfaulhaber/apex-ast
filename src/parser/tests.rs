@@ -39,6 +39,38 @@ fn file_parses() {
 }
 
 #[test]
+fn virtual_class_parses() {
+	let input = "public virtual with sharing class Foo {}";
+
+	let expected = Class {
+		annotation: None,
+		access_mod: Some(AccessModifier::Public),
+		impl_mod: Some(ClassImplMod::Virtual),
+		sharing_mod: Some(ClassSharingMod::With),
+		name: Identifier {
+			name: String::from("Foo"),
+			span: Span {
+				start: 34,
+				end: 37,
+				start_pos: Position { line: 1, col: 35 },
+				end_pos: Position { line: 1, col: 38 },
+			},
+		},
+		extension: None,
+		implementations: Vec::new(),
+		body: Vec::new(),
+		span: Span {
+			start: 0,
+			end: 40,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 41 },
+		},
+	};
+
+	test_parse(Rule::class_declaration, input, parse_class, expected);
+}
+
+#[test]
 fn class_basic_parses() {
 	let input = r#"public with sharing class FileWriter implements Writer {
 		public Buffer buf;
@@ -60,7 +92,8 @@ fn class_basic_parses() {
 	let expected = Class {
 		annotation: None,
 		access_mod: Some(AccessModifier::Public),
-		sharing_or_impl_modifier: Some(ImplOrSharingMod::With),
+		impl_mod: None,
+		sharing_mod: Some(ClassSharingMod::With),
 		name: Identifier {
 			name: String::from("FileWriter"),
 			span: Span {

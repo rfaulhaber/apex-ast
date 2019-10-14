@@ -2,20 +2,15 @@
 
 apex_file = { SOI ~ (class_declaration | interface_declaration | trigger_declaration) ~ EOI }
 
-class_declaration = { annotation? ~ access_modifier? ~ class_impl_or_sharing_modifier? ~ CLASS ~ identifier ~ (IMPLEMENTS ~ type_list)? ~ (EXTENDS ~ basic_type)? ~ class_body }
+class_declaration = { annotation?  ~ access_modifier? ~ class_impl_modifier? ~ class_sharing_modifier? ~ CLASS ~ identifier ~ (IMPLEMENTS ~ type_list)? ~ (EXTENDS ~ basic_type)? ~ class_body }
 class_body = { "{" ~ (inner_class_declaration | interface_declaration | class_method_declaration | enum_declaration | class_field_declaration | static_block | instance_block | class_constructor_definition)* ~ "}" }
-inner_class_declaration = { access_modifier? ~ class_impl_or_sharing_modifier? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
+inner_class_declaration = { access_modifier? ~ class_impl_modifier? ~ class_sharing_modifier? ~ CLASS ~ identifier ~ (EXTENDS ~ basic_type)? ~ (IMPLEMENTS ~ type_list)? ~ inner_class_body }
 inner_class_body = { "{" ~ (class_method_declaration | enum_declaration | class_field_declaration | class_constructor_definition | static_block | instance_block)* ~ "}" }
 // basically methods without return type 
 class_constructor_definition = { annotation? ~ access_modifier? ~ identifier ~ parameter_list ~ block }
 
-class_impl_or_sharing_modifier = {
-	ABSTRACT
-	| VIRTUAL
-    | WITHOUT_SHARING
-    | WITH_SHARING
-    | INHERITED_SHARING
-}
+class_impl_modifier = { VIRTUAL | ABSTRACT }
+class_sharing_modifier = { WITHOUT_SHARING | WITH_SHARING | INHERITED_SHARING }
 
 // interface declaration
 interface_declaration = { access_modifier? ~ VIRTUAL? ~ INTERFACE ~ identifier ~ (EXTENDS ~ type_list)? ~ interface_body }
@@ -213,7 +208,7 @@ instanceof_expr = { expr_inner ~ INSTANCEOF ~ basic_type }
 // NOTE a previous version had this include !CLASS to make distinct from type
 // expressions, however in Apex `something.class.getName()` is valid, so for
 // now we'll lump them in with this rule
-property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | identifier) }
+property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | CLASS | identifier) }
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
@@ -224,8 +219,8 @@ access_partial = _{
     | cast_expression
     | new_instance_expr
     | query_expression
-    | SUPER ~ super_suffix
     | method_call
+    | SUPER
     | THIS
     | identifier
 }
@@ -241,9 +236,7 @@ primary = {
 super_suffix = { arguments | "." ~ identifier ~ arguments }
 
 method_call = { 
-    identifier ~ arguments
-    | THIS ~ arguments?
-    | SUPER ~ arguments?
+    (identifier | SUPER | THIS) ~ arguments
 }
 
 new_instance_expr = { NEW ~ (map_literal_init | collection_literal_init | array_literal_init | new_class) }
@@ -271,10 +264,10 @@ sobject_argument_pair = { identifier ~ "=" ~ expression }
 type_expr = { basic_type ~ "." ~ CLASS }
 
 // TODO add "| VOID"
-basic_type = { (primitive_type | class_or_interface_type) ~ array_brackets? }
+basic_type = { ((class_or_interface_type | primitive_type) ~ array_brackets?) | VOID }
 array_brackets = @{ "[]" }
 
-class_or_interface_type = { identifier ~ ("." ~ !CLASS ~ identifier)? ~ type_arguments? }
+class_or_interface_type = { (identifier ~ ("." ~ !CLASS ~ identifier)? | (MAP | LIST | SET))  ~ type_arguments? }
 
 // apex only has typed types of up to two types.
 // Map<String, String> => two types
@@ -336,7 +329,8 @@ null_literal = { ^"null" }
 
 // TODO how do I write this such that it doesn't match apex keywords?
 // "voids" should be a valid identifier, while "void" shouldn't be
-identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+// identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+identifier = @{ ((!apex_keyword ~ ASCII_ALPHA) | (apex_keyword ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
 
 escape_sequence = {
     "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
@@ -357,7 +351,6 @@ LONG = { ^"Long" }
 OBJECT = { ^"Object" }
 STRING = { ^"String" } 
 TIME = { ^"Time" }
-
 LIST = { ^"List" }
 SET = { ^"Set" }  
 
@@ -440,47 +433,60 @@ BIT_SHIFT_RIGHT = { ">>" }
 
 // apex keywords convenience rule
 apex_keyword = _{
-    ABSTRACT
-    | BOOLEAN
-    | BREAK
-    | CATCH
-    | CLASS
-    | CONTINUE
-    | DEFAULT
-    | DO
-    | ELSE
-    | ENUM
-    | EXTENDS
-    | FALSE
-    | FINALLY
-    | FINAL
-    | FOR
-    | GET
-    | GLOBAL
-    | IF
-    | IMPLEMENTS
-    | INHERITED_SHARING
-    | INSTANCEOF
-    | INTERFACE
-    | NEW
-    | OVERRIDE
-    | PRIVATE
-    | PROTECTED
-    | PUBLIC
-    | RETURN
-    | SET
-    | STATIC
-    | SUPER
-    | THIS
-    | THROW
-    | TRANSIENT
-    | TRUE
-    | TRY
-    | VIRTUAL
-    | VOID
-    | WHILE
-    | WITHOUT_SHARING
-    | WITH_SHARING
+	ABSTRACT
+	| BLOB
+	| BOOLEAN
+	| BOOLEAN
+	| BREAK
+	| CATCH
+	| CLASS
+	| CONTINUE
+	| DATE
+	| DATETIME
+	| DECIMAL
+	| DEFAULT
+	| DO
+	| DOUBLE
+	| ELSE
+	| ENUM
+	| EXTENDS
+	| FALSE
+	| FINAL
+	| FINALLY
+	| FOR
+	// | GET
+	| GLOBAL
+	| IF
+	| IMPLEMENTS
+	| INHERITED_SHARING
+	| INSTANCEOF
+	| INTEGER
+	| INTERFACE
+	| LIST
+	| LONG
+	| MAP
+	// | NEW
+	| OBJECT
+	| OVERRIDE
+	| PRIVATE
+	| PROTECTED
+	| PUBLIC
+	| RETURN
+	// | SET 
+	| STATIC
+	| STRING
+	| SUPER
+	| THIS
+	| THROW
+	| TIME
+	| TRANSIENT
+	| TRUE
+	| TRY
+	| VIRTUAL
+	| VOID
+	| WHILE
+	| WITHOUT_SHARING
+	| WITH_SHARING
 }
 
 // apex keywords
@@ -510,6 +516,7 @@ INSERT = { ^"insert" }
 INSTANCEOF = { ^"instanceof" }
 INTERFACE = { ^"interface" }
 MERGE = { ^"merge" }
+MAP = { ^"Map" }
 NEW = { ^"new" }
 NULL = { ^"null" }
 ON = { ^"on" }
