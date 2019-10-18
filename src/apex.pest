@@ -176,8 +176,8 @@ expression = { infix_expr | ternary_expr | assignment_expr | instanceof_expr | e
 
 // these are supposed to be "terminal" expressions, to avoid left-recursion 
 expr_inner = {
-    braced_expr
-    | property_access
+    property_access
+    | braced_expr
     | query_expression
     | list_access
     | new_instance_expr
@@ -208,7 +208,21 @@ instanceof_expr = { expr_inner ~ INSTANCEOF ~ basic_type }
 // NOTE a previous version had this include !CLASS to make distinct from type
 // expressions, however in Apex `something.class.getName()` is valid, so for
 // now we'll lump them in with this rule
-property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | CLASS | identifier) }
+// property_access = { (list_access | access_partial) ~ "." ~ (property_access | list_access | method_call | CLASS | identifier) }
+property_access = { property_access_left ~ ("." ~ property_access_right)+ }
+
+property_access_left = _{
+    list_access
+    | access_partial
+}
+
+property_access_right = _{
+    list_access 
+    | method_call 
+    | CLASS 
+    | identifier
+}
+
 list_access = { access_partial ~ "[" ~ expression ~ "]" }
 
 cast_expression = { cast_operator ~ expression }
@@ -220,6 +234,7 @@ access_partial = _{
     | new_instance_expr
     | query_expression
     | method_call
+    | primitive_type
     | SUPER
     | THIS
     | identifier
