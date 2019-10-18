@@ -234,10 +234,10 @@ access_partial = _{
     | new_instance_expr
     | query_expression
     | method_call
-    | primitive_type
     | SUPER
     | THIS
     | identifier
+    | primitive_type
 }
 
 // this name comes to us courtesy of java
