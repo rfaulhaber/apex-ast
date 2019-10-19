@@ -1,5 +1,5 @@
 pub(crate) mod parse;
-pub use parse::parse_file;
+pub use parse::{parse_file, ParseError};
 // lexically, this is dead code, but Pest needs this imported like so
 #[allow(unused_imports)]
 use pest::Parser;

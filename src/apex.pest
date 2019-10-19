@@ -244,8 +244,8 @@ access_partial = _{
 primary = {
     THIS ~ arguments?
     | SUPER ~ super_suffix
-    | literal
     | identifier
+    | literal
 }
 
 super_suffix = { arguments | "." ~ identifier ~ arguments }
