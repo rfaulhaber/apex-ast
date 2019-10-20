@@ -23,7 +23,7 @@ pub struct Ty {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum TyKind {
 	/// A user-defined type.
-	ClassOrInterface(ClassOrInterface),
+	RefType(RefType),
 	/// An Apex "primitive".
 	Primitive(Primitive),
 	Void,
@@ -35,7 +35,7 @@ impl Ty {
 	}
 }
 
-/// A class or interface.
+/// A user-defined type.
 ///
 /// The following fields, being options, should cover all forms.
 ///
@@ -44,15 +44,28 @@ impl Ty {
 /// - `Foo.Bar` ("inner")
 /// - `Foo<Bar>` ("generic" with one type argument)
 /// - `Foo.Bar<Baz>` (generic inner with one type argument)
+/// - `Foo<Bar>.Baz` (generic outer with inner class, may not exist in Apex)
+/// - `Foo<Bar>.Baz<Quux>` (generic outer with generic inner, may not exist in Apex)
 /// - `Foo[]` (syntactic sugar for List<Foo>)
 /// - `Foo.Bar[]` (syntactic sugar for List<Foo.Bar>)
 #[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct ClassOrInterface {
+pub struct RefType {
 	pub name: Identifier,
-	pub subclass: Option<Identifier>,
-	pub type_arguments: Option<(TyRef, Option<TyRef>)>,
+	pub inner: Option<InnerRefType>,
+	pub type_arguments: Option<TypeArguments>,
 	pub is_array: bool,
-	pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct InnerRefType {
+	pub name: Identifier,
+	pub type_arguments: Option<TypeArguments>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub enum TypeArguments {
+	Single(TyRef),
+	Double(TyRef, TyRef),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

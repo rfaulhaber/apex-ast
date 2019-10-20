@@ -1414,159 +1414,56 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 
 	new_inst_inner.next(); // discard "NEW"
 
-	let subrule = new_inst_inner.next().unwrap();
-	let subrule_span = Span::from(subrule.as_span());
+	let next = new_inst_inner.next().unwrap();
 
-	match subrule.as_rule() {
+	let (ty, new_type) = match next.as_rule() {
 		Rule::map_literal_init => {
-			let mut map_inner = subrule.into_inner();
+			let (ty, map_args) = parse_map_values(next);
 
-			let map_name = parse_identifier(map_inner.next().unwrap());
-
-			let mut two_types = map_inner.next().unwrap().into_inner();
-
-			let first_type = parse_ty(two_types.next().unwrap());
-			let second_type = parse_ty(two_types.next().unwrap());
-
-			let ty = Ty {
-				kind: TyKind::ClassOrInterface(ClassOrInterface {
-					name: map_name,
-					subclass: None,
-					type_arguments: type_args!(first_type, second_type),
-					is_array: false,
-					span: subrule_span.clone(),
-				}),
-				span: subrule_span,
-			};
-
-			let args = map_inner.next().unwrap();
-
-			match args.as_rule() {
-				Rule::map_literal_values => {
-					let pairs: Vec<(Expr, Expr)> = args
-						.into_inner()
-						.map(|p| {
-							let mut pair_inner = p.into_inner();
-
-							let left = parse_expr(pair_inner.next().unwrap());
-							let right = parse_expr(pair_inner.next().unwrap());
-
-							(left, right)
-						})
-						.collect();
-
-					Expr {
-						kind: ExprKind::New(ty, NewType::Map(pairs)),
-						span,
-					}
-				}
-				Rule::arguments => {
-					let args = parse_arguments(args);
-					Expr {
-						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
-						span,
-					}
-				}
-				_ => unreachable!("unexpected rule encountered: {:?}", args.as_rule()),
-			}
+			(ty, NewType::Map(map_args))
 		}
 		Rule::collection_literal_init => {
-			let mut lit_inner = subrule.into_inner();
+			let (ty, args) = parse_collection_values(next);
 
-			let collection_name = parse_identifier(lit_inner.next().unwrap());
-			let gen_type = parse_ty(lit_inner.next().unwrap().into_inner().next().unwrap());
-
-			let args = lit_inner.next().unwrap();
-
-			let ty = Ty {
-				kind: TyKind::ClassOrInterface(ClassOrInterface {
-					name: collection_name,
-					subclass: None,
-					type_arguments: Some((Box::new(gen_type), None)),
-					is_array: false,
-					span: subrule_span.clone(),
-				}),
-				span: subrule_span,
-			};
-
-			match args.as_rule() {
-				Rule::new_collection_literal => {
-					let exprs: Vec<Expr> = args.into_inner().map(parse_expr).collect();
-
-					Expr {
-						kind: ExprKind::New(ty, NewType::Collection(exprs)),
-						span,
-					}
-				}
-				Rule::arguments => {
-					let span = Span::from(args.as_span());
-					let args = parse_arguments(args);
-
-					Expr {
-						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
-						span,
-					}
-				}
-				_ => unreachable!("encountered unexpected rule: {:?}", args.as_rule()),
-			}
+			(ty, NewType::Collection(args))
 		}
 		Rule::array_literal_init => {
-			let mut lit_inner = subrule.into_inner();
+			let (ty, args) = parse_array_values(next);
 
-			let ty = parse_ty(lit_inner.next().unwrap());
-
-			let exprs: Vec<Expr> = lit_inner
-				.next()
-				.unwrap()
-				.into_inner()
-				.map(parse_expr)
-				.collect();
-
-			Expr {
-				kind: ExprKind::New(ty, NewType::Array(exprs)),
-				span,
-			}
+			(ty, NewType::Array(args))
 		}
 		Rule::new_class => {
-			let mut class_inner = subrule.into_inner();
+			let (ty, class_args) = parse_class_args(next);
 
-			let ty = parse_ty(class_inner.next().unwrap());
-
-			let args = class_inner.next().unwrap();
-
-			match args.as_rule() {
-				Rule::sobject_arguments => {
-					let span = Span::from(args.as_span());
-					let args: Vec<(Identifier, Expr)> = args
-						.into_inner()
-						.map(|p| {
-							let mut sobject_pair = p.into_inner();
-
-							let id = parse_identifier(sobject_pair.next().unwrap());
-							let expr = parse_expr(sobject_pair.next().unwrap());
-
-							(id, expr)
-						})
-						.collect();
-
-					Expr {
-						kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
-						span,
-					}
-				}
-				Rule::arguments => {
-					let args = parse_arguments(args);
-
-					Expr {
-						kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
-						span,
-					}
-				}
-				_ => unreachable!("unexpected rule found: {:?}", args.as_rule()),
-			}
+			(ty, NewType::Class(class_args))
 		}
-		_ => unreachable!("expected new instance subrule, got {:?}", subrule.as_rule()),
+		_ => unreachable!("expected new literal init, found: {:?}", next.as_rule()),
+	};
+
+	Expr {
+		kind: ExprKind::New(ty, new_type),
+		span,
 	}
+}
+
+fn parse_map_values(p: Pair<Rule>) -> (Ty, Vec<(Expr, Expr)>) {
+	let mut inner = p.into_inner();
+
+	let ty = parse_ty(inner.next().unwrap());
+
+	unimplemented!();
+}
+
+fn parse_collection_values(p: Pair<Rule>) -> (Ty, Vec<Expr>) {
+	unimplemented!();
+}
+
+fn parse_array_values(p: Pair<Rule>) -> (Ty, Vec<Expr>) {
+	unimplemented!();
+}
+
+fn parse_class_args(p: Pair<Rule>) -> (Ty, ClassArgs) {
+	unimplemented!();
 }
 
 pub(super) fn parse_method_call(p: Pair<Rule>) -> Expr {
@@ -1597,10 +1494,6 @@ pub(super) fn parse_identifier(p: Pair<Rule>) -> Identifier {
 				span,
 			}
 		}
-		Rule::map_type => Identifier {
-			name: String::from(p.as_str()),
-			span,
-		},
 		_ => unreachable!(
 			"expected identifier or rule that leads to identifier, got: {:?}",
 			p.as_rule()
@@ -1654,161 +1547,103 @@ pub(super) fn parse_literal(p: Pair<Rule>) -> Literal {
 }
 
 // Rule::basic_type
-// TODO clean up
 pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 	let span = Span::from(p.as_span());
 	let mut inner = p.into_inner();
 
-	let t = inner.next().unwrap();
+	let first = inner.next().unwrap();
 
-	match t.as_rule() {
-		Rule::class_or_interface_type => {
-			let mut coi_inner = t.into_inner();
+	let kind = match first.as_rule() {
+		Rule::ref_type => TyKind::RefType(parse_ref_type(first)),
+		Rule::primitive_type => TyKind::Primitive(parse_primitive_type(first)),
+		Rule::VOID => TyKind::Void,
+		_ => unreachable!("expected ty kind, got {:?}", first.as_rule()),
+	};
 
-			let name = parse_identifier(coi_inner.next().unwrap());
+	Ty { kind, span }
+}
 
-			if name.eq_case_insensitive("void") {
-				return Ty {
-					kind: TyKind::Void,
-					span,
-				};
-			}
+fn parse_ref_type(p: Pair<Rule>) -> RefType {
+	let mut inner = p.into_inner();
 
-			match coi_inner.next() {
-				Some(ref pair) if pair.as_rule() == Rule::identifier => {
-					let subclass = parse_identifier(pair.clone());
+	let name = parse_identifier(inner.next().unwrap());
 
-					let next = coi_inner.next();
+	let mut next = inner.next().unwrap();
 
-					if let Some(following) = next {
-						let ty_args = following.into_inner().next().unwrap();
+	let type_arguments =
+		parse_iter_if_rule!(inner, next, Rule::type_arguments, parse_type_arguments);
+	let inner_name = parse_iter_if_rule!(inner, next, Rule::identifier, parse_identifier);
+	let inner_ty_args =
+		parse_iter_if_rule!(inner, next, Rule::type_arguments, parse_type_arguments);
 
-						match ty_args.as_rule() {
-							Rule::two_type_arguments => {
-								let mut type_inner = ty_args.into_inner();
-								let first = parse_ty(type_inner.next().unwrap());
-								let second = parse_ty(type_inner.next().unwrap());
+	let inner_ty = match inner_name {
+		Some(id) => match inner_ty_args {
+			Some(args) => Some(InnerRefType {
+				name: id,
+				type_arguments: Some(args),
+			}),
+			None => Some(InnerRefType {
+				name: id,
+				type_arguments: None,
+			}),
+		},
+		None => None,
+	};
 
-								Ty {
-									kind: TyKind::ClassOrInterface(ClassOrInterface {
-										name,
-										subclass: Some(subclass),
-										type_arguments: Some((
-											Box::new(first),
-											Some(Box::new(second)),
-										)),
-										is_array: inner.next().is_some(),
-										span: span.clone(),
-									}),
-									span,
-								}
-							}
-							Rule::one_type_argument => {
-								let mut type_inner = ty_args.into_inner();
-								let first = parse_ty(type_inner.next().unwrap());
-								Ty {
-									kind: TyKind::ClassOrInterface(ClassOrInterface {
-										name,
-										subclass: Some(subclass),
-										type_arguments: Some((Box::new(first), None)),
-										is_array: inner.next().is_some(),
-										span: span.clone(),
-									}),
-									span,
-								}
-							}
-							_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
-						}
-					} else {
-						Ty {
-							kind: TyKind::ClassOrInterface(ClassOrInterface {
-								name,
-								subclass: Some(subclass),
-								type_arguments: None,
-								is_array: inner.next().is_some(),
-								span: span.clone(),
-							}),
-							span,
-						}
-					}
-				}
-				Some(ref pair) if pair.as_rule() == Rule::type_arguments => {
-					let ty_args = pair.clone().into_inner().next().unwrap();
+	let is_array = inner.next().is_some();
 
-					match ty_args.as_rule() {
-						Rule::two_type_arguments => {
-							let mut type_inner = ty_args.into_inner();
-							let first = parse_ty(type_inner.next().unwrap());
-							let second = parse_ty(type_inner.next().unwrap());
+	RefType {
+		name,
+		inner: inner_ty,
+		type_arguments,
+		is_array,
+	}
+}
 
-							Ty {
-								kind: TyKind::ClassOrInterface(ClassOrInterface {
-									name,
-									subclass: None,
-									type_arguments: Some((Box::new(first), Some(Box::new(second)))),
-									is_array: inner.next().is_some(),
-									span: span.clone(),
-								}),
-								span,
-							}
-						}
-						Rule::one_type_argument => {
-							let mut type_inner = ty_args.into_inner();
-							let first = parse_ty(type_inner.next().unwrap());
-							Ty {
-								kind: TyKind::ClassOrInterface(ClassOrInterface {
-									name,
-									subclass: None,
-									type_arguments: Some((Box::new(first), None)),
-									is_array: inner.next().is_some(),
-									span: span.clone(),
-								}),
-								span,
-							}
-						}
-						_ => unreachable!("unexpected rule found: {:?}", ty_args.as_rule()),
-					}
-				}
-				Some(_) => unreachable!("unexpected variant"),
-				None => Ty {
-					kind: TyKind::ClassOrInterface(ClassOrInterface {
-						name,
-						subclass: None,
-						type_arguments: None,
-						is_array: inner.next().is_some(),
-						span: span.clone(),
-					}),
-					span,
-				},
-			}
+fn parse_primitive_type(p: Pair<Rule>) -> Primitive {
+	let mut inner = p.into_inner();
+	let primitive_ty_pair = inner.next().unwrap();
+
+	let kind = match primitive_ty_pair.as_rule() {
+		Rule::BLOB => PrimitiveKind::Blob,
+		Rule::BOOLEAN => PrimitiveKind::Boolean,
+		Rule::DATE => PrimitiveKind::Date,
+		Rule::DATETIME => PrimitiveKind::Datetime,
+		Rule::DECIMAL => PrimitiveKind::Decimal,
+		Rule::DOUBLE => PrimitiveKind::Double,
+		Rule::ID => PrimitiveKind::ID,
+		Rule::INTEGER => PrimitiveKind::Integer,
+		Rule::LONG => PrimitiveKind::Long,
+		Rule::OBJECT => PrimitiveKind::Object,
+		Rule::STRING => PrimitiveKind::String,
+		Rule::TIME => PrimitiveKind::Time,
+		_ => unreachable!(
+			"expected primitive_type rule, got: {:?}",
+			primitive_ty_pair.as_rule()
+		),
+	};
+
+	let is_array = inner.next().is_some();
+
+	Primitive { kind, is_array }
+}
+
+fn parse_type_arguments(p: Pair<Rule>) -> TypeArguments {
+	let inner = p.into_inner().next().unwrap();
+
+	match inner.as_rule() {
+		Rule::two_type_arguments => {
+			let mut ty_inner = inner.into_inner();
+			let left = parse_ty(ty_inner.next().unwrap());
+			let right = parse_ty(ty_inner.next().unwrap());
+
+			TypeArguments::Double(Box::new(left), Box::new(right))
 		}
-		Rule::primitive_type => {
-			let prim_inner = t.into_inner().next().unwrap();
+		Rule::one_type_argument => {
+			let ty = parse_ty(inner.into_inner().next().unwrap());
 
-			let kind = match prim_inner.as_rule() {
-				Rule::BLOB => PrimitiveKind::Blob,
-				Rule::BOOLEAN => PrimitiveKind::Boolean,
-				Rule::DATE => PrimitiveKind::Date,
-				Rule::DATETIME => PrimitiveKind::Datetime,
-				Rule::DECIMAL => PrimitiveKind::Decimal,
-				Rule::DOUBLE => PrimitiveKind::Double,
-				Rule::ID => PrimitiveKind::ID,
-				Rule::INTEGER => PrimitiveKind::Integer,
-				Rule::LONG => PrimitiveKind::Long,
-				Rule::OBJECT => PrimitiveKind::Object,
-				Rule::STRING => PrimitiveKind::String,
-				Rule::TIME => PrimitiveKind::Time,
-				_ => unreachable!("unexpected primitve kind: {:?}", prim_inner.as_rule()),
-			};
-
-			Ty {
-				kind: TyKind::Primitive(Primitive {
-					kind,
-					is_array: inner.next().is_some(),
-				}),
-				span,
-			}
+			TypeArguments::Single(Box::new(ty))
 		}
-		_ => unreachable!("expected basic_type or sub-rule, found {:?}", t.as_rule()),
+		_ => unreachable!("expected type arguments, got: {:?}", inner.as_rule()),
 	}
 }

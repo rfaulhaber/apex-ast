@@ -70,8 +70,8 @@ pub trait Visitor: Sized {
 		walk_ty(self, ty);
 	}
 
-	fn visit_coi_ty(&mut self, coi: ClassOrInterface) {
-		walk_coi_ty(self, coi);
+	fn visit_ref_type(&mut self, ref_type: RefType) {
+		walk_ref_type(self, ref_type);
 	}
 
 	fn visit_primitive(&mut self, primitive: Primitive) {
@@ -176,25 +176,37 @@ pub fn walk_trigger<V: Visitor>(visitor: &mut V, trigger: Trigger) {
 
 pub fn walk_ty<V: Visitor>(visitor: &mut V, ty: Ty) {
 	match ty.kind {
-		TyKind::ClassOrInterface(coi) => visitor.visit_coi_ty(coi),
+		TyKind::RefType(ref_type) => visitor.visit_ref_type(ref_type),
 		TyKind::Primitive(prim) => visitor.visit_primitive(prim),
 		TyKind::Void => (), // nothing to do
 	}
 }
 
-pub fn walk_coi_ty<V: Visitor>(visitor: &mut V, coi: ClassOrInterface) {
-	visitor.visit_identifier(coi.name);
+pub fn walk_ref_type<V: Visitor>(visitor: &mut V, ref_type: RefType) {
+	visitor.visit_identifier(ref_type.name);
 
-	if let Some(subclass) = coi.subclass {
-		visitor.visit_identifier(subclass);
+	if let Some(inner) = ref_type.inner {
+		visitor.visit_identifier(inner.name);
+
+		if let Some(type_args) = inner.type_arguments {
+			match type_args {
+				TypeArguments::Single(ty_ref) => visitor.visit_ty(*ty_ref),
+				TypeArguments::Double(left, right) => {
+					visitor.visit_ty(*left);
+					visitor.visit_ty(*right);
+				}
+			};
+		}
 	}
 
-	if let Some(type_args) = coi.type_arguments {
-		visitor.visit_ty(*type_args.0);
-
-		if let Some(second_arg) = type_args.1 {
-			visitor.visit_ty(*second_arg);
-		}
+	if let Some(type_args) = ref_type.type_arguments {
+		match type_args {
+			TypeArguments::Single(ty_ref) => visitor.visit_ty(*ty_ref),
+			TypeArguments::Double(left, right) => {
+				visitor.visit_ty(*left);
+				visitor.visit_ty(*right);
+			}
+		};
 	}
 }
 

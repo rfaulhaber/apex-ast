@@ -1513,9 +1513,9 @@ fn class_method_basic_parses() {
 			kind: TyKind::Void,
 			span: Span {
 				start: 14,
-				end: 19,
+				end: 18,
 				start_pos: Position { line: 1, col: 15 },
-				end_pos: Position { line: 1, col: 20 },
+				end_pos: Position { line: 1, col: 19 },
 			},
 		},
 		identifier: Identifier {

@@ -260,17 +260,15 @@ method_call = {
     (identifier | SUPER | THIS) ~ arguments
 }
 
-new_instance_expr = { NEW ~ (map_literal_init | collection_literal_init | array_literal_init | new_class) }
+new_instance_expr = { NEW ~ basic_type ~ (map_literal_values | new_collection_literal | new_array_literal | sobject_arguments | arguments)) }
 
-map_literal_init = { map_type ~ two_type_arguments ~ (map_literal_values | arguments) }
-map_type = { ^"MAP" }
+map_literal_init = { basic_type ~ map_literal_values }
 map_literal_values = { "{" ~ mapping_pair ~ ("," ~ mapping_pair)* ~ "}" }
 mapping_pair = { expression ~ "=>" ~ expression }
 
 array_literal_init = { basic_type ~ new_array_literal }
 new_array_literal = { "[" ~ expression ~ ("," ~ expression)* ~ "]" }
-collection_literal_init = { collection_type ~ one_type_argument ~ (new_collection_literal | arguments) }
-collection_type = { LIST | SET }
+collection_literal_init = { basic_type ~ new_collection_literal }
 new_collection_literal = { "{" ~ (expression ~ ("," ~ expression)*)? ~ "}" }
 
 new_class = { basic_type ~ (sobject_arguments | arguments) }
@@ -284,9 +282,10 @@ sobject_argument_pair = { identifier ~ "=" ~ expression }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 
-// TODO add "| VOID"
-basic_type = { ((class_or_interface_type | primitive_type) ~ array_brackets?) | VOID }
+basic_type = { ((ref_type | primitive_type) ~ array_brackets?) | VOID }
 array_brackets = @{ "[]" }
+
+ref_type = { identifier ~ type_arguments? ~ ("." ~ identifier ~ type_arguments?)? }
 
 class_or_interface_type = { (identifier ~ ("." ~ !CLASS ~ identifier)? | (MAP | LIST | SET))  ~ type_arguments? }
 
@@ -350,8 +349,8 @@ null_literal = { ^"null" }
 
 // TODO how do I write this such that it doesn't match apex keywords?
 // "voids" should be a valid identifier, while "void" shouldn't be
-// identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
-identifier = @{ ((!apex_keyword ~ ASCII_ALPHA) | (apex_keyword ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
+identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+// identifier = @{ ((!apex_keyword ~ ASCII_ALPHA) | (apex_keyword ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
 
 escape_sequence = {
     "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
