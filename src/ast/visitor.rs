@@ -306,6 +306,10 @@ pub fn walk_stmt<V: Visitor>(visitor: &mut V, stmt: Stmt) {
 				visitor.visit_block(block);
 			}
 		}
+		StmtKind::RunAs(RunAs { expr, block }) => {
+			visitor.visit_expr(expr);
+			visitor.visit_block(block);
+		}
 		StmtKind::Block(block) => {
 			visitor.visit_block(block);
 		}

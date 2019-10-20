@@ -82,6 +82,7 @@ statement = {
     | if_stmt
     | switch_stmt
     | try_catch_stmt
+    | run_as_stmt
 	| block
     | return_stmt
 	| dml_stmt
@@ -90,6 +91,11 @@ statement = {
     | continue_stmt
     | stmt_expr ~ ";"
 }
+
+// `System.runAs` calls are an unusual deviation from the syntax, and as far as
+// I can tell, they are non-standard. This is like Ruby's block functionality 
+// grafted onto Java!
+run_as_stmt = { ^"System.runAs" ~ "(" ~ expression ~ ")" ~ block }
 
 // if statements
 if_stmt = { IF ~ if_condition ~ (inline_block | block) ~ else_if_block* ~ else_block? }

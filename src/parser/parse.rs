@@ -595,6 +595,7 @@ pub(super) fn parse_stmt(p: Pair<Rule>) -> Stmt {
 		Rule::if_stmt => parse_if_stmt(inner),
 		Rule::switch_stmt => parse_switch_stmt(inner),
 		Rule::try_catch_stmt => parse_try_catch_stmt(inner),
+		Rule::run_as_stmt => parse_run_as_stmt(inner),
 		Rule::block => Stmt {
 			kind: StmtKind::Block(parse_block(inner)),
 			span,
@@ -881,6 +882,20 @@ pub(super) fn parse_catch_clause(p: Pair<Rule>) -> (Ty, Identifier, Block) {
 	let block = parse_block(inner.next().unwrap());
 
 	(ty, id, block)
+}
+
+pub(super) fn parse_run_as_stmt(p: Pair<Rule>) -> Stmt {
+	let span = Span::from(p.as_span());
+
+	let mut inner = p.into_inner();
+
+	let expr = parse_expr(inner.next().unwrap());
+	let block = parse_block(inner.next().unwrap());
+
+	Stmt {
+		kind: StmtKind::RunAs(RunAs { expr, block }),
+		span,
+	}
 }
 
 pub(super) fn parse_any_block(p: Pair<Rule>) -> Block {

@@ -2889,6 +2889,43 @@ fn stmt_expr_expr_parses() {
 }
 
 #[test]
+fn run_as_stmt_parses() {
+	let input = "System.runAs(u) {}";
+
+	let expected = Stmt {
+		kind: StmtKind::RunAs(RunAs {
+			expr: Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("u"),
+					span: Span {
+						start: 13,
+						end: 14,
+						start_pos: Position { line: 1, col: 14 },
+						end_pos: Position { line: 1, col: 15 },
+					},
+				}),
+				span: Span {
+					start: 13,
+					end: 14,
+					start_pos: Position { line: 1, col: 14 },
+					end_pos: Position { line: 1, col: 15 },
+				},
+			},
+
+			block: Block::Body(Vec::new()),
+		}),
+		span: Span {
+			start: 0,
+			end: 18,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 19 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
 fn stmt_expr_local_parses() {
 	let input = "Integer foo = 22;";
 

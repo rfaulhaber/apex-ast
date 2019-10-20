@@ -35,6 +35,7 @@ pub enum StmtKind {
 		Option<Vec<(Ty, Identifier, Block)>>,
 		Option<Block>,
 	),
+	RunAs(RunAs),
 	Block(Block),
 	Return(Option<Expr>),
 	Dml(DmlOp, Expr),
@@ -43,6 +44,12 @@ pub enum StmtKind {
 	Continue,
 	StmtExpr(StmtExpr),
 	Local(Local),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct RunAs {
+	pub expr: Expr,
+	pub block: Block,
 }
 
 pub type WhenCase = (WhenCondition, Block);
