@@ -4,15 +4,6 @@ use serde::Serialize;
 
 pub type TyRef = Box<Ty>;
 
-macro_rules! type_args {
-	($first:expr) => {
-		Some((Box::new($first), None))
-	};
-	($first:expr, $second:expr) => {
-		Some((Box::new($first), Some(Box::new($second))))
-	};
-}
-
 /// An Apex type.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Ty {

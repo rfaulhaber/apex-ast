@@ -1583,15 +1583,44 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 fn parse_ref_type(p: Pair<Rule>) -> RefType {
 	let mut inner = p.into_inner();
 
+	println!("inner: {:?}", inner);
+
 	let name = parse_identifier(inner.next().unwrap());
 
-	let mut next = inner.next().unwrap();
+	let mut next = inner.next();
 
-	let type_arguments =
-		parse_iter_if_rule!(inner, next, Rule::type_arguments, parse_type_arguments);
-	let inner_name = parse_iter_if_rule!(inner, next, Rule::identifier, parse_identifier);
-	let inner_ty_args =
-		parse_iter_if_rule!(inner, next, Rule::type_arguments, parse_type_arguments);
+	// TODO can this be written better?
+	let type_arguments = if let Some(pair) = next.clone() {
+		if pair.as_rule() == Rule::type_arguments {
+			next = inner.next();
+			Some(parse_type_arguments(pair))
+		} else {
+			None
+		}
+	} else {
+		None
+	};
+
+	let inner_name = if let Some(name_pair) = next.clone() {
+		if name_pair.as_rule() == Rule::identifier {
+			next = inner.next();
+			Some(parse_identifier(name_pair))
+		} else {
+			None
+		}
+	} else {
+		None
+	};
+
+	let inner_ty_args = if let Some(ty_args_pair) = next.clone() {
+		if ty_args_pair.as_rule() == Rule::type_arguments {
+			Some(parse_type_arguments(ty_args_pair))
+		} else {
+			None
+		}
+	} else {
+		None
+	};
 
 	let inner_ty = match inner_name {
 		Some(id) => match inner_ty_args {
