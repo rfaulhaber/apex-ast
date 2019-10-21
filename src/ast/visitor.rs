@@ -395,10 +395,8 @@ pub fn walk_expr<V: Visitor>(visitor: &mut V, expr: Expr) {
 					walk_list!(visitor, visit_expr, col);
 				}
 				NewType::Class(args) => match args {
-					ClassArgs::Basic(optional_args) => {
-						if let Some(basic_args) = optional_args {
-							walk_list!(visitor, visit_expr, basic_args);
-						}
+					ClassArgs::Basic(basic_args) => {
+						walk_list!(visitor, visit_expr, basic_args);
 					}
 					ClassArgs::SObject(pairs) => {
 						for (id, expr) in pairs {

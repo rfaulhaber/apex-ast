@@ -1413,29 +1413,26 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 	let mut new_inst_inner = p.into_inner();
 
 	new_inst_inner.next(); // discard "NEW"
+	let ty = parse_ty(new_inst_inner.next().unwrap());
 
 	let next = new_inst_inner.next().unwrap();
 
-	let (ty, new_type) = match next.as_rule() {
-		Rule::map_literal_init => {
-			let (ty, map_args) = parse_map_values(next);
-
-			(ty, NewType::Map(map_args))
+	let new_type = match next.as_rule() {
+		Rule::map_literal_values => {
+			let map_args = parse_map_values(next);
+			NewType::Map(map_args)
 		}
-		Rule::collection_literal_init => {
-			let (ty, args) = parse_collection_values(next);
-
-			(ty, NewType::Collection(args))
+		Rule::new_collection_literal => {
+			let args = parse_collection_values(next);
+			NewType::Collection(args)
 		}
-		Rule::array_literal_init => {
-			let (ty, args) = parse_array_values(next);
-
-			(ty, NewType::Array(args))
+		Rule::new_array_literal => {
+			let args = parse_array_values(next);
+			NewType::Array(args)
 		}
-		Rule::new_class => {
-			let (ty, class_args) = parse_class_args(next);
-
-			(ty, NewType::Class(class_args))
+		Rule::sobject_arguments | Rule::arguments => {
+			let class_args = parse_class_args(next);
+			NewType::Class(class_args)
 		}
 		_ => unreachable!("expected new literal init, found: {:?}", next.as_rule()),
 	};
@@ -1446,24 +1443,35 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 	}
 }
 
-fn parse_map_values(p: Pair<Rule>) -> (Ty, Vec<(Expr, Expr)>) {
+fn parse_map_values(p: Pair<Rule>) -> Vec<(Expr, Expr)> {
 	let mut inner = p.into_inner();
 
-	let ty = parse_ty(inner.next().unwrap());
+	inner
+		.map(|pair| {
+			let mut mapping_inner = pair.into_inner();
 
+			let left = mapping_inner.next().unwrap();
+			let right = mapping_inner.next().unwrap();
+
+			(parse_expr(left), parse_expr(right))
+		})
+		.collect::<Vec<Expr, Expr>>()
+}
+
+fn parse_collection_values(p: Pair<Rule>) -> Vec<Expr> {
 	unimplemented!();
 }
 
-fn parse_collection_values(p: Pair<Rule>) -> (Ty, Vec<Expr>) {
+fn parse_array_values(p: Pair<Rule>) -> Vec<Expr> {
 	unimplemented!();
 }
 
-fn parse_array_values(p: Pair<Rule>) -> (Ty, Vec<Expr>) {
-	unimplemented!();
-}
-
-fn parse_class_args(p: Pair<Rule>) -> (Ty, ClassArgs) {
-	unimplemented!();
+fn parse_class_args(p: Pair<Rule>) -> ClassArgs {
+	match p.as_rule() {
+		Rule::sobject_arguments => unimplemented!(),
+		Rule::arguments => unimplemented!(),
+		_ => unreachable!("expected class args, got: {:?}", p.as_rule()),
+	}
 }
 
 pub(super) fn parse_method_call(p: Pair<Rule>) -> Expr {
@@ -1487,13 +1495,6 @@ pub(super) fn parse_identifier(p: Pair<Rule>) -> Identifier {
 			name: String::from(p.as_str()),
 			span,
 		},
-		Rule::collection_type => {
-			let lit_type = p.into_inner().next().unwrap();
-			Identifier {
-				name: String::from(lit_type.as_str()),
-				span,
-			}
-		}
 		_ => unreachable!(
 			"expected identifier or rule that leads to identifier, got: {:?}",
 			p.as_rule()

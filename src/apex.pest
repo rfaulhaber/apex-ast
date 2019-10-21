@@ -260,7 +260,7 @@ method_call = {
     (identifier | SUPER | THIS) ~ arguments
 }
 
-new_instance_expr = { NEW ~ basic_type ~ (map_literal_values | new_collection_literal | new_array_literal | sobject_arguments | arguments)) }
+new_instance_expr = { NEW ~ basic_type ~ (map_literal_values | new_collection_literal | new_array_literal | sobject_arguments | arguments) }
 
 map_literal_init = { basic_type ~ map_literal_values }
 map_literal_values = { "{" ~ mapping_pair ~ ("," ~ mapping_pair)* ~ "}" }
