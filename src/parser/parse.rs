@@ -1444,32 +1444,48 @@ pub(super) fn parse_new_instance_expr(p: Pair<Rule>) -> Expr {
 }
 
 fn parse_map_values(p: Pair<Rule>) -> Vec<(Expr, Expr)> {
-	let mut inner = p.into_inner();
-
-	inner
+	p.into_inner()
 		.map(|pair| {
 			let mut mapping_inner = pair.into_inner();
 
-			let left = mapping_inner.next().unwrap();
-			let right = mapping_inner.next().unwrap();
+			let left = parse_expr(mapping_inner.next().unwrap());
+			let right = parse_expr(mapping_inner.next().unwrap());
 
-			(parse_expr(left), parse_expr(right))
+			(left, right)
 		})
-		.collect::<Vec<Expr, Expr>>()
+		.collect::<Vec<(Expr, Expr)>>()
 }
 
 fn parse_collection_values(p: Pair<Rule>) -> Vec<Expr> {
-	unimplemented!();
+	p.into_inner().map(parse_expr).collect::<Vec<Expr>>()
 }
 
 fn parse_array_values(p: Pair<Rule>) -> Vec<Expr> {
-	unimplemented!();
+	p.into_inner().map(parse_expr).collect::<Vec<Expr>>()
 }
 
 fn parse_class_args(p: Pair<Rule>) -> ClassArgs {
 	match p.as_rule() {
-		Rule::sobject_arguments => unimplemented!(),
-		Rule::arguments => unimplemented!(),
+		Rule::sobject_arguments => {
+			let exprs = p
+				.into_inner()
+				.map(|p| {
+					let mut arg_pair = p.into_inner();
+
+					let id = parse_identifier(arg_pair.next().unwrap());
+					let expr = parse_expr(arg_pair.next().unwrap());
+
+					(id, expr)
+				})
+				.collect();
+
+			ClassArgs::SObject(exprs)
+		}
+		Rule::arguments => {
+			let exprs = p.into_inner().map(parse_expr).collect();
+
+			ClassArgs::Basic(exprs)
+		}
 		_ => unreachable!("expected class args, got: {:?}", p.as_rule()),
 	}
 }
