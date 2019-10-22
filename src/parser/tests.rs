@@ -4890,9 +4890,9 @@ fn new_inst_map_args_parses() {
 		}),
 		span: Span {
 			start: 4,
-			end: 29,
+			end: 24,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 30 },
+			end_pos: Position { line: 1, col: 25 },
 		},
 	};
 
