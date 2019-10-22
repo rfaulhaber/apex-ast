@@ -176,7 +176,6 @@ pub(super) fn parse_class_sharing_modifier(p: Pair<Rule>) -> ClassSharingMod {
 }
 
 pub(super) fn parse_class_body_member(p: Pair<Rule>) -> ClassBodyMember {
-	println!("rule: {:?}", p.as_rule());
 	match p.as_rule() {
 		Rule::inner_class_declaration => unimplemented!("class parsing not implemented yet"),
 		Rule::interface_declaration => ClassBodyMember::InnerInterface(parse_interface(p)),
@@ -1582,8 +1581,6 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 
 fn parse_ref_type(p: Pair<Rule>) -> RefType {
 	let mut inner = p.into_inner();
-
-	println!("inner: {:?}", inner);
 
 	let name = parse_identifier(inner.next().unwrap());
 

@@ -4558,9 +4558,9 @@ fn new_inst_collection_literal_parses() {
 		}),
 		span: Span {
 			start: 4,
-			end: 26,
+			end: 17,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 27 },
+			end_pos: Position { line: 1, col: 18 },
 		},
 	};
 
@@ -4665,9 +4665,9 @@ fn new_inst_collection_literal_with_args_parses() {
 		}),
 		span: Span {
 			start: 4,
-			end: 23,
+			end: 17,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 24 },
+			end_pos: Position { line: 1, col: 18 },
 		},
 	};
 
@@ -4692,9 +4692,9 @@ fn new_inst_collection_literal_with_args_parses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
 		span: Span {
-			start: 17,
+			start: 0,
 			end: 23,
-			start_pos: Position { line: 1, col: 18 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 24 },
 		},
 	};
@@ -4749,9 +4749,9 @@ fn new_inst_map_literal_parses() {
 		}),
 		span: Span {
 			start: 4,
-			end: 48,
+			end: 24,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 49 },
+			end_pos: Position { line: 1, col: 25 },
 		},
 	};
 
@@ -4968,7 +4968,7 @@ fn new_inst_class_parses() {
 }
 
 #[test]
-fn new_inst_class_sobject_argsparses() {
+fn new_inst_class_sobject_args_parses() {
 	let input = "new Account(Name = 'foo')";
 	let ty = Ty {
 		kind: TyKind::RefType(RefType {
@@ -5025,9 +5025,9 @@ fn new_inst_class_sobject_argsparses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
 		span: Span {
-			start: 11,
+			start: 0,
 			end: 25,
-			start_pos: Position { line: 1, col: 12 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 26 },
 		},
 	};

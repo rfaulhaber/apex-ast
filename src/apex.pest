@@ -250,7 +250,8 @@ access_partial = _{
 primary = {
     THIS ~ arguments?
     | SUPER ~ super_suffix
-    | identifier
+    // TODO fix
+    | !literal ~ identifier
     | literal
 }
 
@@ -282,7 +283,11 @@ sobject_argument_pair = { identifier ~ "=" ~ expression }
 
 type_expr = { basic_type ~ "." ~ CLASS }
 
-basic_type = { ((ref_type | primitive_type) ~ array_brackets?) | VOID }
+// we have to do !primitive_type here to allow for things like "ObjectTypes" to
+// be a valid type while also allowing it to identify "Object" as a primitive.
+// It's not a great solution!
+// TODO: fix, remove primitive_type?
+basic_type = { !VOID ~ ((!primitive_type ~ ref_type | primitive_type) ~ array_brackets?) | VOID }
 array_brackets = @{ "[]" }
 
 ref_type = { identifier ~ type_arguments? ~ ("." ~ identifier ~ type_arguments?)? }
