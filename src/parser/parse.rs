@@ -1575,7 +1575,10 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 			is_array: inner.next().is_some(),
 			..parse_ref_type(first)
 		}),
-		Rule::primitive_type => TyKind::Primitive(parse_primitive_type(first)),
+		Rule::primitive_type => TyKind::Primitive(Primitive {
+			is_array: inner.next().is_some(),
+			..parse_primitive_type(first)
+		}),
 		Rule::VOID => TyKind::Void,
 		_ => unreachable!("expected ty kind, got {:?}", first.as_rule()),
 	};
@@ -1585,15 +1588,10 @@ pub(super) fn parse_ty(p: Pair<Rule>) -> Ty {
 
 fn parse_ref_type(p: Pair<Rule>) -> RefType {
 	let mut inner = p.into_inner();
-	println!("inner top: {:?}", inner);
 
 	let name = parse_identifier(inner.next().unwrap());
 
-	println!("inner first: {:?}", inner);
-
 	let mut next = inner.next();
-
-	println!("next first: {:?}", next);
 
 	// TODO can this be written better?
 	let type_arguments = if let Some(pair) = next.clone() {
@@ -1617,7 +1615,6 @@ fn parse_ref_type(p: Pair<Rule>) -> RefType {
 	} else {
 		None
 	};
-	println!("inner earlier {:?}, {:?}", inner, next);
 
 	let inner_ty_args = if let Some(ty_args_pair) = next.clone() {
 		if ty_args_pair.as_rule() == Rule::type_arguments {
@@ -1643,17 +1640,11 @@ fn parse_ref_type(p: Pair<Rule>) -> RefType {
 		None => None,
 	};
 
-	println!("next: {:?}", next);
-	println!("inner: {:?}", inner);
-
-	let is_array =
-		next.is_some() && next.unwrap().as_rule() == Rule::array_brackets || inner.next().is_some();
-
 	RefType {
 		name,
 		inner: inner_ty,
 		type_arguments,
-		is_array,
+		is_array: false, // this will be reset elsewhere
 	}
 }
 

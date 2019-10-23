@@ -3724,7 +3724,12 @@ fn ty_subclass_parses() {
 			inner: Some(InnerRefType {
 				name: Identifier {
 					name: String::from("Bar"),
-					span: Span::default(),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
 				},
 				type_arguments: None,
 			}),
@@ -3970,9 +3975,9 @@ fn ty_subtype_generic_parses() {
 						end_pos: Position { line: 1, col: 8 },
 					},
 				},
-				type_arguments: None,
+				type_arguments: Some(TypeArguments::Single(Box::new(gen_type))),
 			}),
-			type_arguments: Some(TypeArguments::Single(Box::new(gen_type))),
+			type_arguments: None,
 			is_array: false,
 		}),
 		span: Span {
