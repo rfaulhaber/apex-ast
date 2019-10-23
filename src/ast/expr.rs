@@ -45,7 +45,7 @@ pub enum NewType {
 // `new Foo(bar)` and `new Account(Name = 'foo')`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum ClassArgs {
-	Basic(Option<Vec<Expr>>),
+	Basic(Vec<Expr>),
 	SObject(Vec<(Identifier, Expr)>),
 }
 

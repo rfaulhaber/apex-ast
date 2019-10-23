@@ -105,7 +105,7 @@ fn class_basic_parses() {
 		},
 		extension: None,
 		implementations: vec![Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Writer"),
 					span: Span {
@@ -115,15 +115,9 @@ fn class_basic_parses() {
 						end_pos: Position { line: 1, col: 55 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 48,
-					end: 55,
-					start_pos: Position { line: 1, col: 49 },
-					end_pos: Position { line: 1, col: 56 },
-				},
 			}),
 			span: Span {
 				start: 48,
@@ -139,7 +133,7 @@ fn class_basic_parses() {
 				instance_mod: None,
 				is_final: false,
 				ty: Ty {
-					kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: TyKind::RefType(RefType {
 						name: Identifier {
 							name: String::from("Buffer"),
 							span: Span {
@@ -149,15 +143,9 @@ fn class_basic_parses() {
 								end_pos: Position { line: 2, col: 16 },
 							},
 						},
-						subclass: None,
+						inner: None,
 						type_arguments: None,
 						is_array: false,
-						span: Span {
-							start: 66,
-							end: 73,
-							start_pos: Position { line: 2, col: 10 },
-							end_pos: Position { line: 2, col: 17 },
-						},
 					}),
 					span: Span {
 						start: 66,
@@ -298,7 +286,7 @@ fn class_basic_parses() {
 						Box::from(Expr {
 							kind: ExprKind::New(
 								Ty {
-									kind: TyKind::ClassOrInterface(ClassOrInterface {
+									kind: TyKind::RefType(RefType {
 										name: Identifier {
 											name: String::from("Buffer"),
 											span: Span {
@@ -308,15 +296,9 @@ fn class_basic_parses() {
 												end_pos: Position { line: 10, col: 20 },
 											},
 										},
-										subclass: None,
+										inner: None,
 										type_arguments: None,
 										is_array: false,
-										span: Span {
-											start: 167,
-											end: 173,
-											start_pos: Position { line: 10, col: 14 },
-											end_pos: Position { line: 10, col: 20 },
-										},
 									}),
 									span: Span {
 										start: 167,
@@ -325,7 +307,7 @@ fn class_basic_parses() {
 										end_pos: Position { line: 10, col: 20 },
 									},
 								},
-								NewType::Class(ClassArgs::Basic(None)),
+								NewType::Class(ClassArgs::Basic(Vec::new())),
 							),
 							span: Span {
 								start: 163,
@@ -596,7 +578,7 @@ fn interface_with_access_mod_parses() {
 			},
 		},
 		extensions: vec![Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Foo"),
 					span: Span {
@@ -606,15 +588,9 @@ fn interface_with_access_mod_parses() {
 						end_pos: Position { line: 1, col: 36 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 32,
-					end: 36,
-					start_pos: Position { line: 1, col: 33 },
-					end_pos: Position { line: 1, col: 37 },
-				},
 			}),
 			span: Span {
 				start: 32,
@@ -710,7 +686,7 @@ fn interface_parses() {
 			},
 		},
 		extensions: vec![Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Foo"),
 					span: Span {
@@ -720,15 +696,9 @@ fn interface_parses() {
 						end_pos: Position { line: 1, col: 29 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 25,
-					end: 29,
-					start_pos: Position { line: 1, col: 26 },
-					end_pos: Position { line: 1, col: 30 },
-				},
 			}),
 			span: Span {
 				start: 25,
@@ -907,7 +877,7 @@ fn trigger_parses() {
 			},
 		},
 		object: Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Account"),
 					span: Span {
@@ -917,15 +887,9 @@ fn trigger_parses() {
 						end_pos: Position { line: 1, col: 36 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 28,
-					end: 36,
-					start_pos: Position { line: 1, col: 29 },
-					end_pos: Position { line: 1, col: 37 },
-				},
 			}),
 			span: Span {
 				start: 28,
@@ -1406,7 +1370,7 @@ fn class_method_maximal_parses() {
 		params: vec![
 			(
 				Ty {
-					kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: TyKind::RefType(RefType {
 						name: Identifier {
 							name: String::from("Bar"),
 							span: Span {
@@ -1416,15 +1380,9 @@ fn class_method_maximal_parses() {
 								end_pos: Position { line: 1, col: 49 },
 							},
 						},
-						subclass: None,
+						inner: None,
 						type_arguments: None,
 						is_array: false,
-						span: Span {
-							start: 45,
-							end: 49,
-							start_pos: Position { line: 1, col: 46 },
-							end_pos: Position { line: 1, col: 50 },
-						},
 					}),
 					span: Span {
 						start: 45,
@@ -1445,7 +1403,7 @@ fn class_method_maximal_parses() {
 			),
 			(
 				Ty {
-					kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: TyKind::RefType(RefType {
 						name: Identifier {
 							name: String::from("Baz"),
 							span: Span {
@@ -1455,15 +1413,9 @@ fn class_method_maximal_parses() {
 								end_pos: Position { line: 1, col: 56 },
 							},
 						},
-						subclass: None,
+						inner: None,
 						type_arguments: None,
 						is_array: false,
-						span: Span {
-							start: 52,
-							end: 56,
-							start_pos: Position { line: 1, col: 53 },
-							end_pos: Position { line: 1, col: 57 },
-						},
 					}),
 					span: Span {
 						start: 52,
@@ -1513,9 +1465,9 @@ fn class_method_basic_parses() {
 			kind: TyKind::Void,
 			span: Span {
 				start: 14,
-				end: 19,
+				end: 18,
 				start_pos: Position { line: 1, col: 15 },
-				end_pos: Position { line: 1, col: 20 },
+				end_pos: Position { line: 1, col: 19 },
 			},
 		},
 		identifier: Identifier {
@@ -1838,7 +1790,7 @@ fn switch_types_parses() {
 
 	let first_when_values = WhenCondition::Type(
 		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Account"),
 					span: Span {
@@ -1848,15 +1800,9 @@ fn switch_types_parses() {
 						end_pos: Position { line: 2, col: 16 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 28,
-					end: 36,
-					start_pos: Position { line: 2, col: 9 },
-					end_pos: Position { line: 2, col: 17 },
-				},
 			}),
 			span: Span {
 				start: 28,
@@ -1904,7 +1850,7 @@ fn switch_types_parses() {
 
 	let second_when_values = WhenCondition::Type(
 		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Contact"),
 					span: Span {
@@ -1914,15 +1860,9 @@ fn switch_types_parses() {
 						end_pos: Position { line: 5, col: 16 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 70,
-					end: 78,
-					start_pos: Position { line: 5, col: 9 },
-					end_pos: Position { line: 5, col: 17 },
-				},
 			}),
 			span: Span {
 				start: 70,
@@ -2889,6 +2829,43 @@ fn stmt_expr_expr_parses() {
 }
 
 #[test]
+fn run_as_stmt_parses() {
+	let input = "System.runAs(u) {}";
+
+	let expected = Stmt {
+		kind: StmtKind::RunAs(RunAs {
+			expr: Expr {
+				kind: ExprKind::Identifier(Identifier {
+					name: String::from("u"),
+					span: Span {
+						start: 13,
+						end: 14,
+						start_pos: Position { line: 1, col: 14 },
+						end_pos: Position { line: 1, col: 15 },
+					},
+				}),
+				span: Span {
+					start: 13,
+					end: 14,
+					start_pos: Position { line: 1, col: 14 },
+					end_pos: Position { line: 1, col: 15 },
+				},
+			},
+
+			block: Block::Body(Vec::new()),
+		}),
+		span: Span {
+			start: 0,
+			end: 18,
+			start_pos: Position { line: 1, col: 1 },
+			end_pos: Position { line: 1, col: 19 },
+		},
+	};
+
+	test_parse(Rule::statement, input, parse_stmt, expected);
+}
+
+#[test]
 fn stmt_expr_local_parses() {
 	let input = "Integer foo = 22;";
 
@@ -3001,7 +2978,7 @@ fn try_catch_catch_finally_parses() {
 
 	let catch_clause = (
 		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Exception"),
 					span: Span {
@@ -3011,15 +2988,9 @@ fn try_catch_catch_finally_parses() {
 						end_pos: Position { line: 3, col: 20 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 30,
-					end: 40,
-					start_pos: Position { line: 3, col: 11 },
-					end_pos: Position { line: 3, col: 21 },
-				},
 			}),
 			span: Span {
 				start: 30,
@@ -3066,7 +3037,7 @@ fn try_catch_catch_finally_parses() {
 
 	let opt_catch = Some(vec![(
 		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("DmlException"),
 					span: Span {
@@ -3076,15 +3047,9 @@ fn try_catch_catch_finally_parses() {
 						end_pos: Position { line: 5, col: 23 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 69,
-					end: 82,
-					start_pos: Position { line: 5, col: 11 },
-					end_pos: Position { line: 5, col: 24 },
-				},
 			}),
 			span: Span {
 				start: 69,
@@ -3207,7 +3172,7 @@ fn try_catch_simple_parses() {
 
 	let catch_clause = (
 		Ty {
-			kind: TyKind::ClassOrInterface(ClassOrInterface {
+			kind: TyKind::RefType(RefType {
 				name: Identifier {
 					name: String::from("Exception"),
 					span: Span {
@@ -3217,15 +3182,9 @@ fn try_catch_simple_parses() {
 						end_pos: Position { line: 3, col: 20 },
 					},
 				},
-				subclass: None,
+				inner: None,
 				type_arguments: None,
 				is_array: false,
-				span: Span {
-					start: 30,
-					end: 40,
-					start_pos: Position { line: 3, col: 11 },
-					end_pos: Position { line: 3, col: 21 },
-				},
 			}),
 			span: Span {
 				start: 30,
@@ -3327,7 +3286,7 @@ fn throw_stmt_parses() {
 		kind: StmtKind::Throw(Expr {
 			kind: ExprKind::New(
 				Ty {
-					kind: TyKind::ClassOrInterface(ClassOrInterface {
+					kind: TyKind::RefType(RefType {
 						name: Identifier {
 							name: String::from("TestException"),
 							span: Span {
@@ -3337,15 +3296,9 @@ fn throw_stmt_parses() {
 								end_pos: Position { line: 1, col: 24 },
 							},
 						},
-						subclass: None,
+						inner: None,
 						type_arguments: None,
 						is_array: false,
-						span: Span {
-							start: 10,
-							end: 23,
-							start_pos: Position { line: 1, col: 11 },
-							end_pos: Position { line: 1, col: 24 },
-						},
 					}),
 					span: Span {
 						start: 10,
@@ -3354,7 +3307,7 @@ fn throw_stmt_parses() {
 						end_pos: Position { line: 1, col: 24 },
 					},
 				},
-				NewType::Class(ClassArgs::Basic(None)),
+				NewType::Class(ClassArgs::Basic(Vec::new())),
 			),
 			span: Span {
 				start: 6,
@@ -3698,7 +3651,7 @@ fn ty_primitive_array_parses() {
 fn ty_class_parses() {
 	let input = "Foo";
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3708,15 +3661,9 @@ fn ty_class_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 3,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 4 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -3734,7 +3681,7 @@ fn ty_class_array_parses() {
 	let input = "Foo[]";
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3744,15 +3691,9 @@ fn ty_class_array_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: true,
-			span: Span {
-				start: 0,
-				end: 5,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 6 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -3770,7 +3711,7 @@ fn ty_subclass_parses() {
 	let input = "Foo.Bar";
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3780,23 +3721,20 @@ fn ty_subclass_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: Some(Identifier {
-				name: String::from("Bar"),
-				span: Span {
-					start: 4,
-					end: 7,
-					start_pos: Position { line: 1, col: 5 },
-					end_pos: Position { line: 1, col: 8 },
+			inner: Some(InnerRefType {
+				name: Identifier {
+					name: String::from("Bar"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
 				},
+				type_arguments: None,
 			}),
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 7,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 8 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -3814,7 +3752,7 @@ fn ty_basic_generic_parses() {
 	let input = "Foo<Bar>";
 
 	let subtype = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Bar"),
 				span: Span {
@@ -3824,15 +3762,9 @@ fn ty_basic_generic_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 7,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 8 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -3843,7 +3775,7 @@ fn ty_basic_generic_parses() {
 	};
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3853,15 +3785,9 @@ fn ty_basic_generic_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(subtype), None)),
+			inner: None,
+			type_arguments: Some(TypeArguments::Single(Box::new(subtype))),
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 8,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 9 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -3879,7 +3805,7 @@ fn ty_generic_subtype_parses() {
 	let input = "Foo<Bar.Baz>";
 
 	let subtype = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Bar"),
 				span: Span {
@@ -3889,23 +3815,20 @@ fn ty_generic_subtype_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: Some(Identifier {
-				name: String::from("Baz"),
-				span: Span {
-					start: 8,
-					end: 11,
-					start_pos: Position { line: 1, col: 9 },
-					end_pos: Position { line: 1, col: 12 },
+			inner: Some(InnerRefType {
+				name: Identifier {
+					name: String::from("Baz"),
+					span: Span {
+						start: 8,
+						end: 11,
+						start_pos: Position { line: 1, col: 9 },
+						end_pos: Position { line: 1, col: 12 },
+					},
 				},
+				type_arguments: None,
 			}),
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 11,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 12 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -3916,7 +3839,7 @@ fn ty_generic_subtype_parses() {
 	};
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3926,15 +3849,9 @@ fn ty_generic_subtype_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(subtype), None)),
+			inner: None,
+			type_arguments: Some(TypeArguments::Single(Box::new(subtype))),
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 12,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 13 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -3952,7 +3869,7 @@ fn ty_generic_subtype_array_parses() {
 	let input = "Foo<Bar.Baz>[]";
 
 	let subtype = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Bar"),
 				span: Span {
@@ -3962,23 +3879,20 @@ fn ty_generic_subtype_array_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: Some(Identifier {
-				name: String::from("Baz"),
-				span: Span {
-					start: 8,
-					end: 11,
-					start_pos: Position { line: 1, col: 9 },
-					end_pos: Position { line: 1, col: 12 },
+			inner: Some(InnerRefType {
+				name: Identifier {
+					name: String::from("Baz"),
+					span: Span {
+						start: 8,
+						end: 11,
+						start_pos: Position { line: 1, col: 9 },
+						end_pos: Position { line: 1, col: 12 },
+					},
 				},
+				type_arguments: None,
 			}),
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 11,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 12 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -3989,7 +3903,7 @@ fn ty_generic_subtype_array_parses() {
 	};
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -3999,15 +3913,9 @@ fn ty_generic_subtype_array_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(subtype), None)),
+			inner: None,
+			type_arguments: Some(TypeArguments::Single(Box::new(subtype))),
 			is_array: true,
-			span: Span {
-				start: 0,
-				end: 14,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 15 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -4024,7 +3932,7 @@ fn ty_generic_subtype_array_parses() {
 fn ty_subtype_generic_parses() {
 	let input = "Foo.Bar<Baz>";
 	let gen_type = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Baz"),
 				span: Span {
@@ -4034,15 +3942,9 @@ fn ty_subtype_generic_parses() {
 					end_pos: Position { line: 1, col: 12 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 8,
-				end: 11,
-				start_pos: Position { line: 1, col: 9 },
-				end_pos: Position { line: 1, col: 12 },
-			},
 		}),
 		span: Span {
 			start: 8,
@@ -4052,10 +3954,8 @@ fn ty_subtype_generic_parses() {
 		},
 	};
 
-	let type_args = (Box::new(gen_type), None);
-
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -4065,23 +3965,20 @@ fn ty_subtype_generic_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: Some(Identifier {
-				name: String::from("Bar"),
-				span: Span {
-					start: 4,
-					end: 7,
-					start_pos: Position { line: 1, col: 5 },
-					end_pos: Position { line: 1, col: 8 },
+			inner: Some(InnerRefType {
+				name: Identifier {
+					name: String::from("Bar"),
+					span: Span {
+						start: 4,
+						end: 7,
+						start_pos: Position { line: 1, col: 5 },
+						end_pos: Position { line: 1, col: 8 },
+					},
 				},
+				type_arguments: Some(TypeArguments::Single(Box::new(gen_type))),
 			}),
-			type_arguments: Some(type_args),
+			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 12,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 13 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -4125,7 +4022,7 @@ fn ty_two_type_args_parses() {
 	};
 
 	let expected = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Map"),
 				span: Span {
@@ -4135,15 +4032,12 @@ fn ty_two_type_args_parses() {
 					end_pos: Position { line: 1, col: 4 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(id_type), Some(Box::new(string_type)))),
+			inner: None,
+			type_arguments: Some(TypeArguments::Double(
+				Box::new(id_type),
+				Box::new(string_type),
+			)),
 			is_array: false,
-			span: Span {
-				start: 0,
-				end: 15,
-				start_pos: Position { line: 1, col: 1 },
-				end_pos: Position { line: 1, col: 16 },
-			},
 		}),
 		span: Span {
 			start: 0,
@@ -4228,7 +4122,7 @@ fn instanceof_expr_parses() {
 	};
 
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -4238,15 +4132,9 @@ fn instanceof_expr_parses() {
 					end_pos: Position { line: 1, col: 19 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 15,
-				end: 18,
-				start_pos: Position { line: 1, col: 16 },
-				end_pos: Position { line: 1, col: 19 },
-			},
 		}),
 		span: Span {
 			start: 15,
@@ -4659,7 +4547,7 @@ fn new_inst_collection_literal_parses() {
 	};
 
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("List"),
 				span: Span {
@@ -4669,21 +4557,15 @@ fn new_inst_collection_literal_parses() {
 					end_pos: Position { line: 1, col: 9 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(int_ty), None)),
+			inner: None,
+			type_arguments: Some(TypeArguments::Single(Box::new(int_ty))),
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 26,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 27 },
-			},
 		}),
 		span: Span {
 			start: 4,
-			end: 26,
+			end: 17,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 27 },
+			end_pos: Position { line: 1, col: 18 },
 		},
 	};
 
@@ -4772,7 +4654,7 @@ fn new_inst_collection_literal_with_args_parses() {
 	};
 
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("List"),
 				span: Span {
@@ -4782,25 +4664,19 @@ fn new_inst_collection_literal_with_args_parses() {
 					end_pos: Position { line: 1, col: 9 },
 				},
 			},
-			subclass: None,
-			type_arguments: Some((Box::new(int_ty), None)),
+			inner: None,
+			type_arguments: Some(TypeArguments::Single(Box::new(int_ty))),
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 23,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 24 },
-			},
 		}),
 		span: Span {
 			start: 4,
-			end: 23,
+			end: 17,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 24 },
+			end_pos: Position { line: 1, col: 18 },
 		},
 	};
 
-	let args = Some(vec![Expr {
+	let args = vec![Expr {
 		kind: ExprKind::Identifier(Identifier {
 			name: String::from("list"),
 			span: Span {
@@ -4816,14 +4692,14 @@ fn new_inst_collection_literal_with_args_parses() {
 			start_pos: Position { line: 1, col: 19 },
 			end_pos: Position { line: 1, col: 23 },
 		},
-	}]);
+	}];
 
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(args))),
 		span: Span {
-			start: 17,
+			start: 0,
 			end: 23,
-			start_pos: Position { line: 1, col: 18 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 24 },
 		},
 	};
@@ -4835,8 +4711,34 @@ fn new_inst_collection_literal_with_args_parses() {
 fn new_inst_map_literal_parses() {
 	let input = "new Map<Integer, String>{1 => 'one', 2 => 'two'}";
 
+	let int_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+		span: Span {
+			start: 8,
+			end: 15,
+			start_pos: Position { line: 1, col: 9 },
+			end_pos: Position { line: 1, col: 16 },
+		},
+	};
+
+	let string_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::String,
+			is_array: false,
+		}),
+		span: Span {
+			start: 17,
+			end: 23,
+			start_pos: Position { line: 1, col: 18 },
+			end_pos: Position { line: 1, col: 24 },
+		},
+	};
+
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Map"),
 				span: Span {
@@ -4846,46 +4748,15 @@ fn new_inst_map_literal_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: None,
-			type_arguments: type_args!(
-				Ty {
-					kind: TyKind::Primitive(Primitive {
-						kind: PrimitiveKind::Integer,
-						is_array: false,
-					}),
-					span: Span {
-						start: 8,
-						end: 15,
-						start_pos: Position { line: 1, col: 9 },
-						end_pos: Position { line: 1, col: 16 },
-					},
-				},
-				Ty {
-					kind: TyKind::Primitive(Primitive {
-						kind: PrimitiveKind::String,
-						is_array: false,
-					}),
-					span: Span {
-						start: 17,
-						end: 23,
-						start_pos: Position { line: 1, col: 18 },
-						end_pos: Position { line: 1, col: 24 },
-					},
-				}
-			),
+			inner: None,
+			type_arguments: Some(TypeArguments::Double(Box::new(int_ty), Box::new(string_ty))),
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 48,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 49 },
-			},
 		}),
 		span: Span {
 			start: 4,
-			end: 48,
+			end: 24,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 49 },
+			end_pos: Position { line: 1, col: 25 },
 		},
 	};
 
@@ -4981,8 +4852,34 @@ fn new_inst_map_literal_parses() {
 fn new_inst_map_args_parses() {
 	let input = "new Map<Integer, String>(foo)";
 
+	let int_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::Integer,
+			is_array: false,
+		}),
+		span: Span {
+			start: 8,
+			end: 15,
+			start_pos: Position { line: 1, col: 9 },
+			end_pos: Position { line: 1, col: 16 },
+		},
+	};
+
+	let string_ty = Ty {
+		kind: TyKind::Primitive(Primitive {
+			kind: PrimitiveKind::String,
+			is_array: false,
+		}),
+		span: Span {
+			start: 17,
+			end: 23,
+			start_pos: Position { line: 1, col: 18 },
+			end_pos: Position { line: 1, col: 24 },
+		},
+	};
+
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Map"),
 				span: Span {
@@ -4992,46 +4889,15 @@ fn new_inst_map_args_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: None,
-			type_arguments: type_args!(
-				Ty {
-					kind: TyKind::Primitive(Primitive {
-						kind: PrimitiveKind::Integer,
-						is_array: false,
-					}),
-					span: Span {
-						start: 8,
-						end: 15,
-						start_pos: Position { line: 1, col: 9 },
-						end_pos: Position { line: 1, col: 16 },
-					},
-				},
-				Ty {
-					kind: TyKind::Primitive(Primitive {
-						kind: PrimitiveKind::String,
-						is_array: false,
-					}),
-					span: Span {
-						start: 17,
-						end: 23,
-						start_pos: Position { line: 1, col: 18 },
-						end_pos: Position { line: 1, col: 24 },
-					},
-				}
-			),
+			inner: None,
+			type_arguments: Some(TypeArguments::Double(Box::new(int_ty), Box::new(string_ty))),
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 29,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 30 },
-			},
 		}),
 		span: Span {
 			start: 4,
-			end: 29,
+			end: 24,
 			start_pos: Position { line: 1, col: 5 },
-			end_pos: Position { line: 1, col: 30 },
+			end_pos: Position { line: 1, col: 25 },
 		},
 	};
 
@@ -5054,7 +4920,7 @@ fn new_inst_map_args_parses() {
 	}];
 
 	let expected = Expr {
-		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Some(class_args)))),
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(class_args))),
 		span: Span {
 			start: 0,
 			end: 29,
@@ -5071,7 +4937,7 @@ fn new_inst_class_parses() {
 	let input = "new Foo()";
 
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Foo"),
 				span: Span {
@@ -5081,15 +4947,9 @@ fn new_inst_class_parses() {
 					end_pos: Position { line: 1, col: 8 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 7,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 8 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -5100,7 +4960,7 @@ fn new_inst_class_parses() {
 	};
 
 	let expected = Expr {
-		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(None))),
+		kind: ExprKind::New(ty, NewType::Class(ClassArgs::Basic(Vec::new()))),
 		span: Span {
 			start: 0,
 			end: 9,
@@ -5113,10 +4973,10 @@ fn new_inst_class_parses() {
 }
 
 #[test]
-fn new_inst_class_sobject_argsparses() {
+fn new_inst_class_sobject_args_parses() {
 	let input = "new Account(Name = 'foo')";
 	let ty = Ty {
-		kind: TyKind::ClassOrInterface(ClassOrInterface {
+		kind: TyKind::RefType(RefType {
 			name: Identifier {
 				name: String::from("Account"),
 				span: Span {
@@ -5126,15 +4986,9 @@ fn new_inst_class_sobject_argsparses() {
 					end_pos: Position { line: 1, col: 12 },
 				},
 			},
-			subclass: None,
+			inner: None,
 			type_arguments: None,
 			is_array: false,
-			span: Span {
-				start: 4,
-				end: 11,
-				start_pos: Position { line: 1, col: 5 },
-				end_pos: Position { line: 1, col: 12 },
-			},
 		}),
 		span: Span {
 			start: 4,
@@ -5176,9 +5030,9 @@ fn new_inst_class_sobject_argsparses() {
 	let expected = Expr {
 		kind: ExprKind::New(ty, NewType::Class(ClassArgs::SObject(args))),
 		span: Span {
-			start: 11,
+			start: 0,
 			end: 25,
-			start_pos: Position { line: 1, col: 12 },
+			start_pos: Position { line: 1, col: 1 },
 			end_pos: Position { line: 1, col: 26 },
 		},
 	};
