@@ -251,7 +251,7 @@ primary = {
     THIS ~ arguments?
     | SUPER ~ super_suffix
     // TODO fix
-    | !literal ~ identifier
+    | identifier
     | literal
 }
 
@@ -287,7 +287,7 @@ type_expr = { basic_type ~ "." ~ CLASS }
 // be a valid type while also allowing it to identify "Object" as a primitive.
 // It's not a great solution!
 // TODO: fix, remove primitive_type?
-basic_type = { !VOID ~ ((!primitive_type ~ ref_type | primitive_type) ~ array_brackets?) | VOID }
+basic_type = { !VOID ~ ((ref_type | primitive_type) ~ array_brackets?) | VOID }
 array_brackets = @{ "[]" }
 
 ref_type = { identifier ~ type_arguments? ~ ("." ~ identifier ~ type_arguments?)? }
@@ -354,8 +354,9 @@ null_literal = { ^"null" }
 
 // TODO how do I write this such that it doesn't match apex keywords?
 // "voids" should be a valid identifier, while "void" shouldn't be
-identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
-// identifier = @{ ((!apex_keyword ~ ASCII_ALPHA) | (apex_keyword ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
+//identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+identifier = @{ ((!ident_reserved ~ ASCII_ALPHA) | (ident_reserved ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
+ident_reserved = { null_literal | bool_literal | primitive_type }
 
 escape_sequence = {
     "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
