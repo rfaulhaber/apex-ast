@@ -287,10 +287,10 @@ type_expr = { basic_type ~ "." ~ CLASS }
 // be a valid type while also allowing it to identify "Object" as a primitive.
 // It's not a great solution!
 // TODO: fix, remove primitive_type?
-basic_type = { !VOID ~ ((ref_type | primitive_type) ~ array_brackets?) | VOID }
+basic_type = { ((ref_type | primitive_type) ~ array_brackets?) | VOID }
 array_brackets = @{ "[]" }
 
-ref_type = { identifier ~ type_arguments? ~ ("." ~ identifier ~ type_arguments?)? }
+ref_type = { (LIST | SET | MAP | identifier) ~ type_arguments? ~ ("." ~ identifier ~ type_arguments?)? }
 
 class_or_interface_type = { (identifier ~ ("." ~ !CLASS ~ identifier)? | (MAP | LIST | SET))  ~ type_arguments? }
 
@@ -355,8 +355,7 @@ null_literal = { ^"null" }
 // TODO how do I write this such that it doesn't match apex keywords?
 // "voids" should be a valid identifier, while "void" shouldn't be
 //identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
-identifier = @{ ((!ident_reserved ~ ASCII_ALPHA) | (ident_reserved ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
-ident_reserved = { null_literal | bool_literal | primitive_type }
+identifier = @{ ((!apex_keyword ~ ASCII_ALPHA) | (apex_keyword ~ (ASCII_ALPHANUMERIC | "_"))) ~ (ASCII_ALPHANUMERIC | "_")* }
 
 escape_sequence = {
     "\\" ~ ("\\" |"b" | "f" | "n" | "t" | "r" | "'")
@@ -458,21 +457,17 @@ BIT_SHIFT_LEFT = { "<<" }
 BIT_SHIFT_RIGHT = { ">>" }
 
 // apex keywords convenience rule
-apex_keyword = _{
+// see: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_reserved_words.htm
+apex_keyword = {
 	ABSTRACT
 	| BLOB
-	| BOOLEAN
-	| BOOLEAN
 	| BREAK
 	| CATCH
 	| CLASS
 	| CONTINUE
-	| DATE
-	| DATETIME
 	| DECIMAL
-	| DEFAULT
+	| DELETE
 	| DO
-	| DOUBLE
 	| ELSE
 	| ENUM
 	| EXTENDS
@@ -480,39 +475,42 @@ apex_keyword = _{
 	| FINAL
 	| FINALLY
 	| FOR
-	// | GET
 	| GLOBAL
 	| IF
 	| IMPLEMENTS
-	| INHERITED_SHARING
+	| INSERT
 	| INSTANCEOF
-	| INTEGER
 	| INTERFACE
 	| LIST
 	| LONG
 	| MAP
-	// | NEW
+	| MERGE
+	| NEW
+	| NULL
 	| OBJECT
+	| ON
 	| OVERRIDE
 	| PRIVATE
 	| PROTECTED
 	| PUBLIC
 	| RETURN
-	// | SET 
+	| SET
 	| STATIC
-	| STRING
 	| SUPER
+	| TESTMETHOD
 	| THIS
 	| THROW
-	| TIME
-	| TRANSIENT
+	| TRIGGER
 	| TRUE
 	| TRY
+	| UNDELETE
+	| UPDATE
+	| UPSERT
 	| VIRTUAL
-	| VOID
+	// "void" is not an official reserved word, strangely, but we need to make
+	// it reserved to allow for certain types of parsing
+	| VOID 
 	| WHILE
-	| WITHOUT_SHARING
-	| WITH_SHARING
 }
 
 // apex keywords
